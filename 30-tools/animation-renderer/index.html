@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ecoplex Sky Outro</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #1a1a1a;
+    overflow: hidden;
+  }
+  #wrap {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: center center;
+  }
+  #stage {
+    position: relative;
+    overflow: hidden;
+    background: #FFFFFF;
+  }
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    will-change: transform;
+  }
+</style>
+</head>
+<body>
+  <div id="wrap"><div id="stage"></div></div>
+
+<script src="params.js"></script>
+<script>
+const P = PARAMS;
+const stage = document.getElementById('stage');
+const wrap  = document.getElementById('wrap');
+
+stage.style.width  = P.width  + 'px';
+stage.style.height = P.height + 'px';
+
+// Scale to fit the window. When Puppeteer sets the viewport to the exact
+// output size this resolves to 1, so preview and capture are identical.
+function fit() {
+  const s = Math.min(window.innerWidth / P.width, window.innerHeight / P.height);
+  wrap.style.transform = `translate(-50%, -50%) scale(${s})`;
+}
+fit();
+window.addEventListener('resize', fit);
+
+const W = P.width;
+
+P.blobs.forEach(b => {
+  const rgb = P.colours[b.colour];
+
+  // Colour safety: clamp Electric Blue's peak alpha.
+  let alpha = b.alpha;
+  if (b.colour === 'blue') alpha = Math.min(alpha, P.blueAlphaCap);
+
+  const el = document.createElement('div');
+  el.className = 'blob';
+
+  const size = b.radius * 2 * W;
+  el.style.width  = size + 'px';
+  el.style.height = size + 'px';
+  el.style.left   = (b.cx * W - size / 2) + 'px';
+  el.style.top    = (b.cy * W - size / 2) + 'px';
+
+  // Gaussian-ish falloff to transparent. No hard edge means no ring banding.
+  el.style.background =
+    `radial-gradient(circle, ` +
+      `rgba(${rgb}, ${alpha}) 0%, ` +
+      `rgba(${rgb}, ${(alpha * 0.62).toFixed(4)}) 28%, ` +
+      `rgba(${rgb}, ${(alpha * 0.24).toFixed(4)}) 50%, ` +
+      `rgba(${rgb}, ${(alpha * 0.06).toFixed(4)}) 68%, ` +
+      `rgba(${rgb}, 0) 82%)`;
+
+  stage.appendChild(el);
+
+  // Sample the sine drift into keyframes so motion matches a true sine
+  // rather than CSS easing between two extremes.
+  const steps = P.keyframeResolution;
+  const frames = [];
+  for (let i = 0; i <= steps; i++) {
+    const t   = i / steps;
+    const ang = 2 * Math.PI * b.cycles * t + b.phase;
+    const dx  = b.ampX * Math.sin(ang) * W;
+    const dy  = b.ampY * Math.cos(ang) * W;
+    const sc  = 1 + b.scaleAmp * Math.sin(ang + 1.1);
+    frames.push({ transform: `translate(${dx}px, ${dy}px) scale(${sc})` });
+  }
+
+  el.animate(frames, {
+    duration: P.duration * 1000,
+    iterations: Infinity,
+    easing: 'linear',
+  });
+});
+</script>
+</body>
+</html>
