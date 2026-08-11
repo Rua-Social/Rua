@@ -1,0 +1,40 @@
+# macOS
+.DS_Store
+
+# Editor / local tooling
+.claude/
+.vscode/
+*.swp
+
+# Dependencies (regenerate from lockfiles, never commit)
+node_modules/
+.venv/
+__pycache__/
+
+# Build / render output (regenerable, not source)
+dist/
+build/
+out/
+frames/
+
+# Large media, camera originals, exports — these live in Drive/local
+# storage, not Git. Add specific exceptions with `git add -f` if a
+# small reference asset (e.g. a logo) genuinely belongs in the repo.
+*.mov
+*.mp4
+*.mxf
+*.braw
+*.r3d
+*.wav
+*.mp3
+*.psd
+*.psb
+*.aep
+*.prproj
+*.zip
+
+# Secrets
+.env
+.env.*
+*.key
+*.pem
