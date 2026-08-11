@@ -11,7 +11,7 @@ White `#FFFFFF` into Electric Yellow `#FFF628` into Electric Blue `#00F0FA`.
 ## One-time setup
 
 ```bash
-cd ecoplex-outro
+cd 30-tools/animation-renderer
 npm install          # pulls puppeteer, downloads a Chromium, takes a minute
 brew install ffmpeg  # skip if you already have it
 ```
