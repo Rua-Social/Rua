@@ -6,3 +6,6 @@ Rua Social / Rua Studio's own operations, not client-delivered work.
 - `marketing/` — Rua's own marketing and content
 - `operations/` — internal process and admin
 - `brand/` — Rua's own brand assets and guidelines
+
+`founder-context.md` is the canonical record of what Rua is optimising for.
+Read it when founder or business intent materially affects a decision.

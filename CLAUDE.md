@@ -26,6 +26,15 @@ Do not create empty `agents/`, `orchestration/`, `models/`, `pipelines/`, or
 and the trigger condition above isn't met yet, don't — flag the friction
 instead and let the user decide when it's real.
 
+## Founder and business intent
+
+Before work on business direction, commercial model, positioning, growth,
+prioritisation, hiring or outsourcing, or any decision where what Rua
+optimises for changes the answer, read `20-studio/founder-context.md` first.
+Do not assume conventional agency growth or revenue maximisation. Do not read
+it for routine production, code or file tasks unless founder/business intent
+materially affects the decision.
+
 ## When introducing something genuinely new
 
 If you introduce a new Git convention, skill, agent, dependency, test, API,
