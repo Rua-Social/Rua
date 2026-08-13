@@ -7,9 +7,9 @@ the creative response, and for any deliberately bounded ongoing arrangement
 such as a retainer with a defined monthly output.
 
 It captures only what every engagement needs settled in advance. It is not a
-service menu, a pricing system or a qualification tool. Copy it into the
-client's directory under `10-clients/<client>/` and fill it in; delete
-guidance notes (in italics) from the working copy.
+service menu, a pricing system or a qualification tool. Copy it into
+`10-clients/<client>/00-brief/` and fill it in; delete guidance notes
+(in italics) from the working copy.
 
 ---
 
@@ -46,10 +46,12 @@ disagreement.*
 ## Deliverables
 
 *The defined body of work, itemised: what, how many, format, and where it
-will be delivered. State quantities as a guaranteed floor; exceeding the
-floor is at Rua's discretion and creates no obligation.*
+will be delivered. State the committed quantity for each deliverable. Where
+intentionally appropriate, the commitment may be set as a conservative floor
+with additional output at Rua's discretion; any extra output is one-off and
+creates no continuing obligation.*
 
-| Deliverable | Quantity (floor) | Format | Delivery location |
+| Deliverable | Committed quantity | Format | Delivery location |
 |---|---|---|---|
 | | | | |
 
@@ -78,9 +80,16 @@ timeline if an input is late. List each input with its owner and date.*
 
 Price: [amount, ex/inc VAT stated]
 
-Payment stages: 50% on confirmation, 50% on delivery of final files, unless
-otherwise agreed here. The engagement is confirmed and dates are held only
-once the first payment is received.
+Payment stages:
+
+- One-off projects: the default is 50% on confirmation and 50% on delivery
+  of final files.
+- Ongoing arrangements: state the terms explicitly; monthly payment in
+  advance is the established retainer mechanism.
+- Subcontract or exceptional arrangements: state the agreed terms.
+
+Whatever the terms, the engagement is confirmed and dates are held only once
+the required initial payment is received.
 
 ## Completion and handover
 
