@@ -161,3 +161,13 @@ Founder-level questions that genuinely matter and remain unresolved.
 - Do not treat Skehans as proof that the sprint model repeats.
 - Do not treat the music-video direction as a decided positioning, and do not discard it either.
 - Do not convert evidence into tasks. The specific jobs, invoices, contacts and dates gathered in this discovery are evidence for this model, not a to-do list.
+
+## Addendum, August 2026: basis of the accepted operating direction
+
+The operating direction recorded in `founder-context.md` was accepted by the founder on 14 August 2026. Its basis, all closed:
+
+**Qualitative synthesis (13 August 2026).** The canonical qualitative operating-model synthesis. Closed.
+
+**Minimum financial verification.** Completed and closed; it did not materially contradict the synthesis. It established only the broad shape: recorded net sales of approximately €35.6k; the largest directly coded client at approximately 73.2% of recorded net sales, at most 78.5% under the broader supported attribution; logged net outlays of approximately €16.3k, of which approximately €9.35k was equipment-related; the workbook's approximately €19.35k indicative surplus is not a P&L. Owner hours, effective rates and engagement profitability remain unknown because the source evidence does not contain that grain. Do not rebuild the accounts, reconstruct time, allocate historical overhead or calculate invented engagement margins. The Otel deposit reconciliation is closed; do not revisit it.
+
+**Blind-first and named-audit robustness exercise.** Found no material reason to believe client names or sectors were carrying the strategic conclusion. Its blind answer initially mixed three separate layers, engagement responsibility, origination mechanism, and portfolio and commercial guardrails; that category error was corrected. Acquisition channels and concentration rules are not themselves complete operating models.
