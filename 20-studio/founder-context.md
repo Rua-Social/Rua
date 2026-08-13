@@ -66,31 +66,21 @@ The founder identified this distinction himself and it has explanatory value.
 
 The commercial model for the second is unresolved. Do not invent one.
 
-## Operating direction
+## Candidate operating direction
 
-Accepted by the founder in August 2026 as the working direction, after a
-qualitative synthesis and a minimum financial verification (both closed;
-evidence in `founder-context-provenance.md`):
+Leading candidate direction, not adopted or commercially validated.
 
-Rua should move towards clearly defined, paid creative projects where the
-client brings the business need and retains the final decision, while Rua
-owns the creative response and production of a defined body of work with a
-clear finish.
+The August 2026 synthesis and minimum financial verification (both closed;
+evidence in `founder-context-provenance.md`) identified defined creative
+ownership as the leading candidate for Rua's operating model: clearly
+defined, paid creative projects where the client brings the business need
+and retains the final decision, while Rua owns the creative response and
+production of a defined body of work with a clear finish.
 
-Boundaries of that direction:
-
-- Bounded production and subcontract work may support the practice.
-- Open-ended marketing or commercial responsibility should be exceptional
-  rather than the default.
-- Self-directed public work remains a possible origination mechanism, not
-  the operating model itself.
-
-Status: a working operating direction, not a niche, a rebrand, a permanent
-service line or a claim of proven profitability. A future engagement may
-test and refine it, but that test is not a gate on organisational work.
-Weigh business-direction, sales, scoping and prioritisation decisions
-against this direction; treat work that departs from it as a deliberate
-exception, not a drift.
+The founder found this attractive but has not adopted it, and has said it
+may be too early to treat it as settled. It is an evidence-informed
+possibility for the future operating model, not current organisational
+policy. Do not use it to accept, reject or rank work.
 
 ## Acquisition
 

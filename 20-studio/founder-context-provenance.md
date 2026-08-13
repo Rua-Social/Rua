@@ -162,9 +162,9 @@ Founder-level questions that genuinely matter and remain unresolved.
 - Do not treat the music-video direction as a decided positioning, and do not discard it either.
 - Do not convert evidence into tasks. The specific jobs, invoices, contacts and dates gathered in this discovery are evidence for this model, not a to-do list.
 
-## Addendum, August 2026: basis of the accepted operating direction
+## Addendum, August 2026: closed analyses and candidate direction
 
-The operating direction recorded in `founder-context.md` was accepted by the founder on 14 August 2026. Its basis, all closed:
+The design work that followed the closed analyses below identified **defined creative ownership** as the leading candidate operating direction: clearly defined, paid creative projects where the client brings the business need and retains the final decision, while Rua owns the creative response and production of a defined body of work with a clear finish. Darragh found it attractive but did not adopt it, and subsequently clarified it may be too early to treat as settled. It is recorded in `founder-context.md` as a candidate only, not policy. The underlying analyses, all closed:
 
 **Qualitative synthesis (13 August 2026).** The canonical qualitative operating-model synthesis. Closed.
 
