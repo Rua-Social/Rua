@@ -2,7 +2,8 @@
 
 Rua Social / Rua Studio's own operations, not client-delivered work.
 
-- `sales/` — pipeline, proposals, pricing
+- `sales/` — pipeline, proposals, pricing; see `sales/README.md` for the
+  upstream commercial workflow from first discussion to final payment
 - `marketing/` — Rua's own marketing and content
 - `operations/` — internal process and admin
 - `brand/` — Rua's own brand assets and guidelines
