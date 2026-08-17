@@ -93,7 +93,14 @@ mandatory when history exists. For thin or missing history, flag the gap and
 pull from whatever exists (category, competitors, the brief). Do not skip the
 read and jump to ideas.
 
-Read `references/research-analysis.md`.
+When the instance or brief has a channel handle, run a channel pull before
+you write findings. Instagram is the first automated pull: last six months
+via xpoz. Other channels use the same file shape when a pull exists for
+them. Read `references/research-analysis.md`.
+
+A findings summary that claims to have read an account, with no pull file,
+is a failed Stage 1. If xpoz fails, still write the file and mark `gap`.
+Do not invent posts, counts, or a format split from memory.
 
 Come out with two things: a findings summary, and a rough concept long-list.
 The long-list is working material. Concepts are worked with the client at
@@ -254,9 +261,9 @@ they are, the pillars this research produces, document scale, copy voice
 or more.
 
 What stays: the path above, the six deliverable types when the sprint is
-run in full, the hierarchy and reissue rule, tier logic, copy bank, change
-log and numbering, talent and logistics sitting with the client, research
-driving concepts.
+run in full, the hierarchy and reissue rule, the channel-pull gate at
+Stage 1, tier logic, copy bank, change log and numbering, talent and
+logistics sitting with the client, research driving concepts.
 
 What does not stay: another client's pillars, editorial taboos, caption
 laws, surplus, page count, or look.

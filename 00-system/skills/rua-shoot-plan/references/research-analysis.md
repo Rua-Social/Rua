@@ -28,6 +28,58 @@ carrying more of the direction.
 
 Use the channels they actually use. Do not assume one platform.
 
+## The channel pull (required when a handle exists)
+
+The pull is a file in the instance, not a vibe from a scroll in chat.
+
+Path: `10-clients/<slug>/01-research/channel-pull.json`
+
+Write it before findings. Instagram is the first automated source. A later
+TikTok or other pull uses the same shape. The handle lives on the instance,
+never in this skill.
+
+Pull the last six months with xpoz (`xpoz__getInstagramPostsByUser`, by
+username). Write what came back. Do not wait for a manual export. If xpoz
+is missing or the fetch fails, still write the file, mark `gap`, and say
+why. Firecrawl cannot read Instagram.
+
+Each item in the pull is one post the machine actually retrieved:
+
+- `id`
+- `posted_at`
+- `channel` (`instagram`, `tiktok`, or the name of the channel)
+- `format` (`reel`, `carousel`, `static`, `story`, `other`)
+- `caption` (verbatim, or empty)
+- `like_count`, `comment_count`, `view_count` when the source gives them
+- `permalink` when the source gives one
+- `sponsored` when the source marks it, or when the visual scroll shows it
+
+The pull also records `pulled_at`, `window_start`, `window_end`, `source`
+(which tool or API), and `gap` if the window is short or the fetch failed.
+
+### Guardrails
+
+- **No pull, no claimed read.** If the handle exists and the file is missing,
+  Stage 1 is incomplete. Run the pull or mark `gap` as thin-history and say
+  why. Do not write a format split, baseline, or caption-tone law from memory.
+- **Cite the pull.** Findings name posts by `id` and `posted_at`. A pillar
+  that cannot point at items in the file is not a pillar.
+- **Copy voice comes from captions in the file.** Quote them. Do not invent
+  a house style and attribute it to the account.
+- **Baseline from the file.** Counts come from the pull. A number that is
+  not in the file does not go in Week 0.
+- **Sponsored stays separate.** If `sponsored` is true, keep that post out
+  of the organic baseline. If the source does not mark paid posts, the
+  visual scroll can. Do not count unmarked paid posts as organic proof.
+- **Visual scroll still happens.** The file is numbers and text. You still
+  look at the feed so you can say why it looks the way it does. The scroll
+  does not replace the file.
+- **Failed fetch is a gap, not a story.** Do not scrape around a failed
+  xpoz pull and pretend it is a read.
+- **Do not invent posts.** If the pull is empty, the history is thin. Say so.
+
+This skill does not contain a client handle or an API key.
+
 ---
 
 ## What to look for

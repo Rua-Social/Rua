@@ -27,6 +27,8 @@ tight packages should not be forced through them.
 ```
 00-brief/       What was asked for, and the filled scope of work
 01-research/    Research and context gathering
+                channel-pull.json when a handle exists (see
+                rua-shoot-plan research-analysis)
 02-plan/        Shoot plans, concepts, schedules
 03-production/  Shoot-day material
 04-post/        Edit and post-production
