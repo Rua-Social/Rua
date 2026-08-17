@@ -6,6 +6,11 @@ Sales collateral, Week 0, concepts, schedules and handovers are built as
 HTML. Export is a local print job. Do not spend Grok Playwright or Chrome
 Headless credits on it.
 
+This prints the document. It does not make a room deck. A live
+presentation is a separate 16:9 present cut, not this PDF dropped into
+PowerPoint. The working offer's present file is
+`20-studio/sales/ways-to-work-present.pptx`.
+
 ## Goal
 
 `deck.html` in, A4 PDF out, same look as the browser. No Playwright, no
