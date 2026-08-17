@@ -52,7 +52,7 @@ What works:
 | --- | --- | --- | --- |
 | Grok | Default conductor. Dashboard. Rua skills. Brains: `grok-4.6`, `grok-4.5`. Kimi via Moonshot. | grok.com + Moonshot API | `rua-desk grok` |
 | Claude Code | Claude's own harness. Plugins, Claude memory. | Anthropic | `rua-desk claude` |
-| Gemini CLI | Google's own harness. Drive / multimodal if you use them. | Google | `rua-desk gemini` |
+| Gemini CLI | Google's own harness. Multimodal if you use it. | Google | `rua-desk gemini` |
 | Codex | OpenAI harness in ChatGPT.app. Computer use. GPT-5.6. | ChatGPT | `rua-desk codex` |
 
 `rua-desk grok` opens the dashboard. `rua-desk grok-one` opens a
@@ -88,15 +88,14 @@ Keys in that window:
 
 These are named dashboard sessions, not an `agents/` directory.
 Create them the first time by dispatching the seed, then rename and
-pin. Reuse them. Do not open a fifth room because a new idea showed
-up.
+pin. Reuse them. Do not open a room because a new idea showed up.
 
 | Room | Seed on first boot | Use for |
 | --- | --- | --- |
 | `desk` | Read `20-studio/desk.md`. You are the conductor. Wait for a class. Do not invent work. | Sit-down, founder, systems, `/desk-brief` |
 | `sales` | Read `20-studio/sales/README.md` and `00-system/templates/scope-of-work.md`. Do not start a delivery skill. | Scope, proposal, invoice, payment gate |
 | `job` | Name the engagement. Read only `10-clients/<slug>/` for that engagement. | The one live client job |
-| `tools` | Read `00-system/skills/rua-ship-gate/SKILL.md`. Software only. | Anything under `30-tools/` |
+| `tools` | Read `00-system/skills/rua-ship-gate/SKILL.md`. Software only. Code, session, and look. | Anything under `30-tools/` |
 | `papa` | Read `40-papa-rua/README.md`. Do not invent a release. | Papa Rua |
 
 One live `job` room. If there is no live engagement, leave it idle.
@@ -113,12 +112,41 @@ on. Park the other in Git. Do not keep a room per old client.
 | Cheap extract on Moonshot | `kimi` MCP tool `kimi_run` (or `/model kimi`) | `spawn_subagent` / workflow `model=kimi` — Grok rejects those slugs. Fake `kimi` agent types just run grok-4.6 |
 | Hostile / long-context on Moonshot | `kimi_run` with model `kimi-k3` | Making K3 the default |
 | Same parallel pass every sit-down | `/desk-brief` from a session in `~/Rua` | Launching it from `$HOME` |
-| Second opinion from Claude / Gemini / Codex | `ai-cli` MCP tools. Codex on this login is ChatGPT, default `gpt-5.6-sol`. Pass that slug or omit the model. Do not pass `gpt-5.3-codex`. | Opening a second terminal for a one-line review |
+| Second opinion from Claude / Gemini / Codex | `ai-cli` MCP tools. See Codex slugs below. | Opening a second terminal for a one-line review |
 | Repeated method | A skill | A custom agent file |
 | Another model's full harness | Another seat (`rua-desk claude` etc.) | A `/model` stub |
 
 A custom agent file is earned when a role needs its own tools or
 prompt, not when you want a job title.
+
+The conductor stays Grok. The other seats are unused if you never
+call them. Pull a seat when the job matches. Do not pull all four
+for courtesy, and do not skip them to keep the chat tidy.
+
+- Long extract or first read of a fat file or folder: `kimi_run`
+  (`kimi`, or `kimi-code` if the material is `30-tools/`).
+- Hostile or 1M-context read: `kimi_run` with `kimi-k3`.
+- Second opinion on a ship or a judgement call: `ai-cli` Claude
+  or Codex. Do not pass `gpt-5.3-codex`.
+
+Codex via `ai-cli`, tried 17 Aug on desk-bridge (same short
+review prompt):
+
+| Slug | Effort | Result |
+| --- | --- | --- |
+| `gpt-5.4-mini` | low | Finished ~1 min. Thin. `--yolo` + tests only. |
+| `gpt-5.5` | medium | Finished ~2 min. Pairing, `--yolo`, silent drop. |
+| `gpt-5.6-luna` | low | Finished ~2 min. Same plus group-chat / no `chat.type` check. Use this for a fast 5.6 pass. |
+| `gpt-5.6-terra` | low | Finished ~2 min. Same core; missed groups; named spec vs session-file tension. |
+| `gpt-5.6-sol` | default | Hung 5+ min after reading. Killed. Do not use Sol for this. |
+- Mail, calendar, Drive: Grok built-in connectors. Sign in once at
+  grok.com/connectors. Do not use the local Google MCP servers.
+- Multimodal: Gemini CLI, or `ai-cli` Gemini for a one-shot.
+- Phone: never Kimi, never a four-seat fan-out.
+
+Kimi is a reader. `kimi_run` cannot write files. That is the point.
+The false start was routing (OpenRouter, `model=kimi` children),
+not the model. Do not rule Kimi out. Do not make K3 the default.
 
 ## Which seat for which Rua class
 
@@ -128,10 +156,10 @@ prompt, not when you want a job title.
 | Sales / scope | Grok `sales`, or Claude Code | Shared rules. Stay in the harness you opened. |
 | Defined sprint | Grok `job` | `rua-shoot-plan` is wired here. |
 | Pickup / execution | Grok `job`, or Codex | Scope of work only. Do not load the sprint skill. |
-| Tool / software | Grok `tools` | `rua-ship-gate`. Approval before files. |
+| Tool / software | Grok `tools` | `rua-ship-gate`. Approval before files. Session and look live here too. |
 | Papa Rua | Grok `papa` | Separate from client delivery. |
 | Claude-only memory or Claude plugins | Claude Code | Different hands, not a Grok `/model` switch. |
-| Gemini-only account, Drive, multimodal CLI | Gemini CLI | Different hands. |
+| Gemini-only account, multimodal CLI | Gemini CLI | Different hands. |
 | Computer use / a Codex thread already in flight | Codex | Finish it there. Resume with the resume-codex skill. |
 
 ## Handoff
@@ -171,6 +199,25 @@ one is `desk-brief`. Add another when the same multi-agent handoff
 is happening every week.
 
 Until then this note is the desk.
+
+## On the phone
+
+Telegram bot `@Rua_desk_bot` is the same desk, reached while away.
+The process lives on this Mac: `30-tools/desk-bridge/`.
+It is a seat, not a fifth room and not a new agent file.
+
+How the phone behaves is `30-tools/desk-bridge/EXPERIENCE.md`.
+This chat is a phone, not a studio log.
+
+- Work silently. Class, doctrine, and file-hunting stay off-screen.
+- Send one short result: what happened, where it is, what they need.
+- Short paragraphs. No markdown tables. No file trees. No "Loading…".
+- If you send a file, say it is in the chat. Do not recap the job.
+- Voice notes are inbound. They are transcribed, then treated as the ask.
+- Phone Grok runs at medium effort. Studio stays on the dashboard setting.
+- Do not install the official Telegram plugin. This seat is desk-bridge.
+- Lists live in `20-studio/lists.md`. Desk list and founder list. If
+  something is blocked, write it there. Do not invent a tracker.
 
 ## Optional: VS Code as the file surface
 

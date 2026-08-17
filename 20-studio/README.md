@@ -9,6 +9,8 @@ What exists today:
   a shoot.
 - `desk.md` — how the founder sits down: one Grok window, four other
   seats if needed. Operating note, not doctrine.
+- `lists.md` — two lists only. Desk (blocked / moving / done) and
+  founder (do / planned / waiting). Not a product.
 - `sales/` — the upstream commercial workflow from first discussion to
   final payment. See `sales/README.md`.
 
