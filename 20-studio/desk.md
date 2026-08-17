@@ -30,19 +30,27 @@ The personal OS is one Grok window looking at this repo.
 That is multi-agent work *inside* Grok. It is not four APIs in one
 chat.
 
-Other models stay other seats. No OpenRouter. No routing service.
+Other models stay other seats unless they have a real API
+behind them. No OpenRouter. No routing service.
 
 ## What is actually live
 
-No OpenRouter account. No OpenRouter key. So there is no way to put
-Gemini, Claude, or Kimi *inside* Grok. Those names in the Grok picker
-were stubs. They are gone.
+Kimi is inside Grok via the Moonshot API. `/model kimi` is
+`kimi-k2.6` (cheap). `/model kimi-code` is `kimi-k2.7-code`.
+`/model kimi-k3` is the flagship ($3 / $15 per 1M, 1M context,
+always thinks). Default stays `grok-4.6`.
 
-What works is four separate seats you already logged into:
+Claude, Gemini, and Codex stay on their own logins. From a
+new Grok session they can also be called as tools through
+the `ai-cli` MCP (one window, no second API bill). Two
+agents may work in parallel on different files. They must
+not write the same file at the same time. Git is the handoff.
+
+What works:
 
 | Seat | What it is | Bill / login | Open it |
 | --- | --- | --- | --- |
-| Grok | Default conductor. Dashboard. Rua skills. Brains: `grok-4.6`, `grok-4.5`. | grok.com | `rua-desk grok` |
+| Grok | Default conductor. Dashboard. Rua skills. Brains: `grok-4.6`, `grok-4.5`. Kimi via Moonshot. | grok.com + Moonshot API | `rua-desk grok` |
 | Claude Code | Claude's own harness. Plugins, Claude memory. | Anthropic | `rua-desk claude` |
 | Gemini CLI | Google's own harness. Drive / multimodal if you use them. | Google | `rua-desk gemini` |
 | Codex | OpenAI harness in ChatGPT.app. Computer use. GPT-5.6. | ChatGPT | `rua-desk codex` |
@@ -62,6 +70,7 @@ single session if you want a quiet thread.
 rua-desk           # see what is installed
 rua-desk grok      # one window
 rua-desk grok-one  # one session
+rua-desk ping      # each seat answers one line
 ```
 
 Keys in that window:
@@ -72,7 +81,7 @@ Keys in that window:
 | `Ctrl+G` | Tasks pane. Subagents under the session you are in. |
 | `Ctrl+T` | Pin the selected room. |
 | `Ctrl+R` | Rename the selected room. |
-| `/desk-brief` | Parallel scan of the four repo rooms, then one brief. Studio and clients on grok-4.5; tools, Papa Rua, and the brief on grok-4.6. |
+| `/desk-brief` | Parallel scan of the four repo rooms, then one brief. Studio and clients on grok-4.5; tools, Papa Rua, and the brief on grok-4.6. Must run from `~/Rua`. Grok children cannot be Kimi. |
 | `/workflows` | Watch a running workflow. |
 
 ## Rooms
@@ -91,7 +100,9 @@ up.
 | `papa` | Read `40-papa-rua/README.md`. Do not invent a release. | Papa Rua |
 
 One live `job` room. If there is no live engagement, leave it idle.
-Do not keep a room per old client.
+If two paid engagements are live at once, do not add a second
+job room. Rename and reseed this one to the slug you are sitting
+on. Park the other in Git. Do not keep a room per old client.
 
 ## Which lever
 
@@ -99,9 +110,12 @@ Do not keep a room per old client.
 | --- | --- | --- |
 | Talk through one class of work | The matching room | Four chats for the same job |
 | Independent lookup while you keep talking | A subagent under that room | A new top-level session |
-| Same parallel pass every sit-down | `/desk-brief` | A human reading four folders |
+| Cheap extract on Moonshot | `kimi` MCP tool `kimi_run` (or `/model kimi`) | `spawn_subagent` / workflow `model=kimi` — Grok rejects those slugs. Fake `kimi` agent types just run grok-4.6 |
+| Hostile / long-context on Moonshot | `kimi_run` with model `kimi-k3` | Making K3 the default |
+| Same parallel pass every sit-down | `/desk-brief` from a session in `~/Rua` | Launching it from `$HOME` |
+| Second opinion from Claude / Gemini / Codex | `ai-cli` MCP tools | Opening a second terminal for a one-line review |
 | Repeated method | A skill | A custom agent file |
-| Another model's hands | Another seat | A `/model` stub |
+| Another model's full harness | Another seat (`rua-desk claude` etc.) | A `/model` stub |
 
 A custom agent file is earned when a role needs its own tools or
 prompt, not when you want a job title.
@@ -124,8 +138,9 @@ prompt, not when you want a job title.
 
 The bus is Git and files, not a chat export.
 
-- One job, one working tree. Do not let two harnesses edit the same
-  files at the same time.
+- One job, one working tree. Parallel work on different files is
+  fine. Concurrent writes to the same file are not. Commit or park
+  before another agent touches those paths.
 - When you change seats, say what class the job is and point at the
   files that matter. The next harness will read `AGENTS.md` itself.
 - To continue a foreign session from Grok: `resume-claude`,
@@ -134,16 +149,15 @@ The bus is Git and files, not a chat export.
   Gemini also has `GEMINI.md`. Those two files are adapters, not a
   second rulebook.
 
-## OpenRouter is optional and not set up
+## Kimi is inside Grok. OpenRouter is not set up
 
-OpenRouter is a paid gateway. One key, many brains, so Grok could
-`/model` to Kimi, Gemini, or Claude without leaving the TUI.
+Kimi is a Moonshot API model on this machine. `/model kimi` and
+`/model kimi-code` are live. The key is `MOONSHOT_API_KEY`, not
+in Git.
 
-That is not free and it is not configured. Do not add those models
-back until there is an OpenRouter account, a key in
-`OPENROUTER_API_KEY`, and a reason the separate CLIs are not enough.
-
-Until then, ignore any advice that says "switch to Kimi inside Grok."
+OpenRouter is still not set up. Do not add Claude or GPT as Grok
+`/model` entries unless there is an API key for that vendor and a
+reason the official CLI is not enough.
 
 ## What we are not building
 
