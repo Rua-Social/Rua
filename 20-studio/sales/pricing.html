@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rua Social — Pricing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --night: #1a1a2e;
+  --purple: #7c3aed;
+  --purple-light: #f3f0ff;
+  --stone: #4a4a68;
+  --body: #2d2d3f;
+  --muted: #71717a;
+  --border: #e4e4e7;
+  --bg: #fafafa;
+  --serif: 'Instrument Serif', Georgia, serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+}
+html, body { background: var(--bg); }
+body { font-family: var(--sans); color: var(--body); font-size: 14px; line-height: 1.5; }
+@page { size: A4 portrait; margin: 0; }
+.page {
+  width: 210mm;
+  height: 297mm;
+  margin: 0 auto;
+  background: white;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+@media print {
+  html, body { margin: 0; background: white; width: 210mm; }
+  .page { margin: 0; box-shadow: none; }
+}
+
+.hero {
+  background: var(--night);
+  color: white;
+  padding: 28px 44px 24px;
+}
+.hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 18px;
+}
+.agency {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+.hero-meta {
+  font-size: 11px;
+  color: rgba(255,255,255,0.45);
+}
+.hero-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #c4b5fd;
+  margin-bottom: 8px;
+}
+.hero h1 {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 40px;
+  line-height: 1.05;
+  font-weight: 400;
+  margin-bottom: 10px;
+}
+.hero-sub {
+  font-size: 14px;
+  color: rgba(255,255,255,0.58);
+  max-width: 520px;
+  line-height: 1.55;
+}
+
+.content { flex: 1; padding: 20px 44px 8px; display: flex; flex-direction: column; }
+
+.price-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin: 0 0 10px;
+  align-items: stretch;
+}
+.tier {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 14px 12px;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  min-height: 268px;
+}
+.tier-rec {
+  background: var(--night);
+  border-color: var(--night);
+  color: white;
+}
+.tier-kicker {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.tier-rec .tier-kicker { color: #c4b5fd; }
+.tier-name {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1.1;
+  color: var(--night);
+  margin-bottom: 4px;
+}
+.tier-rec .tier-name { color: white; }
+.tier-price {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 28px;
+  color: var(--purple);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.tier-unit { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+.tier-rec .tier-unit { color: rgba(255,255,255,0.5); }
+.tier-rule { height: 1px; background: var(--border); margin: 0 0 10px; }
+.tier-rec .tier-rule { background: rgba(255,255,255,0.12); }
+.tier-blurb {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--stone);
+  margin-bottom: 8px;
+}
+.tier-rec .tier-blurb { color: rgba(255,255,255,0.7); }
+.tier ul { list-style: none; padding: 0; margin: 0; }
+.tier li {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--body);
+  padding: 4px 0 4px 14px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.tier li:last-child { border-bottom: none; }
+.tier li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 5px;
+  height: 5px;
+  background: var(--purple);
+  border-radius: 50%;
+}
+.tier-rec li { color: rgba(255,255,255,0.82); border-bottom-color: rgba(255,255,255,0.1); }
+
+.adhoc {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 18px;
+  display: grid;
+  grid-template-columns: 1fr 1.7fr auto;
+  gap: 16px;
+  align-items: center;
+  background: var(--bg);
+  margin-bottom: 12px;
+}
+.adhoc-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--purple);
+  margin-bottom: 2px;
+}
+.adhoc-name {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 20px;
+  color: var(--night);
+  line-height: 1.15;
+}
+.adhoc-copy { font-size: 12px; color: var(--stone); line-height: 1.45; }
+.adhoc-price {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 24px;
+  color: var(--purple);
+  text-align: right;
+  white-space: nowrap;
+}
+.adhoc-price small {
+  display: block;
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.terms {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.box {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: white;
+}
+.box-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--purple);
+  margin-bottom: 6px;
+}
+.box p, .box li { font-size: 11.5px; color: var(--stone); line-height: 1.45; }
+.box ul { list-style: none; padding: 0; }
+.box li {
+  padding: 3px 0 3px 12px;
+  position: relative;
+}
+.box li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 4px;
+  height: 4px;
+  background: var(--purple);
+  border-radius: 50%;
+}
+
+.note {
+  background: var(--purple-light);
+  border-left: 3px solid var(--purple);
+  padding: 10px 14px;
+  border-radius: 0 6px 6px 0;
+  font-size: 12px;
+  color: var(--stone);
+  line-height: 1.5;
+}
+
+.foot {
+  margin-top: auto;
+  padding: 14px 44px 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.foot-name {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 20px;
+  color: var(--night);
+}
+.foot-lines { font-size: 12px; color: var(--muted); line-height: 1.5; text-align: right; }
+</style>
+</head>
+<body>
+<section class="page">
+  <header class="hero">
+    <div class="hero-top">
+      <span class="agency">Rua Social</span>
+      <span class="hero-meta">August 2026 · Euro, exclusive of VAT</span>
+    </div>
+    <div class="hero-label">Working offer</div>
+    <h1>Three retainers, or a project.</h1>
+    <p class="hero-sub">You bring the business need and the last yes. Rua plans, shoots, and delivers a defined body of work with a clear finish.</p>
+  </header>
+
+  <div class="content">
+    <div class="price-grid">
+      <article class="tier">
+        <div class="tier-kicker">Retainer 01</div>
+        <div class="tier-name">Edit</div>
+        <div class="tier-price">€1,200</div>
+        <div class="tier-unit">per month, ex VAT</div>
+        <div class="tier-rule"></div>
+        <p class="tier-blurb">You already have the footage. We turn it into finished pieces, ready to post.</p>
+        <ul>
+          <li>Up to 8 edited pieces a month</li>
+          <li>Captions, titles, platform formats</li>
+          <li>One revision round per piece</li>
+          <li>No shoot day</li>
+        </ul>
+      </article>
+
+      <article class="tier tier-rec">
+        <div class="tier-kicker">Retainer 02 · Recommended</div>
+        <div class="tier-name">Monthly</div>
+        <div class="tier-price">€2,200</div>
+        <div class="tier-unit">per month, ex VAT</div>
+        <div class="tier-rule"></div>
+        <p class="tier-blurb">One shoot day and the month’s output. The usual way to stay in a rhythm.</p>
+        <ul>
+          <li>One full shoot day</li>
+          <li>10 or more finished pieces</li>
+          <li>Planning call, captions, titles</li>
+          <li>One revision round</li>
+        </ul>
+      </article>
+
+      <article class="tier">
+        <div class="tier-kicker">Retainer 03</div>
+        <div class="tier-name">Studio</div>
+        <div class="tier-price">€4,000</div>
+        <div class="tier-unit">per month, ex VAT</div>
+        <div class="tier-rule"></div>
+        <p class="tier-blurb">Higher volume. Two shoot days, more finished work, a monthly review.</p>
+        <ul>
+          <li>Two shoot days</li>
+          <li>20 or more finished pieces</li>
+          <li>Monthly review of what ran</li>
+          <li>One revision round</li>
+        </ul>
+      </article>
+    </div>
+
+    <aside class="adhoc">
+      <div>
+        <div class="adhoc-label">Ad hoc</div>
+        <div class="adhoc-name">A project</div>
+      </div>
+      <p class="adhoc-copy">A defined sprint with a finish: research, concepts, one shoot day, a bank of 10 or more pieces. No monthly obligation.</p>
+      <div class="adhoc-price">From €2,500<small>ex VAT · 50 / 50</small></div>
+    </aside>
+
+    <div class="terms">
+      <div class="box">
+        <div class="box-label">Payment</div>
+        <ul>
+          <li>Retainers: month in advance</li>
+          <li>Project: 50% to confirm, 50% on delivery</li>
+          <li>Dates held only when first payment lands</li>
+        </ul>
+      </div>
+      <div class="box">
+        <div class="box-label">Included</div>
+        <ul>
+          <li>Planning, kit, edit and grade</li>
+          <li>Captions, titles, platform formats</li>
+          <li>One revision round per piece</li>
+          <li>Usage on your site and socials</li>
+        </ul>
+      </div>
+      <div class="box">
+        <div class="box-label">Not included</div>
+        <ul>
+          <li>Posting or channel management</li>
+          <li>Paid media, boosting, or ads</li>
+          <li>Extra shoot days</li>
+          <li>Usage beyond your own channels</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="note">Each option names a conservative floor. Extra output is one-off. It does not raise the next month’s obligation. Nothing here is a confirmed engagement until a scope of work is agreed and the first payment lands. Pickup and subcontract work are scoped separately.</p>
+  </div>
+
+  <footer class="foot">
+    <div class="foot-name">Rua Social</div>
+    <div class="foot-lines">
+      Darragh Hoare<br>
+      darragh@ruasocial.ie · +353 85 715 0077
+    </div>
+  </footer>
+</section>
+</body>
+</html>

@@ -43,12 +43,12 @@ bounded engagement Rua legitimately accepts, whatever shape it takes.
 
 The current working offer (three retainers plus a project) is
 `ways-to-work.pdf`, built from `ways-to-work.html`. It is a leave-behind.
+The one-page send is `pricing.pdf`, built from `pricing.html`. Same facts.
 The room version is `ways-to-work-present.pptx`, a 16:9 present cut of
 the same facts. After a number changes, rebuild with
 `cd 20-studio/sales && npm install && npm run build`. It is not a rate card written into this workflow,
 and it does not cover subcontract or pickup work. Change the numbers in
-the HTML and reprint with
-`python3 30-tools/html-to-pdf/html_to_pdf.py 20-studio/sales/ways-to-work.html`
+the HTML (`ways-to-work.html` and `pricing.html`) and reprint both
 when the offer changes.
 
 ### Still open
