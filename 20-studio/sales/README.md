@@ -1,6 +1,6 @@
 # Sales: the upstream commercial workflow
 
-This is the Stage 0 boundary referenced by the Shoot Plan skill
+This is the Stage 0 boundary referenced by the sprint skill
 (`00-system/skills/rua-shoot-plan/SKILL.md`): proposal, scoping and
 invoicing sit here, upstream of any delivery workflow. It applies to any
 bounded engagement Rua legitimately accepts, whatever shape it takes.
@@ -15,7 +15,7 @@ bounded engagement Rua legitimately accepts, whatever shape it takes.
 
 2. **Agree responsibilities, scope and commercial terms** using the
    scope-of-work template (`00-system/templates/scope-of-work.md`). The
-   filled copy lives in `10-clients/<client>/00-brief/`.
+   filled copy lives in `10-clients/<client>/` with the brief.
 
 3. **Invoice the required initial payment** under the terms stated in the
    scope of work.
@@ -25,12 +25,14 @@ bounded engagement Rua legitimately accepts, whatever shape it takes.
    engagement.
 
 5. **Create or activate the client engagement area** under
-   `10-clients/<client>/`, following the phased structure in
-   `10-clients/README.md`.
+   `10-clients/<client>/`. Use the folders the job needs. Do not force a
+   six-phase sprint tree onto pickup or a tight package.
 
 6. **Hand confirmed production into the appropriate delivery workflow.**
-   For content sprints and shoots that is the Shoot Plan skill, which picks
-   up from its Stage 1.
+   For a defined Rua-led content sprint, that is the shoot-plan skill,
+   which picks up from its Stage 1. If the scope is execution-only
+   (pickup, shoot-only, edit-only, raw drop), do not run the sprint skill.
+   Deliver against the scope.
 
 7. **Record any scope change explicitly before the extra work happens**,
    per the exceptions section of the scope of work: agreed in writing with
@@ -40,5 +42,6 @@ bounded engagement Rua legitimately accepts, whatever shape it takes.
    terms.
 
 This README describes the workflow that exists. It is not a CRM, pipeline
-tracker or proposal library; add structure here only when repeated friction
-earns it.
+tracker, proposal library or rate card. Add structure here only when
+repeated friction earns it. Do not invent a commercial model for
+subcontract work in this file.

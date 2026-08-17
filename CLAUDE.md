@@ -1,66 +1,83 @@
 # Operating instructions for Claude in this repo
 
-## What this repo is
+@AGENTS.md
 
-The single monorepo for Rua: Rua Social / Rua Studio, client work, internal
-tools, reusable skills, and Papa Rua. Large media, camera originals, exports,
-and archive material live outside Git in Drive/local storage — this repo is
-for structured knowledge, instructions, skills, and code.
+The shared operating rules are imported above so Claude and Codex stay in
+sync. Put anything that applies to both in `AGENTS.md`, not here. `AGENTS.md`
+must remain in the repository: without it this file loses its shared
+instructions. Everything below is Claude-specific.
 
-## The core rule: build the minimum abstraction the work actually needs
+If this is not a client job, name the class using `AGENTS.md` (Start of a
+chat) and load only that class's doctrine.
 
-Do not create agents, orchestration, model routing, or extra structure
-because they might be useful eventually. Match the abstraction to what's
-actually repeating:
+## Load order for a job
 
-- Repeated procedure → **Skill** (a `SKILL.md` under `00-system/skills/`)
-- Deterministic functionality → **Tool** (a proper software project under
-  `30-tools/`)
-- Independently delegatable AI task → **Agent**
-- Repeated handoff between multiple workers → **Orchestration**
-- Different tasks demonstrably benefit from different models → **Model
-  routing**
+1. What was sold, and has the payment gate been passed?
+   (`20-studio/sales/README.md`, `00-system/templates/scope-of-work.md`)
+2. Name the job-type. Defined Rua-led sprint, pickup / execution, or other.
+3. If `10-clients/<slug>/` exists for this engagement, read that record.
+   Treat it as factual context, not a creative template and not a lead deck.
+4. Load only the doctrine for that job-type. For a sprint, that is
+   `00-system/skills/rua-shoot-plan/`. For pickup, do not load it.
+5. Open a library artefact only if the human asked, or if doctrine does not
+   cover the deliverable and the human agrees to look at a source.
 
-Do not create empty `agents/`, `orchestration/`, `models/`, `pipelines/`, or
-`specs/` directories ahead of need. If you're about to propose one of these
-and the trigger condition above isn't met yet, don't — flag the friction
-instead and let the user decide when it's real.
+If a cited path is missing, report that. Do not reconstruct it from another
+client or from a map description.
 
-## Founder and business intent
+## The reference map
 
-Before work on business direction, commercial model, positioning, growth,
-prioritisation, hiring or outsourcing, or any decision where what Rua
-optimises for changes the answer, read `20-studio/founder-context.md` first.
-Do not assume conventional agency growth or revenue maximisation. Do not read
-it for routine production, code or file tasks unless founder/business intent
-materially affects the decision.
+`00-system/reference-map.md` is a library index of past documents. Most of
+the sources it cites are machine-local and outside Git. It is not a design
+canon and it is not how a job starts.
 
-## When introducing something genuinely new
+Do not read it in full by default. Do not import it here. Do not start
+ordinary client work at Part D.
 
-If you introduce a new Git convention, skill, agent, dependency, test, API,
-or orchestration layer, briefly explain: what it is, why it's needed here,
-and why the alternative would be worse. Skip this for routine filesystem
-operations (moving a file, creating a normal directory) — only explain when
-the concept itself is new.
+When the human is asking about the library, or has agreed you may look up a
+deliverable type:
 
-## Structure
+1. Check whether an exact-client instance record exists in `10-clients/`.
+   Read it only when it matches the current client.
+2. Use Part D of the map to find candidate artefacts.
+3. Read the relevant Part A or B record.
+4. Open the original cited artefact before relying on or borrowing from it.
 
-- `00-system/` — skills and templates that apply across the org
-- `10-clients/<client>/` — one directory per client, phased subfolders
-  (brief → research → plan → production → post → delivery)
-- `20-studio/` — Rua Social / Rua Studio's own sales, marketing, operations,
-  brand
-- `30-tools/<tool>/` — deterministic software projects, each a normal
-  buildable/runnable codebase with its own README
-- `40-papa-rua/` — releases, content, live, business. Stays in this monorepo
-  unless a concrete reason emerges (separate collaborators, permissions,
-  deployment, or substantial independent development) to split it out
-- `90-archive/` — completed or inactive material kept for reference
+**Open the original before borrowing from it.** The map describes what a
+document does and where it sits. Never reproduce wording, a structure or a
+component solely from the map's description.
 
-## Media and Git
+If a cited path no longer resolves, report that instead of reconstructing
+the source from the map.
 
-Never commit large media (camera originals, renders, exports, masters).
-`.gitignore` excludes common media extensions and build-output directories
-(`out/`, `dist/`, `frames/`, etc.) by default. If a small reference asset
-(e.g. a brand logo under a few hundred KB) genuinely belongs in the repo,
-that's fine — just don't let it become the default.
+Supporting evidence for how the map was built lives in
+`00-system/reference-audit/2026-08-14/`.
+
+## Selecting precedent
+
+- Select precedent by **deliverable type, workflow stage, audience and
+  problem**, not by perceived similarity between clients.
+- **Current discovery evidence overrides precedent.**
+- **Compare several relevant artefacts** where appropriate rather than
+  defaulting to the most prominent example.
+- **Identify singletons as singletons.**
+- **Never transfer commercial terms, client assumptions, voice, visual
+  devices or creative concepts between clients** without current evidence.
+- An instance record is **factual context, not a creative template**.
+
+## Past styling versus current evidence
+
+Recurring visual conventions in past documents are historical evidence, not
+automatically Rua brand requirements. Do not infer intentional design rules
+from recurrence alone. Current discovery, approved client assets and
+explicit briefs take priority. `references/document-build.md` is a recipe.
+
+Some cited sources have no usable text layer and must be rendered to page
+images rather than text-extracted. The map identifies these sources
+individually.
+
+## The map is evidence, not canon
+
+A discrepancy between the map and a skill is not permission to modify
+either. Change skill files, including `references/document-build.md`, only
+when explicitly asked. The rewrite contract is `00-system/rewrite-contract.md`.

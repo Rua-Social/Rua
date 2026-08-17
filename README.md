@@ -11,9 +11,9 @@ instructions, skills, and code.
 ## Structure
 
 ```
-00-system/      Cross-cutting operating layer: skills, templates
-10-clients/     Client work, one directory per client
-20-studio/      Rua Social / Rua Studio itself: sales, marketing, ops, brand
+00-system/      Doctrine, templates, rewrite contract, library index
+10-clients/     Named instance records, one directory per client in play
+20-studio/      Founder context, sales workflow, and desk note
 30-tools/       Deterministic software projects (e.g. animation-renderer)
 40-papa-rua/    Papa Rua releases, content, live, business
 90-archive/     Completed / inactive material kept for reference
@@ -30,17 +30,24 @@ These terms are used consistently across this repo:
   a tool, a release)
 - **REPOSITORY** — this Git-tracked home for the organisation's projects
 - **README** — explains what something is, how it's structured, how to use it
-- **CLAUDE.md** — operating instructions for Claude inside a given part of
-  the repo
-- **SKILL** — a reusable procedure/capability (e.g. `rua-shoot-plan`)
+- **AGENTS.md** — shared operating instructions for every model
+- **CLAUDE.md** — Claude-specific load order and library rules
+- **SKILL** — a reusable procedure (e.g. `rua-shoot-plan`, `rua-ship-gate`)
 - **TOOL** — deterministic software/code (e.g. the animation renderer)
-- **AGENT** — a bounded AI worker with a specific responsibility/context/tools
-- **ORCHESTRATION** — coordination between multiple agents/processes
-- **MODEL ROUTING** — choosing Claude/Gemini/GPT/Kimi for a specific task
+- **DOCTRINE** — portable method, no living client names
+- **INSTANCE** — named facts about one engagement
+- **LIBRARY** — index of real artefacts, most of them outside Git
+- **AGENT** — a bounded AI worker (not created ahead of need)
+- **ORCHESTRATION** — coordination between multiple agents (not created
+  ahead of need)
+- **MODEL ROUTING** — choosing a model for a specific task (not created
+  ahead of need)
 
-See [CLAUDE.md](CLAUDE.md) for the rule on when each of these gets created.
+See [AGENTS.md](AGENTS.md) for the rule on when each of these gets created.
+See [00-system/rewrite-contract.md](00-system/rewrite-contract.md) for how
+doctrine is written.
 
 ## Status
 
 This is a starting schema, not fixed architecture. Structure grows from real
-friction, not anticipation — see CLAUDE.md.
+friction, not anticipation.
