@@ -303,6 +303,13 @@ output path. Raise `--wait-ms` if headlines fall back to Georgia.
 Each page div must use `height: 297mm` (not `min-height`) with `page-break-after: always`, or pages
 drift and content bleeds across breaks.
 
+If this deck will be walked in a room, ask whether a 16:9 present cut is
+needed. That is a separate file, organised for presenting, not the PDF
+dropped into PowerPoint. The first example is
+`20-studio/sales/ways-to-work-present.js`. Open work and the order to
+do it live in `20-studio/sales/README.md` under **Still open**. Do not
+build a compiler until a second present cut exists.
+
 ---
 
 ## QA pagination before delivery

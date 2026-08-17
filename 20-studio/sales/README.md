@@ -51,6 +51,22 @@ the HTML and reprint with
 `python3 30-tools/html-to-pdf/html_to_pdf.py 20-studio/sales/ways-to-work.html`
 when the offer changes.
 
+### Still open
+
+Do not treat the present cut as finished infrastructure. It is one
+worked example. Follow-up, in this order:
+
+1. **The ask.** After an HTML deck is printed, if it will be walked in
+   a room (this offer, Week 0, concepts), ask whether a 16:9 present
+   cut is needed. Default no for schedule, shot list, and handover.
+   The ask is not yet in `document-build.md` or the sprint stages.
+2. **A second present cut** before any shared compiler. Week 0 or a
+   concepts review is the trigger. Until then, copy facts by hand.
+   `ways-to-work.html` and `ways-to-work-present.js` can drift. Change
+   both when a number changes.
+3. **Do not** flatten a PDF into slides. **Do not** add Drive upload
+   until dragging the PPTX onto Drive is actually painful.
+
 This README describes the workflow that exists. It is not a CRM, pipeline
 tracker, proposal library or rate card. Add structure here only when
 repeated friction earns it. Do not invent a commercial model for
