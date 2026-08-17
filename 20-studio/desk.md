@@ -113,7 +113,7 @@ on. Park the other in Git. Do not keep a room per old client.
 | Cheap extract on Moonshot | `kimi` MCP tool `kimi_run` (or `/model kimi`) | `spawn_subagent` / workflow `model=kimi` — Grok rejects those slugs. Fake `kimi` agent types just run grok-4.6 |
 | Hostile / long-context on Moonshot | `kimi_run` with model `kimi-k3` | Making K3 the default |
 | Same parallel pass every sit-down | `/desk-brief` from a session in `~/Rua` | Launching it from `$HOME` |
-| Second opinion from Claude / Gemini / Codex | `ai-cli` MCP tools | Opening a second terminal for a one-line review |
+| Second opinion from Claude / Gemini / Codex | `ai-cli` MCP tools. Codex on this login is ChatGPT, default `gpt-5.6-sol`. Pass that slug or omit the model. Do not pass `gpt-5.3-codex`. | Opening a second terminal for a one-line review |
 | Repeated method | A skill | A custom agent file |
 | Another model's full harness | Another seat (`rua-desk claude` etc.) | A `/model` stub |
 
