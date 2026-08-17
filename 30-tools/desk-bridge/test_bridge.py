@@ -1,10 +1,205 @@
 #!/usr/bin/env python3
+"""Offline boundary tests for the Telegram desk bridge."""
+
+from __future__ import annotations
+
+import io
+import json
+import os
+import subprocess
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
 
 import bridge
+
+
+GOOGLE_REPLY = "Google isn't on this phone seat. Parked on the desk list."
+QUEUE_REPLY = "Queued. One ask is already running."
+SETUP_REPLY = "Set TELEGRAM_USER_ID before starting the desk."
+
+
+def file_mode(path: Path) -> int:
+    return path.stat().st_mode & 0o777
+
+
+def update(
+    update_id: int = 10,
+    *,
+    user_id: int = 42,
+    chat_id: int = 420,
+    chat_type: str = "private",
+    text: str | None = "do the thing",
+    voice: dict | None = None,
+) -> dict:
+    message: dict = {
+        "message_id": update_id + 100,
+        "chat": {"id": chat_id, "type": chat_type},
+        "from": {"id": user_id},
+    }
+    if text is not None:
+        message["text"] = text
+    if voice is not None:
+        message["voice"] = voice
+    return {"update_id": update_id, "message": message}
+
+
+class RuntimeCase(unittest.TestCase):
+    """Point every mutable bridge path at one disposable directory."""
+
+    def setUp(self):
+        super().setUp()
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        self.repo = self.root / "Rua"
+        self.repo.mkdir()
+        (self.repo / "20-studio").mkdir()
+        self.lists = self.repo / "20-studio" / "lists.md"
+        self.lists.write_text("# Lists\n\n## Desk\n\n### Blocked\n")
+        self.state = self.root / ".grok" / "desk-bridge"
+        self.secrets = self.root / ".grok" / "secrets" / "desk-bridge.env"
+        self.eleven = self.root / ".grok" / "secrets" / "elevenlabs.env"
+        self.plist = self.root / "Library" / "LaunchAgents" / "com.rua.desk-bridge.plist"
+        paths = {
+            "REPO": self.repo,
+            "STATE_DIR": self.state,
+            "SESSION_FILE": self.state / "session_id",
+            "SESSION_META_FILE": self.state / "session.json",
+            "OFFSET_FILE": self.state / "offset",
+            "INBOX_FILE": self.state / "inbox.json",
+            "LAST_ERROR_FILE": self.state / "last_error",
+            "LAST_RUN_FILE": self.state / "last_run",
+            "OUTBOX_FILE": self.state / "outbox.json",
+            "METRICS_FILE": self.state / "metrics.jsonl",
+            "RUN_LOCK_FILE": self.state / "run.lock",
+            "BRIDGE_LOG_FILE": self.state / "bridge.log",
+            "BRIDGE_ERR_FILE": self.state / "bridge.err",
+            "SECRETS": self.secrets,
+            "ELEVEN_SECRETS": self.eleven,
+            "PLIST_PATH": self.plist,
+            "LISTS_FILE": self.lists,
+            "DESK_LIST_FILE": self.lists,
+        }
+        for name, value in paths.items():
+            patcher = mock.patch.object(bridge, name, value, create=True)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def write_owner_secrets(self, owner: str = "42") -> None:
+        self.secrets.parent.mkdir(parents=True, exist_ok=True)
+        self.secrets.write_text(
+            "export TELEGRAM_BOT_TOKEN=token\n"
+            f"export TELEGRAM_USER_ID={owner}\n"
+        )
+
+
+class PipeProcess:
+    """Popen double with selectable stdout and no child process."""
+
+    def __init__(
+        self,
+        schedule: list[tuple[float, str]] | None = None,
+        *,
+        keep_open: float = 0.0,
+        returncode: int = 0,
+        stderr: str = "",
+    ):
+        read_fd, self._write_fd = os.pipe()
+        self.stdout = os.fdopen(read_fd, "r", encoding="utf-8", buffering=1)
+        self.stderr = io.StringIO(stderr)
+        self._planned_returncode = returncode
+        self.returncode: int | None = None
+        self.terminated = False
+        self.killed = False
+        self._stop = threading.Event()
+        self._done = threading.Event()
+        self.args = ["grok"]
+        self.pid = 12345
+        self._thread = threading.Thread(
+            target=self._write,
+            args=(schedule or [], keep_open),
+            daemon=True,
+        )
+        self._thread.start()
+
+    def _write(self, schedule: list[tuple[float, str]], keep_open: float) -> None:
+        try:
+            for delay, line in schedule:
+                if self._stop.wait(delay):
+                    break
+                try:
+                    os.write(self._write_fd, line.encode())
+                except (BrokenPipeError, OSError):
+                    break
+            self._stop.wait(keep_open)
+        finally:
+            try:
+                os.close(self._write_fd)
+            except OSError:
+                pass
+            if self.returncode is None:
+                self.returncode = -15 if self.terminated else self._planned_returncode
+            self._done.set()
+
+    def poll(self):
+        return self.returncode if self._done.is_set() else None
+
+    def wait(self, timeout=None):
+        if not self._done.wait(timeout):
+            raise subprocess.TimeoutExpired(self.args, timeout)
+        return self.returncode
+
+    def terminate(self):
+        self.terminated = True
+        self._stop.set()
+
+    def kill(self):
+        self.killed = True
+        self.terminated = True
+        self._stop.set()
+
+    def communicate(self, timeout=None):
+        self.wait(timeout)
+        return self.stdout.read(), self.stderr.read()
+
+    def close(self):
+        self._stop.set()
+        self._done.wait(0.5)
+        try:
+            self.stdout.close()
+        except OSError:
+            pass
+
+
+def success_stream(
+    text: str = "Done.",
+    *,
+    session_id: str = "fresh-session",
+    effort: str = "medium",
+    prompt_tokens: int = 1200,
+) -> list[tuple[float, str]]:
+    return [
+        (0.0, json.dumps({
+            "type": "session", "sessionId": session_id,
+            "model": "grok-4.6-build", "effort": effort,
+        }) + "\n"),
+        (0.0, json.dumps({
+            "type": "usage", "data": {
+                "prompt_tokens": prompt_tokens,
+                "cached_prompt_tokens": 100,
+                "completion_tokens": 12,
+                "reasoning_tokens": 4,
+            },
+        }) + "\n"),
+        (0.0, json.dumps({"type": "text", "data": text}) + "\n"),
+        (0.0, json.dumps({
+            "type": "end", "sessionId": session_id,
+            "model": "grok-4.6-build", "effort": effort,
+        }) + "\n"),
+    ]
 
 
 class ChunkTest(unittest.TestCase):
@@ -14,138 +209,967 @@ class ChunkTest(unittest.TestCase):
     def test_empty(self):
         self.assertEqual(bridge.chunk_text("  "), ["(empty reply)"])
 
-    def test_splits_long(self):
+    def test_splits_long_without_losing_words(self):
         body = ("word " * 2000).strip()
         parts = bridge.chunk_text(body, limit=80)
         self.assertGreater(len(parts), 1)
         self.assertEqual(" ".join(parts), body)
-        self.assertTrue(all(len(p) <= 80 for p in parts))
+        self.assertTrue(all(len(part) <= 80 for part in parts))
 
 
-class EnvTest(unittest.TestCase):
-    def test_load_and_pair(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "desk-bridge.env"
-            path.write_text("export TELEGRAM_BOT_TOKEN=abc\nexport TELEGRAM_USER_ID=\n")
-            env = bridge.load_env(path)
-            self.assertEqual(env["TELEGRAM_BOT_TOKEN"], "abc")
-            self.assertEqual(env["TELEGRAM_USER_ID"], "")
-            bridge.write_user_id("42", path)
-            env = bridge.load_env(path)
-            self.assertEqual(env["TELEGRAM_USER_ID"], "42")
-            self.assertEqual(env["TELEGRAM_BOT_TOKEN"], "abc")
-
-
-class PhoneTextTest(unittest.TestCase):
-    def test_drops_process_talk(self):
-        stream = "\n".join(
-            [
-                '{"type":"text","data":"Sales. Loading founder context...\\n"}',
-                '{"type":"tool_call","toolCallId":"1","toolName":"read_file"}',
-                '{"type":"text","data":"One-pager is in the chat."}',
-                '{"type":"end","sessionId":"abc"}',
-            ]
+class EnvAndOwnerTest(RuntimeCase):
+    def test_load_env_preserves_explicit_blank(self):
+        self.secrets.parent.mkdir(parents=True)
+        self.secrets.write_text(
+            "export TELEGRAM_BOT_TOKEN=abc\nexport TELEGRAM_USER_ID=\n"
         )
-        text, sid = bridge.phone_text_from_stream(stream)
-        self.assertEqual(text, "One-pager is in the chat.")
-        self.assertEqual(sid, "abc")
+        env = bridge.load_env(self.secrets)
+        self.assertEqual(env["TELEGRAM_BOT_TOKEN"], "abc")
+        self.assertEqual(env["TELEGRAM_USER_ID"], "")
 
-    def test_joins_final_chunks(self):
-        stream = "\n".join(
-            [
-                '{"type":"tool_call","toolCallId":"1"}',
-                '{"type":"text","data":"Sent. "}',
-                '{"type":"text","data":"PDF is in the chat."}',
-                '{"type":"end","sessionId":"z"}',
-            ]
+    def test_elevenlabs_file_cannot_override_telegram_owner_or_token(self):
+        self.write_owner_secrets("42")
+        self.eleven.write_text(
+            "export ELEVENLABS_API_KEY=voice-key\n"
+            "export TELEGRAM_BOT_TOKEN=wrong-token\n"
+            "export TELEGRAM_USER_ID=7\n"
         )
-        text, sid = bridge.phone_text_from_stream(stream)
-        self.assertEqual(text, "Sent. PDF is in the chat.")
-        self.assertEqual(sid, "z")
+        env = bridge.load_secrets()
+        self.assertEqual(env["TELEGRAM_BOT_TOKEN"], "token")
+        self.assertEqual(env["TELEGRAM_USER_ID"], "42")
+        self.assertEqual(env["ELEVENLABS_API_KEY"], "voice-key")
 
-    def test_legacy_json(self):
-        text, sid = bridge.phone_text_from_stream(
-            '{"text":"hi","sessionId":"s1"}'
-        )
-        self.assertEqual(text, "hi")
-        self.assertEqual(sid, "s1")
+    def test_configured_owner_strips_and_returns_id(self):
+        self.assertEqual(bridge.configured_owner({"TELEGRAM_USER_ID": " 42 "}), "42")
 
-    def test_error_event(self):
-        with self.assertRaises(RuntimeError):
-            bridge.phone_text_from_stream('{"type":"error","message":"nope"}')
+    def test_configured_owner_rejects_blank_with_setup_sentence(self):
+        with self.assertRaisesRegex(ValueError, SETUP_REPLY):
+            bridge.configured_owner({"TELEGRAM_USER_ID": "  "})
 
-    def test_no_fallback_after_tool(self):
-        stream = "\n".join(
-            [
-                '{"type":"text","data":"I will inspect it"}',
-                '{"type":"tool_call","toolCallId":"1"}',
-                '{"type":"end","sessionId":"s"}',
-            ]
-        )
-        text, sid = bridge.phone_text_from_stream(stream)
-        self.assertEqual(text, "")
-        self.assertEqual(sid, "s")
+    def test_blank_owner_never_auto_pairs(self):
+        self.write_owner_secrets("")
+        original = self.secrets.read_text()
+        with self.assertRaisesRegex(ValueError, SETUP_REPLY):
+            bridge.pair_status(bridge.load_secrets(), 99)
+        self.assertEqual(self.secrets.read_text(), original)
 
-    def test_incomplete_stream(self):
-        stream = '{"type":"text","data":"partial"}'
-        with self.assertRaises(RuntimeError):
-            bridge.phone_text_from_stream(stream)
+    def test_run_refuses_blank_owner_before_polling(self):
+        with mock.patch.object(
+            bridge, "load_secrets",
+            return_value={"TELEGRAM_BOT_TOKEN": "token", "TELEGRAM_USER_ID": ""},
+        ), mock.patch.object(bridge, "poll_loop") as poll, mock.patch.object(
+            bridge.sys, "stderr", new_callable=io.StringIO
+        ) as stderr:
+            result = bridge.main(["bridge.py", "--run"])
+        self.assertEqual(result, 1)
+        poll.assert_not_called()
+        self.assertIn(SETUP_REPLY, stderr.getvalue())
 
-
-class SessionHeavyTest(unittest.TestCase):
-    def test_heavy_when_history_big(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            hist = Path(tmp) / "cwd" / "sid-1" / "chat_history.jsonl"
-            hist.parent.mkdir(parents=True)
-            hist.write_bytes(b"x" * 500)
-            with mock.patch.object(bridge, "session_history_path", return_value=hist):
-                self.assertTrue(bridge.session_is_heavy("sid-1", limit=100))
-                self.assertFalse(bridge.session_is_heavy("sid-1", limit=10_000))
-
-    def test_missing_is_not_heavy(self):
-        with mock.patch.object(bridge, "session_history_path", return_value=None):
-            self.assertFalse(bridge.session_is_heavy("missing"))
-
-    def test_drop_stale_missing_history(self):
-        with mock.patch.object(bridge, "session_history_path", return_value=None):
-            self.assertTrue(bridge.should_drop_session("stale-id"))
-            self.assertFalse(bridge.should_drop_session(""))
+    def test_second_runtime_cannot_take_the_singleton_lock(self):
+        first = bridge.acquire_run_lock()
+        self.addCleanup(os.close, first)
+        with self.assertRaisesRegex(RuntimeError, "already running"):
+            bridge.acquire_run_lock()
 
 
-class PairAndChatTest(unittest.TestCase):
+class RoutingTest(RuntimeCase):
     def test_private_dm_only(self):
         self.assertTrue(bridge.is_private_dm({"type": "private"}))
         self.assertFalse(bridge.is_private_dm({"type": "group"}))
         self.assertFalse(bridge.is_private_dm({"type": "supergroup"}))
         self.assertFalse(bridge.is_private_dm({}))
 
-    def test_pair_status(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "desk-bridge.env"
-            path.write_text("export TELEGRAM_BOT_TOKEN=abc\nexport TELEGRAM_USER_ID=\n")
-            with mock.patch.object(bridge, "SECRETS", path):
-                env = bridge.load_env(path)
-                self.assertEqual(bridge.pair_status(env, 7), "claimed")
-                env = bridge.load_env(path)
-                self.assertEqual(bridge.pair_status(env, 7), "ok")
-                self.assertEqual(bridge.pair_status(env, 8), "foreign")
-                self.assertFalse(bridge.allowed(env, 8))
-                self.assertTrue(bridge.allowed(env, 7))
+    def test_owner_message_is_enqueued(self):
+        enqueue = mock.Mock(return_value=0)
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"TELEGRAM_USER_ID": "42"}
+        ), mock.patch.object(bridge, "send") as send:
+            next_offset = bridge.handle_update("token", update(), enqueue)
+        self.assertEqual(next_offset, 11)
+        enqueue.assert_called_once()
+        job = enqueue.call_args.args[0]
+        self.assertEqual(job["chat_id"], 420)
+        self.assertEqual(job["text"], "do the thing")
+        send.assert_not_called()
 
-
-class DeskRulesTest(unittest.TestCase):
-    def test_google_miss_is_plain(self):
-        rules = bridge.DESK_RULES
-        self.assertIn("Mail.app", rules)
-        self.assertIn(
-            "Google isn't on this phone seat. Parked on the desk list.",
-            rules,
+    def test_foreign_dm_gets_plain_refusal_and_is_not_enqueued(self):
+        enqueue = mock.Mock()
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"TELEGRAM_USER_ID": "42"}
+        ), mock.patch.object(bridge, "send") as send:
+            next_offset = bridge.handle_update(
+                "token", update(user_id=7, chat_id=700), enqueue
+            )
+        self.assertEqual(next_offset, 11)
+        enqueue.assert_not_called()
+        send.assert_called_once_with(
+            "token", 700, "This desk is paired to someone else.", timeout=5
         )
-        self.assertIn("20-studio/lists.md", rules)
+
+    def test_group_is_silent_even_when_sent_by_owner(self):
+        enqueue = mock.Mock()
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"TELEGRAM_USER_ID": "42"}
+        ), mock.patch.object(bridge, "send") as send:
+            next_offset = bridge.handle_update(
+                "token", update(chat_type="group"), enqueue
+            )
+        self.assertEqual(next_offset, 11)
+        enqueue.assert_not_called()
+        send.assert_not_called()
+
+    def test_second_ask_is_acknowledged_as_queued(self):
+        enqueue = mock.Mock(return_value=1)
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"TELEGRAM_USER_ID": "42"}
+        ), mock.patch.object(bridge, "send") as send:
+            next_offset = bridge.handle_update("token", update(), enqueue)
+        self.assertEqual(next_offset, 11)
+        send.assert_called_once_with("token", 420, QUEUE_REPLY, timeout=5)
+
+    def test_enqueue_failure_is_raised_so_poller_retries_same_offset(self):
+        enqueue = mock.Mock(side_effect=RuntimeError("queue broke"))
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"TELEGRAM_USER_ID": "42"}
+        ), mock.patch.object(bridge, "send"):
+            with self.assertRaisesRegex(RuntimeError, "queue broke"):
+                bridge.handle_update("token", update(), enqueue)
+
+    def test_malformed_stored_offset_recovers_to_zero(self):
+        self.state.mkdir(parents=True)
+        bridge.OFFSET_FILE.write_text("definitely-not-an-int")
+        self.assertEqual(bridge.read_offset(), 0)
+
+    def test_poller_persists_offset_after_durable_enqueue(self):
+        class StopPolling(BaseException):
+            pass
+
+        coordinator = mock.Mock()
+        coordinator.enqueue.return_value = 0
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"TELEGRAM_USER_ID": "42"}
+        ), mock.patch.object(
+            bridge, "WorkCoordinator", return_value=coordinator
+        ), mock.patch.object(
+            bridge, "deliver_outbox", return_value=True
+        ), mock.patch.object(
+            bridge,
+            "api",
+            side_effect=[{"result": [update()]}, StopPolling()],
+        ):
+            with self.assertRaises(StopPolling):
+                bridge.poll_loop("token")
+        self.assertEqual(bridge.read_offset(), 11)
+
+    def test_poller_does_not_advance_offset_when_enqueue_fails(self):
+        class StopPolling(BaseException):
+            pass
+
+        bridge.write_text(bridge.OFFSET_FILE, "5")
+        coordinator = mock.Mock()
+        coordinator.enqueue.side_effect = RuntimeError("queue broke")
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"TELEGRAM_USER_ID": "42"}
+        ), mock.patch.object(
+            bridge, "WorkCoordinator", return_value=coordinator
+        ), mock.patch.object(
+            bridge, "deliver_outbox", return_value=True
+        ), mock.patch.object(
+            bridge,
+            "api",
+            side_effect=[{"result": [update()]}, StopPolling()],
+        ):
+            with self.assertRaises(StopPolling):
+                bridge.poll_loop("token")
+        self.assertEqual(bridge.read_offset(), 5)
 
 
-class ResetLineTest(unittest.TestCase):
-    def test_prefix(self):
+class QueuePersistenceTest(RuntimeCase):
+    def test_depth_includes_a_job_after_the_worker_has_taken_it(self):
+        coordinator = bridge.WorkCoordinator("token")
+        coordinator.jobs.put({"id": 10})
+        coordinator.jobs.get_nowait()
+        self.assertEqual(coordinator.jobs.qsize(), 0)
+        self.assertEqual(coordinator.depth(), 1)
+        coordinator.jobs.task_done()
+        self.assertEqual(coordinator.depth(), 0)
+
+    def test_replayed_update_id_is_not_put_in_memory_twice(self):
+        coordinator = bridge.WorkCoordinator("token")
+        job = {
+            "id": 10,
+            "chat_id": 420,
+            "message_id": 110,
+            "text": "do the thing",
+            "voice": None,
+            "enqueued_at": 1.0,
+        }
+        coordinator.enqueue(job)
+        coordinator.enqueue(job)
+        self.assertEqual(len(bridge.inbox_items()), 1)
+        self.assertEqual(coordinator.jobs.qsize(), 1)
+
+    def test_offset_is_durable_before_job_is_exposed_to_worker(self):
+        class StopPolling(BaseException):
+            pass
+
+        worker_done = threading.Event()
+        offsets_seen_by_worker: list[int] = []
+
+        def finish_immediately(_token, _job, delivery_notify=None):
+            del delivery_notify
+            offsets_seen_by_worker.append(bridge.read_offset())
+            worker_done.set()
+
+        def metric_barrier(event):
+            # Force the current enqueue->metric->offset ordering to expose its
+            # crash window deterministically instead of relying on a race.
+            if event.get("stage") == "pickup":
+                worker_done.wait(0.3)
+
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"TELEGRAM_USER_ID": "42"}
+        ), mock.patch.object(
+            bridge, "deliver_outbox", return_value=True
+        ), mock.patch.object(
+            bridge, "process_work_item", side_effect=finish_immediately
+        ), mock.patch.object(
+            bridge, "append_metric", side_effect=metric_barrier
+        ), mock.patch.object(
+            bridge,
+            "api",
+            side_effect=[{"result": [update()]}, StopPolling()],
+        ):
+            with self.assertRaises(StopPolling):
+                bridge.poll_loop("token")
+        self.assertTrue(worker_done.wait(0.5))
+        self.assertEqual(offsets_seen_by_worker, [11])
+
+
+class GoogleFailClosedTest(RuntimeCase):
+    def test_classifier_catches_mail_calendar_and_drive_asks(self):
+        asks = [
+            "What was the last email from Aoife?",
+            "What's on my Google Calendar tomorrow?",
+            "Find the latest deck in Drive",
+            "Search Gmail for the invoice",
+            "When is my call with Aoife tomorrow?",
+            "Do I have anything on at 3 tomorrow?",
+            "Open the budget spreadsheet in Google Docs",
+            "What meetings do I have this week?",
+        ]
+        for ask in asks:
+            with self.subTest(ask=ask):
+                self.assertTrue(bridge.is_google_ask(ask))
+
+    def test_classifier_does_not_block_local_work(self):
+        asks = [
+            "Edit 20-studio/desk.md",
+            "Draft an email I can send tomorrow",
+            "Write copy for a Google Drive explainer",
+            "Review the calendar component in this codebase",
+            "Design an inbox component for the website",
+            "Write a Gmail explainer",
+            "Draft an article about Google Workspace",
+        ]
+        for ask in asks:
+            with self.subTest(ask=ask):
+                self.assertFalse(bridge.is_google_ask(ask))
+
+    def test_google_ask_is_parked_idempotently(self):
+        ask = "Find the latest client deck in Drive"
+        bridge.park_google_ask(ask)
+        once = self.lists.read_text()
+        bridge.park_google_ask(ask)
+        twice = self.lists.read_text()
+        self.assertEqual(twice, once)
+        self.assertEqual(
+            twice.count("phone Google request blocked by desk-bridge"), 1
+        )
+        self.assertNotIn(ask, twice)
+
+    def test_google_ask_never_reaches_grok(self):
+        ask = "Read my latest Gmail message"
+        with mock.patch.object(bridge, "run_grok") as run_grok:
+            reply = bridge.handle_prompt("token", 420, 7, ask)
+        run_grok.assert_not_called()
+        self.assertEqual(reply, GOOGLE_REPLY)
+        self.assertEqual(
+            self.lists.read_text().count(
+                "phone Google request blocked by desk-bridge"
+            ),
+            1,
+        )
+
+
+class SecureStateTest(RuntimeCase):
+    def test_atomic_write_creates_owner_only_parent_and_file(self):
+        path = self.state / "nested" / "state"
+        bridge.ensure_private_dir(path.parent)
+        bridge.atomic_write_text(path, "one", mode=0o600)
+        self.assertEqual(path.read_text(), "one")
+        self.assertEqual(file_mode(path.parent), 0o700)
+        self.assertEqual(file_mode(path), 0o600)
+
+    def test_atomic_replacement_preserves_owner_only_mode(self):
+        path = self.state / "value"
+        path.parent.mkdir(parents=True)
+        path.write_text("old")
+        path.chmod(0o644)
+        bridge.atomic_write_text(path, "new", mode=0o600)
+        self.assertEqual(path.read_text(), "new")
+        self.assertEqual(file_mode(path), 0o600)
+
+    def test_failed_atomic_replace_preserves_previous_value(self):
+        path = self.state / "value"
+        bridge.atomic_write_text(path, "old")
+        with mock.patch.object(bridge.os, "replace", side_effect=OSError("disk full")):
+            with self.assertRaises(OSError):
+                bridge.atomic_write_text(path, "new")
+        self.assertEqual(path.read_text(), "old")
+
+    def test_write_text_uses_secure_atomic_write(self):
+        path = self.state / "last_run"
+        bridge.write_text(path, "ok")
+        self.assertEqual(path.read_text(), "ok")
+        self.assertEqual(file_mode(path), 0o600)
+        self.assertEqual(file_mode(self.state), 0o700)
+
+
+class TelegramBoundaryTest(unittest.TestCase):
+    def test_raw_timeout_is_normalized(self):
+        with mock.patch.object(
+            bridge.urllib.request, "urlopen", side_effect=TimeoutError("timed out")
+        ):
+            with self.assertRaisesRegex(RuntimeError, "telegram getMe.*timed out"):
+                bridge.api("token", "getMe", timeout=1)
+
+    def test_reaction_is_best_effort_for_raw_timeout(self):
+        with mock.patch.object(
+            bridge.urllib.request, "urlopen", side_effect=TimeoutError("timed out")
+        ):
+            bridge.react("token", 2, 3)
+
+    def test_typing_pulse_is_best_effort_for_raw_timeout(self):
+        with mock.patch.object(
+            bridge.urllib.request, "urlopen", side_effect=TimeoutError("timed out")
+        ):
+            bridge.typing_pulse("token", 2, threading.Event())
+
+    def test_absolute_http_deadline_beats_a_trickling_response(self):
+        release = threading.Event()
+
+        class SlowResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self, _limit=-1):
+                release.wait(1)
+                return b"done"
+
+        started = bridge.time.monotonic()
+        try:
+            with mock.patch.object(
+                bridge.urllib.request, "urlopen", return_value=SlowResponse()
+            ):
+                with self.assertRaisesRegex(TimeoutError, "phone request deadline"):
+                    bridge.fetch_url_bytes(
+                        bridge.urllib.request.Request("https://example.invalid"),
+                        timeout=1,
+                        deadline=bridge.time.monotonic() + 0.03,
+                    )
+            self.assertLess(bridge.time.monotonic() - started, 0.3)
+        finally:
+            release.set()
+
+
+class FeedbackTimingTest(RuntimeCase):
+    def test_slow_reaction_does_not_delay_grok_start(self):
+        release_reaction = threading.Event()
+        grok_started = threading.Event()
+
+        def slow_feedback(*_args, **_kwargs):
+            release_reaction.wait(1)
+
+        def fake_grok(_prompt, new_session=False, deadline=None):
+            del new_session, deadline
+            grok_started.set()
+            return "Done."
+
+        errors: list[BaseException] = []
+
+        def invoke():
+            try:
+                bridge.process_work_item(
+                    "token",
+                    {
+                        "id": 1,
+                        "chat_id": 420,
+                        "message_id": 7,
+                        "text": "local task",
+                        "voice": None,
+                    },
+                )
+            except BaseException as exc:  # pragma: no cover - reported below
+                errors.append(exc)
+
+        with mock.patch.object(
+            bridge, "feedback_pulse", side_effect=slow_feedback
+        ), mock.patch.object(
+            bridge, "run_grok", side_effect=fake_grok
+        ), mock.patch.object(bridge, "enqueue_outbox"), mock.patch.object(
+            bridge, "deliver_outbox", return_value=True
+        ):
+            worker = threading.Thread(target=invoke)
+            worker.start()
+            self.assertTrue(
+                grok_started.wait(0.4),
+                "Grok stayed behind a best-effort Telegram reaction",
+            )
+            release_reaction.set()
+            worker.join(1)
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(errors, [])
+
+
+class PhoneTextTest(unittest.TestCase):
+    def test_grok_1_0_4_stream_fixture(self):
+        stream = "\n".join([
+            '{"type":"available_commands","tools":[],"commands":[]}',
+            '{"type":"thought","data":"Answer briefly."}',
+            '{"type":"text","data":"OK"}',
+            '{"type":"usage","usage":{"input_tokens":20,"cache_read_input_tokens":10,"output_tokens":1}}',
+            '{"type":"end","stopReason":"end_turn","sessionId":"live-shape"}',
+        ])
+        self.assertEqual(
+            bridge.phone_text_from_stream(stream), ("OK", "live-shape")
+        )
+
+    def test_drops_process_talk_before_last_tool(self):
+        stream = "\n".join([
+            '{"type":"text","data":"Sales. Loading founder context...\\n"}',
+            '{"type":"tool_call","toolCallId":"1","toolName":"read_file"}',
+            '{"type":"text","data":"One-pager is in the chat."}',
+            '{"type":"end","sessionId":"abc"}',
+        ])
+        text, session_id = bridge.phone_text_from_stream(stream)
+        self.assertEqual(text, "One-pager is in the chat.")
+        self.assertEqual(session_id, "abc")
+
+    def test_joins_final_chunks(self):
+        stream = "\n".join([
+            '{"type":"tool_call","toolCallId":"1"}',
+            '{"type":"text","data":"Sent. "}',
+            '{"type":"text","data":"PDF is in the chat."}',
+            '{"type":"end","sessionId":"z"}',
+        ])
+        text, session_id = bridge.phone_text_from_stream(stream)
+        self.assertEqual(text, "Sent. PDF is in the chat.")
+        self.assertEqual(session_id, "z")
+
+    def test_legacy_json(self):
+        text, session_id = bridge.phone_text_from_stream(
+            '{"text":"hi","sessionId":"s1"}'
+        )
+        self.assertEqual(text, "hi")
+        self.assertEqual(session_id, "s1")
+
+    def test_error_event(self):
+        with self.assertRaises(RuntimeError):
+            bridge.phone_text_from_stream('{"type":"error","message":"nope"}')
+
+    def test_no_fallback_after_tool(self):
+        stream = "\n".join([
+            '{"type":"text","data":"I will inspect it"}',
+            '{"type":"tool_call","toolCallId":"1"}',
+            '{"type":"end","sessionId":"s"}',
+        ])
+        text, session_id = bridge.phone_text_from_stream(stream)
+        self.assertEqual(text, "")
+        self.assertEqual(session_id, "s")
+
+    def test_incomplete_stream(self):
+        with self.assertRaises(RuntimeError):
+            bridge.phone_text_from_stream('{"type":"text","data":"partial"}')
+
+
+class SessionResetTest(RuntimeCase):
+    def make_history(self, size: int = 10) -> Path:
+        history = self.root / "sessions" / "sid" / "chat_history.jsonl"
+        history.parent.mkdir(parents=True)
+        history.write_bytes(b"x" * size)
+        return history
+
+    def test_heavy_when_history_file_is_over_byte_fallback(self):
+        history = self.make_history(500)
+        with mock.patch.object(bridge, "session_history_path", return_value=history):
+            self.assertTrue(bridge.session_is_heavy("sid", limit=100))
+            self.assertFalse(bridge.session_is_heavy("sid", limit=10_000))
+
+    def test_missing_history_drops_existing_session(self):
+        with mock.patch.object(bridge, "session_history_path", return_value=None):
+            self.assertTrue(bridge.should_drop_session("stale-id"))
+            self.assertFalse(bridge.should_drop_session(""))
+
+    def test_wrong_effective_effort_drops_session(self):
+        history = self.make_history()
+        with mock.patch.object(
+            bridge, "session_history_path", return_value=history
+        ), mock.patch.object(
+            bridge, "session_metadata",
+            return_value={
+                "effort": "xhigh",
+                "prompt_tokens": 10,
+                "history_bytes": 10,
+            },
+        ):
+            self.assertTrue(bridge.should_drop_session("sid"))
+
+    def test_prompt_token_budget_drops_session(self):
+        history = self.make_history()
+        with mock.patch.object(
+            bridge, "SESSION_PROMPT_TOKENS", 100, create=True
+        ), mock.patch.object(
+            bridge, "session_history_path", return_value=history
+        ), mock.patch.object(
+            bridge, "session_metadata",
+            return_value={
+                "effort": "medium",
+                "prompt_tokens": 101,
+                "history_bytes": 10,
+            },
+        ):
+            self.assertTrue(bridge.should_drop_session("sid"))
+
+    def test_matching_session_under_budget_is_kept(self):
+        history = self.make_history()
+        with mock.patch.object(
+            bridge, "SESSION_PROMPT_TOKENS", 100, create=True
+        ), mock.patch.object(
+            bridge, "session_history_path", return_value=history
+        ), mock.patch.object(
+            bridge, "session_metadata",
+            return_value={
+                "effort": "medium",
+                "prompt_tokens": 99,
+                "history_bytes": 10,
+            },
+        ):
+            self.assertFalse(bridge.should_drop_session("sid"))
+
+    def test_history_observed_effort_wins_over_stale_saved_metadata(self):
+        history = self.root / "sessions" / "sid" / "chat_history.jsonl"
+        history.parent.mkdir(parents=True)
+        history.write_text(
+            json.dumps(
+                {
+                    "type": "assistant",
+                    "model_id": "grok-4.6-build",
+                    "reasoning_effort": "xhigh",
+                }
+            )
+            + "\n"
+        )
+        bridge.write_json(
+            bridge.SESSION_META_FILE,
+            {
+                "session_id": "sid",
+                "model": "grok-4.6-build",
+                "effort": "medium",
+                "prompt_tokens": 10,
+            },
+        )
+        with mock.patch.object(bridge, "session_history_path", return_value=history):
+            metadata = bridge.session_metadata("sid")
+            self.assertEqual(metadata["effort"], "xhigh")
+            self.assertTrue(bridge.should_drop_session("sid"))
+
+
+class StreamSchemaTest(unittest.TestCase):
+    def fresh_meta(self) -> dict:
+        return {
+            "first_event_seconds": None,
+            "tool_events": 0,
+            "model": "",
+            "effort": "",
+            "prompt_tokens": 0,
+            "output_tokens": 0,
+            "reasoning_tokens": 0,
+        }
+
+    def test_tool_call_update_counts_as_meaningful_progress(self):
+        event = {"type": "tool_call_update", "toolCallId": "one"}
+        self.assertTrue(bridge._meaningful_stream_event(event))
+
+    def test_cached_input_is_included_in_session_prompt_budget(self):
+        meta = self.fresh_meta()
+        bridge._update_stream_meta(
+            {
+                "type": "usage",
+                "data": {
+                    "input_tokens": 1_000,
+                    "cache_read_input_tokens": 79_000,
+                },
+            },
+            meta,
+        )
+        self.assertEqual(meta["prompt_tokens"], 80_000)
+
+    def test_current_usage_envelope_is_parsed(self):
+        meta = self.fresh_meta()
+        bridge._update_stream_meta(
+            {
+                "type": "usage",
+                "usage": {
+                    "input_tokens": 1_000,
+                    "cache_read_input_tokens": 2_000,
+                    "output_tokens": 12,
+                    "reasoning_tokens": 4,
+                },
+            },
+            meta,
+        )
+        self.assertEqual(meta["prompt_tokens"], 3_000)
+        self.assertEqual(meta["output_tokens"], 12)
+        self.assertEqual(meta["reasoning_tokens"], 4)
+
+
+class GrokStreamingTest(RuntimeCase):
+    def run_with_process(
+        self,
+        process: PipeProcess,
+        *,
+        first: float = 0.04,
+        idle: float = 0.06,
+        total: float = 0.12,
+        drop_session: bool = False,
+    ) -> tuple[str, mock.Mock]:
+        self.addCleanup(process.close)
+        popen = mock.Mock(return_value=process)
+        with mock.patch.object(bridge.subprocess, "Popen", popen), mock.patch.object(
+            bridge, "GROK_FIRST_EVENT_TIMEOUT", first, create=True
+        ), mock.patch.object(
+            bridge, "GROK_IDLE_TIMEOUT", idle, create=True
+        ), mock.patch.object(bridge, "GROK_TIMEOUT", total), mock.patch.object(
+            bridge, "should_drop_session", return_value=drop_session
+        ):
+            reply = bridge.run_grok("a private prompt")
+        return reply, popen
+
+    def test_streaming_success_uses_medium_ten_turn_phone_command(self):
+        process = PipeProcess(success_stream())
+        reply, popen = self.run_with_process(process)
+        self.assertEqual(reply, "Done.")
+        command = popen.call_args.args[0]
+        self.assertIn("--effort", command)
+        self.assertEqual(command[command.index("--effort") + 1], "medium")
+        self.assertIn("--max-turns", command)
+        self.assertEqual(command[command.index("--max-turns") + 1], "10")
+        self.assertEqual(bridge.read_text(bridge.SESSION_FILE), "fresh-session")
+
+    def test_first_event_timeout_returns_provider_busy_sentence(self):
+        process = PipeProcess([], keep_open=0.5)
+        reply, _ = self.run_with_process(process, first=0.02, idle=0.2, total=0.3)
+        self.assertEqual(reply, "Grok is busy. Try again in a minute.")
+        self.assertTrue(process.terminated or process.killed)
+
+    def test_capacity_retry_event_fails_fast_before_any_tool(self):
+        process = PipeProcess(
+            [
+                (
+                    0.0,
+                    json.dumps(
+                        {
+                            "type": "retrying",
+                            "reason": "model currently at capacity",
+                            "retry_state": {"attempt": 1},
+                        }
+                    )
+                    + "\n",
+                )
+            ],
+            keep_open=0.5,
+        )
+        reply, _ = self.run_with_process(process, first=0.2, idle=0.2, total=0.3)
+        self.assertEqual(reply, "Grok is busy. Try again in a minute.")
+        self.assertTrue(process.terminated or process.killed)
+
+    def test_idle_timeout_after_first_event_returns_desk_timeout(self):
+        process = PipeProcess(
+            [(0.0, '{"type":"text","data":"partial"}\n')], keep_open=0.5
+        )
+        reply, _ = self.run_with_process(process, first=0.05, idle=0.02, total=0.3)
+        self.assertEqual(reply, "The desk timed out. Send it again or try a smaller ask.")
+        self.assertTrue(process.terminated or process.killed)
+
+    def test_total_timeout_wins_while_events_keep_arriving(self):
+        events = [
+            (0.008, json.dumps({"type": "text", "data": "."}) + "\n")
+            for _ in range(20)
+        ]
+        process = PipeProcess(events, keep_open=0.2)
+        reply, _ = self.run_with_process(
+            process, first=0.03, idle=0.03, total=0.055
+        )
+        self.assertEqual(reply, "The desk timed out. Send it again or try a smaller ask.")
+        self.assertTrue(process.terminated or process.killed)
+
+    def test_reset_session_runs_fresh_and_says_so(self):
+        bridge.atomic_write_text(bridge.SESSION_FILE, "old-session")
+        process = PipeProcess(success_stream("Fresh answer."))
+        reply, popen = self.run_with_process(process, drop_session=True)
+        command = popen.call_args.args[0]
+        self.assertNotIn("--resume", command)
+        self.assertTrue(
+            reply.startswith("Session reset. The last one was too big or gone.")
+        )
+        self.assertTrue(reply.endswith("Fresh answer."))
+
+    def test_metrics_do_not_store_prompt_content(self):
+        private_prompt = "private words that must not enter metrics"
+        process = PipeProcess(success_stream())
+        self.addCleanup(process.close)
+        with mock.patch.object(
+            bridge.subprocess, "Popen", return_value=process
+        ), mock.patch.object(bridge, "should_drop_session", return_value=False):
+            self.assertEqual(bridge.run_grok(private_prompt), "Done.")
+        metrics = bridge.METRICS_FILE.read_text()
+        self.assertNotIn(private_prompt, metrics)
+        self.assertEqual(file_mode(bridge.METRICS_FILE), 0o600)
+        events = [json.loads(line) for line in metrics.splitlines() if line.strip()]
+        completed = [
+            event
+            for event in events
+            if event.get("stage") == "grok" and event.get("outcome") == "ok"
+        ]
+        self.assertEqual(len(completed), 1)
+        self.assertIn("first_event_seconds", completed[0])
+        self.assertEqual(completed[0]["prompt_tokens"], 1200)
+
+
+class OutboxTest(RuntimeCase):
+    def test_enqueue_is_idempotent_by_source_id_and_owner_only(self):
+        bridge.enqueue_outbox("update:7", 420, "Completed result")
+        bridge.enqueue_outbox("update:7", 420, "Completed result")
+        data = json.loads(bridge.OUTBOX_FILE.read_text())
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["chat_id"], 420)
+        self.assertEqual(data[0]["parts"], ["Completed result"])
+        self.assertEqual(file_mode(bridge.OUTBOX_FILE), 0o600)
+
+    def test_failed_delivery_stays_pending_then_retries(self):
+        bridge.enqueue_outbox("update:7", 420, "Completed result")
+        with mock.patch.object(
+            bridge, "api", side_effect=RuntimeError("telegram unavailable")
+        ) as failed_send:
+            self.assertFalse(bridge.deliver_outbox("token"))
+        failed_send.assert_called_once_with(
+            "token",
+            "sendMessage",
+            {"chat_id": 420, "text": "Completed result"},
+            timeout=bridge.TG_SEND_TIMEOUT,
+        )
+        self.assertTrue(bridge.OUTBOX_FILE.exists())
+        with mock.patch.object(bridge, "api") as successful_send:
+            self.assertTrue(bridge.deliver_outbox("token"))
+        successful_send.assert_called_once_with(
+            "token",
+            "sendMessage",
+            {"chat_id": 420, "text": "Completed result"},
+            timeout=bridge.TG_SEND_TIMEOUT,
+        )
+        if bridge.OUTBOX_FILE.exists():
+            self.assertEqual(json.loads(bridge.OUTBOX_FILE.read_text()), [])
+
+    def test_partial_chunk_retry_does_not_resend_delivered_part(self):
+        text = ("first " * 800) + "final"
+        bridge.enqueue_outbox("update:8", 420, text)
+        saved = json.loads(bridge.OUTBOX_FILE.read_text())
+        self.assertGreater(len(saved[0]["parts"]), 1)
+        first_part, second_part = saved[0]["parts"][:2]
+        with mock.patch.object(
+            bridge,
+            "api",
+            side_effect=[{"ok": True}, RuntimeError("telegram unavailable")],
+        ) as first_attempt:
+            self.assertFalse(bridge.deliver_outbox("token"))
+        self.assertEqual(first_attempt.call_count, 2)
+        pending = json.loads(bridge.OUTBOX_FILE.read_text())
+        self.assertEqual(pending[0]["next_part"], 1)
+        with mock.patch.object(bridge, "api", return_value={"ok": True}) as retry:
+            self.assertTrue(bridge.deliver_outbox("token"))
+        sent_texts = [call.args[2]["text"] for call in retry.call_args_list]
+        self.assertNotIn(first_part, sent_texts)
+        self.assertIn(second_part, sent_texts)
+
+    def test_retry_does_not_rerun_grok(self):
+        job = {
+            "id": 7,
+            "chat_id": 420,
+            "message_id": 70,
+            "text": "do it",
+            "voice": None,
+        }
+        with mock.patch.object(
+            bridge, "feedback_pulse"
+        ), mock.patch.object(
+            bridge, "run_grok", return_value="Completed result"
+        ) as run_grok, mock.patch.object(
+            bridge, "api", side_effect=RuntimeError("telegram unavailable")
+        ):
+            bridge.process_work_item("token", job)
+        run_grok.assert_called_once()
+        self.assertEqual(run_grok.call_args.args, ("do it",))
+        self.assertIsInstance(run_grok.call_args.kwargs.get("deadline"), float)
+        self.assertTrue(bridge.OUTBOX_FILE.exists())
+        with mock.patch.object(bridge, "api") as send:
+            self.assertTrue(bridge.deliver_outbox("token"))
+        send.assert_called_once_with(
+            "token",
+            "sendMessage",
+            {"chat_id": 420, "text": "Completed result"},
+            timeout=bridge.TG_SEND_TIMEOUT,
+        )
+        run_grok.assert_called_once()
+
+    def test_completed_inbox_job_is_retired_before_delivery(self):
+        job = {
+            "id": 10,
+            "chat_id": 420,
+            "message_id": 110,
+            "text": "do it",
+            "voice": None,
+            "enqueued_at": bridge.time.time(),
+        }
+        bridge.persist_inbox_job(job)
+        bridge.mark_inbox_job(10, "running")
+
+        def inspect_delivery(_token):
+            self.assertEqual(bridge.inbox_items(), [])
+            self.assertEqual(bridge.pending_outbox_count(), 1)
+            return True
+
+        with mock.patch.object(bridge, "run_grok", return_value="Done"), mock.patch.object(
+            bridge, "deliver_outbox", side_effect=inspect_delivery
+        ):
+            bridge.process_work_item("token", job)
+
+    def test_live_worker_only_wakes_delivery_thread(self):
+        job = {
+            "id": 11,
+            "chat_id": 420,
+            "message_id": 111,
+            "text": "do it",
+            "voice": None,
+            "enqueued_at": bridge.time.time(),
+        }
+        notify = mock.Mock()
+        with mock.patch.object(bridge, "run_grok", return_value="Done"), mock.patch.object(
+            bridge, "deliver_outbox", side_effect=AssertionError("must be asynchronous")
+        ):
+            bridge.process_work_item("token", job, delivery_notify=notify)
+        notify.assert_called_once_with()
+        self.assertEqual(bridge.pending_outbox_count(), 1)
+
+    def test_recovery_offset_is_never_written_backward(self):
+        bridge.write_text(bridge.OFFSET_FILE, "20")
+        self.assertEqual(bridge.advance_offset(11), 20)
+        self.assertEqual(bridge.read_offset(), 20)
+
+
+class VoiceTest(RuntimeCase):
+    def test_waiting_pulse_covers_transcription(self):
+        pulse_started = threading.Event()
+
+        def pulse(_token, _chat_id, _message_id, stop):
+            pulse_started.set()
+            stop.wait(0.5)
+
+        def transcribe(*_args, **_kwargs):
+            self.assertTrue(
+                pulse_started.wait(0.3),
+                "typing did not begin until after voice transcription",
+            )
+            return "book the room"
+
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"ELEVENLABS_API_KEY": "key"}
+        ), mock.patch.object(
+            bridge, "feedback_pulse", side_effect=pulse
+        ), mock.patch.object(
+            bridge, "telegram_file", return_value=(b"voice", "voice.ogg")
+        ), mock.patch.object(
+            bridge, "transcribe_voice", side_effect=transcribe
+        ), mock.patch.object(bridge, "handle_prompt") as handle_prompt, mock.patch.object(
+            bridge, "enqueue_outbox"
+        ), mock.patch.object(
+            bridge, "deliver_outbox", return_value=True
+        ):
+            bridge.process_work_item(
+                "token",
+                {
+                    "id": 7,
+                    "chat_id": 420,
+                    "message_id": 70,
+                    "text": "",
+                    "voice": {"file_id": "file", "mime_type": "audio/ogg"},
+                },
+            )
+        handle_prompt.assert_called_once_with(
+            "", 0, None, "Voice note: book the room", deadline=mock.ANY
+        )
+
+    def test_expired_voice_budget_never_starts_grok(self):
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"ELEVENLABS_API_KEY": "key"}
+        ), mock.patch.object(bridge, "handle_prompt") as handle_prompt:
+            reply = bridge.handle_voice(
+                "token",
+                420,
+                7,
+                {"file_id": "file", "mime_type": "audio/ogg"},
+                deadline=bridge.time.monotonic() - 1,
+            )
+        self.assertEqual(reply, bridge.PHONE_TIMEOUT)
+        handle_prompt.assert_not_called()
+
+    def test_voice_transcription_failure_has_plain_sentence(self):
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"ELEVENLABS_API_KEY": "key"}
+        ), mock.patch.object(
+            bridge, "telegram_file", side_effect=RuntimeError("bad file")
+        ):
+            reply = bridge.handle_voice(
+                "token", 420, 7,
+                {"file_id": "file", "mime_type": "audio/ogg"},
+            )
+        self.assertEqual(
+            reply, "Couldn't transcribe that. Try again or type it."
+        )
+
+
+class MultipartTest(unittest.TestCase):
+    def test_contains_model_and_file(self):
+        body, boundary = bridge.multipart(
+            {"model_id": "scribe_v2"}, "voice.ogg", b"OGGDATA", "audio/ogg"
+        )
+        self.assertIn(boundary.encode(), body)
+        self.assertIn(b"scribe_v2", body)
+        self.assertIn(b"OGGDATA", body)
+        self.assertIn(b"voice.ogg", body)
+
+
+class RulesTest(unittest.TestCase):
+    def test_phone_rules_are_embedded_without_per_ask_experience_read(self):
+        self.assertIn(GOOGLE_REPLY, bridge.DESK_RULES)
+        self.assertNotIn(
+            "read 30-tools/desk-bridge/experience.md", bridge.DESK_RULES.lower()
+        )
+
+    def test_reset_prefix(self):
         self.assertEqual(bridge.with_reset(False, "hi"), "hi")
         self.assertTrue(
             bridge.with_reset(True, "hi").startswith(
@@ -154,18 +1178,115 @@ class ResetLineTest(unittest.TestCase):
         )
 
 
-class MultipartTest(unittest.TestCase):
-    def test_contains_model_and_file(self):
-        body, bound = bridge.multipart(
-            {"model_id": "scribe_v2"},
-            "voice.ogg",
-            b"OGGDATA",
-            "audio/ogg",
-        )
-        self.assertIn(bound.encode(), body)
-        self.assertIn(b"scribe_v2", body)
-        self.assertIn(b"OGGDATA", body)
-        self.assertIn(b"voice.ogg", body)
+class CommandReplyTest(RuntimeCase):
+    def test_status_reports_effective_effort_queue_and_pending_delivery(self):
+        bridge.write_text(bridge.SESSION_FILE, "sid")
+        bridge.write_text(bridge.LAST_RUN_FILE, '{"seconds":1.2}')
+        bridge.enqueue_outbox("pending", 420, "held")
+        with mock.patch.object(
+            bridge,
+            "load_secrets",
+            return_value={"TELEGRAM_USER_ID": "42"},
+        ), mock.patch.object(
+            bridge,
+            "session_metadata",
+            return_value={"effort": "medium", "model": "grok-4.6-build"},
+        ), mock.patch.object(bridge, "current_queue_depth", return_value=2), mock.patch.object(
+            bridge, "run_grok"
+        ) as run_grok:
+            reply = bridge.handle_prompt("token", 420, 7, "/status")
+        run_grok.assert_not_called()
+        self.assertIn("owner: 42", reply)
+        self.assertIn("effective effort: medium", reply)
+        self.assertIn("queue: 2", reply)
+        self.assertIn("pending delivery: 1", reply)
+        self.assertIn("last run:", reply)
+
+    def test_new_drops_session_and_metadata(self):
+        bridge.write_text(bridge.SESSION_FILE, "sid")
+        bridge.write_json(bridge.SESSION_META_FILE, {"session_id": "sid"})
+        with mock.patch.object(bridge, "run_grok") as run_grok:
+            reply = bridge.handle_prompt("token", 420, 7, "/new")
+        self.assertEqual(reply, "New session. Next message starts fresh.")
+        self.assertFalse(bridge.SESSION_FILE.exists())
+        self.assertFalse(bridge.SESSION_META_FILE.exists())
+        run_grok.assert_not_called()
+
+
+class CommandFailureTest(RuntimeCase):
+    def test_check_rejects_missing_owner_without_traceback(self):
+        with mock.patch.object(
+            bridge, "load_secrets",
+            return_value={"TELEGRAM_BOT_TOKEN": "token", "TELEGRAM_USER_ID": ""},
+        ), mock.patch.object(bridge, "api", return_value={"ok": True}), mock.patch.object(
+            bridge, "grok_bin", return_value="/fake/grok"
+        ), mock.patch.object(bridge.shutil, "which", return_value="/fake/grok"), mock.patch.object(
+            bridge.subprocess, "run",
+            return_value=mock.Mock(returncode=0, stdout="grok 1", stderr=""),
+        ), mock.patch("builtins.print") as output:
+            self.assertEqual(bridge.cmd_check(), 1)
+        self.assertIn(SETUP_REPLY, "\n".join(str(call) for call in output.call_args_list))
+
+    def test_check_normalizes_telegram_failure_to_nonzero(self):
+        with mock.patch.object(
+            bridge, "load_secrets",
+            return_value={"TELEGRAM_BOT_TOKEN": "token", "TELEGRAM_USER_ID": "42"},
+        ), mock.patch.object(
+            bridge, "api", side_effect=RuntimeError("telegram unavailable")
+        ), mock.patch("builtins.print"):
+            self.assertEqual(bridge.cmd_check(), 1)
+
+    def test_successful_check_hardens_secret_files(self):
+        self.write_owner_secrets()
+        self.eleven.write_text("export ELEVENLABS_API_KEY=key\n")
+        self.secrets.parent.chmod(0o755)
+        self.secrets.chmod(0o644)
+        self.eleven.chmod(0o644)
+        with mock.patch.object(
+            bridge, "api",
+            return_value={"ok": True, "result": {"username": "Rua_desk_bot"}},
+        ), mock.patch.object(bridge, "grok_bin", return_value="/fake/grok"), mock.patch.object(
+            bridge.shutil, "which", return_value="/fake/grok"
+        ), mock.patch.object(
+            bridge.subprocess, "run",
+            return_value=mock.Mock(returncode=0, stdout="grok 1", stderr=""),
+        ):
+            self.assertEqual(bridge.cmd_check(), 0)
+        self.assertEqual(file_mode(self.secrets.parent), 0o700)
+        self.assertEqual(file_mode(self.secrets), 0o600)
+        self.assertEqual(file_mode(self.eleven), 0o600)
+
+    def test_install_precreates_owner_only_logs(self):
+        loaded = mock.Mock(returncode=0, stdout="", stderr="")
+        with mock.patch.object(bridge, "cmd_check", return_value=0), mock.patch.object(
+            bridge.subprocess, "run", return_value=loaded
+        ):
+            self.assertEqual(bridge.cmd_install(), 0)
+        self.assertEqual(file_mode(self.state), 0o700)
+        self.assertEqual(file_mode(self.state / "bridge.log"), 0o600)
+        self.assertEqual(file_mode(self.state / "bridge.err"), 0o600)
+
+    def test_failed_reinstall_restores_and_reloads_previous_plist(self):
+        self.plist.parent.mkdir(parents=True)
+        self.plist.write_text("old plist", encoding="utf-8")
+        ok = mock.Mock(returncode=0, stdout="", stderr="")
+        failed = mock.Mock(returncode=1, stdout="", stderr="new load failed")
+        with mock.patch.object(bridge, "cmd_check", return_value=0), mock.patch.object(
+            bridge.subprocess,
+            "run",
+            side_effect=[ok, ok, failed, ok],
+        ), mock.patch("builtins.print"):
+            self.assertEqual(bridge.cmd_install(), 1)
+        self.assertEqual(self.plist.read_text(encoding="utf-8"), "old plist")
+
+    def test_uninstall_failure_is_reported_and_keeps_plist(self):
+        self.plist.parent.mkdir(parents=True)
+        self.plist.write_text("plist")
+        with mock.patch.object(
+            bridge.subprocess, "run", side_effect=OSError("launchctl missing")
+        ), mock.patch("builtins.print"):
+            self.assertEqual(bridge.cmd_uninstall(), 1)
+        self.assertTrue(self.plist.exists())
 
 
 if __name__ == "__main__":

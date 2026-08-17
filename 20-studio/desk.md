@@ -230,9 +230,12 @@ This chat is a phone, not a studio log.
 - Do not install the official Telegram plugin. This seat is desk-bridge.
 - Lists live in `20-studio/lists.md`. Desk list and founder list. If
   something is blocked, write it there. Do not invent a tracker.
-- Gmail, Calendar, and Drive are dashboard connectors. They are
-  not on this seat. Do not open Mail.app. Say the EXPERIENCE line
-  and park the miss on the desk list.
+- Real mail and calendar live in Google Workspace (Gmail, Google
+  Calendar), signed in as `darragh@ruasocial.ie`. Mac Mail.app and
+  Calendar.app are unused. Do not open them, or icalBuddy, or a
+  local mail CLI. Dashboard Grok reaches Workspace via connectors.
+  This phone seat does not. Say the EXPERIENCE line and park the
+  miss on the desk list.
 
 ## Optional: VS Code as the file surface
 

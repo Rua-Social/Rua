@@ -22,8 +22,9 @@ export TELEGRAM_BOT_TOKEN=
 export TELEGRAM_USER_ID=
 ```
 
-Leave `TELEGRAM_USER_ID` blank. The first person who DMs the bot is
-paired and the id is written back.
+Set `TELEGRAM_USER_ID` to the founder's numeric Telegram user id before
+installing. The bridge refuses to start when it is blank. It never trusts
+the first person who happens to find the bot.
 
 Voice notes also need `~/.grok/secrets/elevenlabs.env`:
 
@@ -42,7 +43,13 @@ python3 30-tools/desk-bridge/bridge.py --install
 and loads it. `--uninstall` removes it. `--run` is the long-poll loop
 (what launchd starts).
 
+Install verifies the replacement launchd job and restores the previous
+plist if loading fails. A runtime lock prevents a second bridge process;
+shutdown stops any active Grok process group before launchd restarts it.
+
 State and logs: `~/.grok/desk-bridge/`.
+The bridge enforces owner-only permissions on secrets, state, metrics,
+pending replies, and launchd logs at startup.
 
 ## Phone commands
 
@@ -50,13 +57,20 @@ State and logs: `~/.grok/desk-bridge/`.
 | --- |---|
 | `/help` | Short usage |
 | `/new` | Fresh Grok session |
-| `/status` | Paired user, session id, last error |
+| `/status` | Owner, effective session effort, queue, pending delivery, last timing/error |
 
 Anything else, including a voice note, is handed to the desk.
 
-The phone run uses medium effort and drops a fat session so a
-pricing job does not ride into the next hello. Studio Grok stays
-on whatever effort you set there.
+The phone run enforces medium effort and drops a fat, stale, or
+wrong-effort session so a pricing job does not ride into the next
+hello. Studio Grok stays on whatever effort you set there.
+
+Grok has 60 seconds to produce its first meaningful event. Each accepted
+phone ask, including voice preprocessing, has five minutes total.
+Completed work is written to a local outbox before Telegram delivery,
+so a transient send failure does not rerun the work. A dedicated sender
+retries without blocking message pickup or the sole Grok worker. One Grok
+ask runs at a time; later messages are acknowledged and queued.
 
 The installed job holds a `caffeinate` idle-sleep assertion, so this
 Mac Studio stays up while the bot is loaded. The display can still

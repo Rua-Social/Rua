@@ -4,6 +4,8 @@
 
 A Telegram DM is a seat at the Rua desk. A process on this Mac hands
 each message to Grok in `~/Rua` and sends one short phone reply back.
+The seat is owner-locked, preserves completed replies across transient
+Telegram failures, and fails quickly when Grok has not started responding.
 
 Voice notes are inbound only: download the Telegram file, transcribe
 with ElevenLabs Scribe v2, then run the same desk path as text.
@@ -19,25 +21,48 @@ Opening the bot to anyone else. Changing studio reasoning effort.
 Giving the phone Grok Space connectors. Claude-for-Google.
 Mail.app, Calendar.app, or a browser as a stand-in for Gmail,
 Calendar, or Drive.
+A custom agent or phone plugin profile. A persistent Grok leader.
+Direct xAI API calls. Automatic model routing or fallback. A new
+dependency, host, service, or chat surface. Changing Telegram's look.
 
 ## Done
 
 - `python3 30-tools/desk-bridge/bridge.py --check` talks to Telegram
   and finds `grok`.
-- Only a private DM from the paired Telegram user is answered.
-  Groups are ignored. The first private DM pairs and says so.
+- Only a private DM from the preconfigured Telegram user is answered.
+  Groups are ignored. A blank owner id prevents startup; the first
+  person to find the bot can never claim it.
 - Secrets stay in `~/.grok/secrets/`, not Git.
+- Secret and state directories are owner-only (`0700`); secret,
+  state, metric, outbox, and log files are owner-only (`0600`).
 - A live text from the phone gets a real desk reply.
 - A voice note from the paired user is transcribed and answered.
-- The phone gets the last assistant text after the last tool, not
-  the studio log. Reaction + typing, not "On it."
-- Phone Grok runs at medium effort. Fat or missing sessions
-  start fresh and say so on the phone.
+- The phone gets the last assistant text after the last tool, not the
+  studio log. Reaction + typing are best effort and never delay Grok.
+- The poller remains live while one Grok worker handles asks in order.
+  A second ask receives the queue sentence in `EXPERIENCE.md`.
+- Phone Grok runs at effective medium effort. Fat, missing, over-budget,
+  or wrong-effort sessions start fresh and say so.
+- Grok output is parsed while it runs. No first meaningful event within 60 seconds
+  uses the provider-busy sentence. Idle work and the whole ask have
+  separate deadlines; the total phone budget is five minutes and ten turns.
+- Completed replies enter an owner-only outbox before Telegram delivery.
+  Delivery retries never rerun Grok or duplicate its side effects.
+  Delivery itself is at-least-once: a process death in Telegram's narrow
+  send/checkpoint gap can repeat a reply chunk. A dedicated sender keeps
+  Telegram delivery latency off the poller and sole Grok worker.
+- Privacy-safe JSONL metrics cover pickup, acknowledgement, voice,
+  Grok first event and finish, effective model/effort, usage, delivery,
+  and failure stage without storing the prompt.
 - While installed, the job prevents idle system sleep.
+- Install verifies the replacement launchd job and restores the prior plist
+  on failure. A singleton runtime lock prevents concurrent bridges, and
+  shutdown terminates the active Grok process group.
 - Phone `grok -p` does not inherit grok.com Space connectors
   (Gmail, Calendar, Drive). Those stay on the dashboard session.
-  A mail, calendar, or Drive ask fails closed with the sentence
-  in `EXPERIENCE.md`. It does not open Mail.app or Calendar.app.
+  An explicit mail, calendar, or Drive ask fails closed with the sentence
+  in `EXPERIENCE.md` before Grok starts and is parked once on the desk
+  list. It does not open Mail.app or Calendar.app.
 
 Success on the phone: the founder knows the result without opening
 a laptop. Do not optimize session length, turn count, or desktop
@@ -51,7 +76,9 @@ python3 30-tools/desk-bridge/bridge.py --check
 python3 30-tools/desk-bridge/bridge.py --install
 ```
 
-Then DM `@Rua_desk_bot`, or send a voice note.
+Then DM `@Rua_desk_bot`; send a text, a second text while the first
+is running, an obvious Google ask, and a voice note. `/status` must
+show effective effort, queue depth, pending delivery, and last timing.
 
 `EXPERIENCE.md` is the session contract. A later change that
 touches pairing, waiting, voice-fail, or session-drop must
