@@ -94,7 +94,7 @@ operations. Only explain when the concept itself is new.
 - `10-clients/<client>/` — one directory per client that is actually being
   worked. Layout follows the job, not a mandatory six-phase costume
 - `20-studio/` — Rua Social / Rua Studio itself. What exists today: founder
-  context and the sales workflow
+  context, the sales workflow, and the desk note
 - `30-tools/<tool>/` — deterministic software projects, each a normal
   buildable/runnable codebase with its own README
 - `40-papa-rua/` — releases, content, live, business. Stays in this

@@ -2,11 +2,15 @@
 
 Rua Social / Rua Studio's own operations, not client-delivered work.
 
-- `sales/` — pipeline, proposals, pricing; see `sales/README.md` for the
-  upstream commercial workflow from first discussion to final payment
-- `marketing/` — Rua's own marketing and content
-- `operations/` — internal process and admin
-- `brand/` — Rua's own brand assets and guidelines
+What exists today:
 
-`founder-context.md` is the canonical record of what Rua is optimising for.
-Read it when founder or business intent materially affects a decision.
+- `founder-context.md` — what Rua is optimising for. Read it when founder
+  or business intent materially affects a decision. Do not read it to plan
+  a shoot.
+- `desk.md` — how the founder sits down with Grok, Kimi, Gemini, Claude
+  and Codex. Operating note, not doctrine.
+- `sales/` — the upstream commercial workflow from first discussion to
+  final payment. See `sales/README.md`.
+
+Marketing, operations and brand are not directories yet. Do not create
+them to match an outline. Add a room when repeated friction earns it.
