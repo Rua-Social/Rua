@@ -11,6 +11,9 @@ What exists today:
   seats if needed. Operating note, not doctrine.
 - `lists.md` — two lists only. Desk (blocked / moving / done) and
   founder (do / planned / waiting). Not a product.
+- `bmad-audit.md` — research ledger: what we took from BMAD and
+  what we refused. Not doctrine. Open on purpose. Do not load it
+  for a shoot, a sale, or a ship.
 - `sales/` — the upstream commercial workflow from first discussion to
   final payment. See `sales/README.md`.
 
