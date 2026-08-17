@@ -21,6 +21,11 @@ Out of scope: authoring the deck, QA page screenshots, WeasyPrint, reportlab.
 Done: the command below writes a real PDF with the right page count and a
 solid navy cover on the fixture.
 
+The renderer writes and sanity-checks a unique temporary PDF (and strictly
+parses it when `pypdf` is available) before atomically replacing the requested
+destination. A failed export therefore leaves the last valid PDF untouched.
+Source and destination must be different files.
+
 ## Run
 
 ```bash
@@ -43,6 +48,12 @@ python3 30-tools/html-to-pdf/html_to_pdf.py \
 ```
 
 Expect two A4 pages, a dark cover, and Instrument Serif on the title.
+
+Run the failure-path tests with:
+
+```bash
+python3 -m unittest discover -s 30-tools/html-to-pdf -p 'test_*.py'
+```
 
 ## Why this and not Playwright
 
