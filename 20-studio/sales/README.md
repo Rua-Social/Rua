@@ -41,6 +41,13 @@ bounded engagement Rua legitimately accepts, whatever shape it takes.
 8. **Complete delivery and collect the remaining payment** under the agreed
    terms.
 
+The current working offer (three retainers plus a project) is
+`ways-to-work.pdf`, built from `ways-to-work.html`. It is a leave-behind.
+It is not a rate card written into this workflow, and it does not cover
+subcontract or pickup work. Change the numbers in the HTML and reprint
+with `python3 30-tools/html-to-pdf/html_to_pdf.py 20-studio/sales/ways-to-work.html`
+when the offer changes.
+
 This README describes the workflow that exists. It is not a CRM, pipeline
 tracker, proposal library or rate card. Add structure here only when
 repeated friction earns it. Do not invent a commercial model for

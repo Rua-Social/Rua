@@ -52,6 +52,8 @@ Every deck starts from this. The concepts deck and the schedule deck both build 
 
 ```css
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@page { size: A4; margin: 0; }
+* { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 :root {
   --night: #1a1a2e; --purple: #7c3aed; --purple-light: #f3f0ff;
   --stone: #4a4a68; --body: #2d2d3f; --muted: #71717a;
@@ -288,25 +290,15 @@ components documented there.
 
 ## PDF conversion
 
-Export every HTML deck with Playwright (Chromium, sync API):
+Export every HTML deck with the local printer. It uses the Chrome already on
+this machine. Do not use Grok's Playwright or Chrome Headless tools.
 
-```python
-from playwright.sync_api import sync_playwright
-import time
-
-with sync_playwright() as p:
-    browser = p.chromium.launch()
-    page = browser.new_page()
-    page.goto('file:///absolute/path/to/deck.html')
-    time.sleep(4)  # let Instrument Serif and DM Sans load before rendering
-    page.pdf(
-        path='/absolute/path/to/deck.pdf',
-        format='A4',
-        print_background=True,
-        margin={'top': '0', 'right': '0', 'bottom': '0', 'left': '0'},
-    )
-    browser.close()
+```bash
+python3 30-tools/html-to-pdf/html_to_pdf.py /absolute/path/to/deck.html
 ```
+
+That writes `deck.pdf` next to the HTML. Pass a second argument to choose the
+output path. Raise `--wait-ms` if headlines fall back to Georgia.
 
 Each page div must use `height: 297mm` (not `min-height`) with `page-break-after: always`, or pages
 drift and content bleeds across breaks.
