@@ -112,7 +112,7 @@ on. Park the other in Git. Do not keep a room per old client.
 | Cheap extract on Moonshot | `kimi` MCP tool `kimi_run` (or `/model kimi`) | `spawn_subagent` / workflow `model=kimi` — Grok rejects those slugs. Fake `kimi` agent types just run grok-4.6 |
 | Hostile / long-context on Moonshot | `kimi_run` with model `kimi-k3` | Making K3 the default |
 | Same parallel pass every sit-down | `/desk-brief` from a session in `~/Rua` | Launching it from `$HOME` |
-| Second opinion from Claude / Gemini / Codex | `ai-cli` MCP tools. See Codex slugs below. | Opening a second terminal for a one-line review |
+| Second opinion from Claude / Gemini / Codex | `ai-cli` with the slugs that worked, below | Opening a second terminal for a one-line review |
 | Repeated method | A skill | A custom agent file |
 | Another model's full harness | Another seat (`rua-desk claude` etc.) | A `/model` stub |
 
@@ -124,10 +124,22 @@ call them. Pull a seat when the job matches. Do not pull all four
 for courtesy, and do not skip them to keep the chat tidy.
 
 - Long extract or first read of a fat file or folder: `kimi_run`
-  (`kimi`, or `kimi-code` if the material is `30-tools/`).
+  with `kimi`. Do not use `kimi-code` (timed out 17 Aug; founder
+  does not want it). The slug stays installed. Do not pull it.
 - Hostile or 1M-context read: `kimi_run` with `kimi-k3`.
-- Second opinion on a ship or a judgement call: `ai-cli` Claude
-  or Codex. Do not pass `gpt-5.3-codex`.
+- Second opinion on a ship or a judgement call: `ai-cli` with the
+  slugs that worked, below. Do not pass `gpt-5.3-codex`.
+
+Claude and Gemini via `ai-cli`, tried 17 Aug on desk-bridge.
+Use the live aliases. There is no current Haiku 4.6 id.
+
+| Slug | Result |
+| --- | --- |
+| `haiku` | Live Haiku (4.5). Fast. Keep using this. |
+| `sonnet` | Live Sonnet (5). Fast judgement. Keep. |
+| `opus` | Live Opus. Same family the founder likes. Keep. |
+| `gemini-3-flash-preview` | Fast Gemini that finished. Keep. |
+| `gemini-2.5-flash` | Failed twice (empty / exit 1). Do not use. |
 
 Codex via `ai-cli`, tried 17 Aug on desk-bridge (same short
 review prompt):
@@ -218,6 +230,9 @@ This chat is a phone, not a studio log.
 - Do not install the official Telegram plugin. This seat is desk-bridge.
 - Lists live in `20-studio/lists.md`. Desk list and founder list. If
   something is blocked, write it there. Do not invent a tracker.
+- Gmail, Calendar, and Drive are dashboard connectors. They are
+  not on this seat. Do not open Mail.app. Say the EXPERIENCE line
+  and park the miss on the desk list.
 
 ## Optional: VS Code as the file surface
 

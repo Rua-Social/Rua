@@ -45,6 +45,10 @@ Do not contradict that file.
 No markdown tables. No class label in the chat. No process talk.
 A line starting with Voice note: is a spoken message. Treat it as the ask.
 Do not ask them to sit down at the Mac unless the machine itself is the blocker.
+Mail, calendar, and Drive are Grok Space connectors. This phone seat does not have them.
+Do not use Mail.app, Calendar.app, icalBuddy, Chrome, or local mail CLIs as a stand-in.
+If the ask needs those, stop. Reply with exactly: Google isn't on this phone seat. Parked on the desk list.
+Write the miss under Desk → Blocked in 20-studio/lists.md. Still answer from local files if those help.
 """
 
 

@@ -16,6 +16,9 @@ restate it. If they conflict, fix the one that is wrong, then the other.
 Slack. Cloud hosting. Spoken replies (TTS). Image ingest. Video notes.
 The official Claude/Grok Telegram plugin. A custom agent file.
 Opening the bot to anyone else. Changing studio reasoning effort.
+Giving the phone Grok Space connectors. Claude-for-Google.
+Mail.app, Calendar.app, or a browser as a stand-in for Gmail,
+Calendar, or Drive.
 
 ## Done
 
@@ -31,6 +34,10 @@ Opening the bot to anyone else. Changing studio reasoning effort.
 - Phone Grok runs at medium effort. Fat or missing sessions
   start fresh and say so on the phone.
 - While installed, the job prevents idle system sleep.
+- Phone `grok -p` does not inherit grok.com Space connectors
+  (Gmail, Calendar, Drive). Those stay on the dashboard session.
+  A mail, calendar, or Drive ask fails closed with the sentence
+  in `EXPERIENCE.md`. It does not open Mail.app or Calendar.app.
 
 Success on the phone: the founder knows the result without opening
 a laptop. Do not optimize session length, turn count, or desktop

@@ -37,6 +37,7 @@ not this seat.
 | "The desk timed out. Send it again or try a smaller ask." | A stack trace |
 | "Couldn't transcribe that. Try again or type it." | Guess at a garbled note |
 | Say a file is in the chat | Recap the job around the file |
+| "Google isn't on this phone seat. Parked on the desk list." | Mail.app, Calendar.app, Chrome, "wire it at the Mac" |
 
 The bot does not rewrite Grok. Final text is sent as-is
 after the last tool. `DESK_RULES` must match this table.
@@ -59,6 +60,7 @@ after the last tool. `DESK_RULES` must match this table.
 | Fat or stale session | "Session reset. The last one was too big or gone." then the new reply. |
 | Wrong inbound type | "Text or a voice note." |
 | Long reply | Extra Telegram messages, no "1/2". |
+| Google not on this seat | "Google isn't on this phone seat. Parked on the desk list." |
 
 ## What you can send
 
@@ -100,9 +102,21 @@ completeness, engagement.
 3. **Worked:** first line is "Session reset. The last one was too big or gone." then a fresh answer.
 4. He can restate the ask. `/status` will not say "none" as if nothing happened.
 
+### Flow 3 — Tomorrow brief (founder, on the street)
+
+1. Asks what's tomorrow, last doc, last mail.
+2. Eyes and typing.
+3. **Worked:** the meeting, the last file, the last thread. Or, if
+   Google is missing from this seat: "Google isn't on this phone
+   seat. Parked on the desk list."
+4. Failure: Mail.app, Calendar.app, or a two-minute hunt. Do not.
+
 ## Parked
 
 1. Mark chunked replies (1/2).
 2. Ack a message that arrives while an ask is in flight.
 3. Split the three voice-fail causes.
 4. `DESK_RULES` mention a file in the chat. The bot cannot send one.
+5. Space connectors on the phone `grok -p` process.
+6. Claude-for-Google. Drive and Gmail worked on Haiku; Calendar
+   auth failed. A second Google path. Not this seat.

@@ -133,6 +133,17 @@ class PairAndChatTest(unittest.TestCase):
                 self.assertTrue(bridge.allowed(env, 7))
 
 
+class DeskRulesTest(unittest.TestCase):
+    def test_google_miss_is_plain(self):
+        rules = bridge.DESK_RULES
+        self.assertIn("Mail.app", rules)
+        self.assertIn(
+            "Google isn't on this phone seat. Parked on the desk list.",
+            rules,
+        )
+        self.assertIn("20-studio/lists.md", rules)
+
+
 class ResetLineTest(unittest.TestCase):
     def test_prefix(self):
         self.assertEqual(bridge.with_reset(False, "hi"), "hi")
