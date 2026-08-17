@@ -1,31 +1,21 @@
 # Document build
 
-HTML-to-PDF recipe for sprint documents: fonts, a default palette, page model,
-CSS for each document type, and the export / QA steps.
-
-This is a build recipe. It is not a Rua brand constitution. It descended from
-one session style that reproduced cleanly across chats. Recurrence is not a
-design decision.
-
-When the client has approved assets (logo, type, colour), those win. Do not
-restyle a job into navy and purple because this file exists. Adjust the
-recipe, including the look, when the job requires it. Do not treat "adjust
-copy, not the system" as a rule.
+The full Rua Social design system: fonts, palette, page model, the CSS for every document type, and the
+PDF conversion and QA steps. The CSS below is lifted from the canonical Skehans decks. Use it as the
+base for every client and adjust copy, not the system.
 
 ---
 
-## Recipe at a glance
+## Design system at a glance
 
 - **Headlines:** Instrument Serif, italic. Used for cover titles, h1, h2.
 - **Body:** DM Sans. Everything else.
-- **Default palette (night):** dark navy `#1a1a2e`, purple `#7c3aed`, with a
-  light purple, stone, and neutral greys. Amber is reserved for flags.
-- **Page model:** A4 portrait. Each page is a fixed-height `.page` div that
-  hard-breaks after itself.
+- **Palette (night):** dark navy `#1a1a2e`, purple `#7c3aed`, with a light purple, stone, and neutral
+  greys. Amber is reserved for flags and warnings.
+- **Page model:** A4 portrait. Each page is a fixed-height `.page` div that hard-breaks after itself.
 - **Format:** built as a single HTML file, exported to PDF.
 
-This palette is the current default for sprint documents when no client
-system has been supplied.
+This is the night palette used for Skehans and is the Rua Social default for sprint documents.
 
 ---
 
@@ -214,7 +204,7 @@ Concepts deck component CSS (add to the base):
 
 The operational day plan, built at Stage 6. Page order:
 
-- Cover (same page recipe as the concepts deck). Mark a draft clearly in the cover if the shoot date
+- Cover (same design system as the concepts deck). Mark a draft clearly in the cover if the shoot date
   is not yet confirmed.
 - Timetable pages: one block card per block, with a dark header (time and title), a body describing
   what is captured and who is needed, and an amber flag box for anything the client must organise.
@@ -264,7 +254,7 @@ section, marked as solo pickup.
 
 ## Shot list (markdown, internal)
 
-Not a deck. Plain markdown, internal. The client never sees it. Structure:
+Not a deck. Plain markdown, for Darragh only. Structure:
 
 - Block headers matching the schedule's time windows.
 - Per block: a shot table (shot ID, description and framing, detail), then equipment and audio notes.

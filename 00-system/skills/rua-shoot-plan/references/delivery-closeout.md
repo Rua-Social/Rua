@@ -1,89 +1,94 @@
 # Delivery and closeout
 
-Stage 8. Two artifacts close the sprint: the delivery ledger and the handover document. Both are built
-here, after the cuts exist. The per-asset edit guides and the master transcript cut that feed this stage
-are produced with the reel-edit-guide skill, not this one.
+Stage 8. Two artefacts close a full sprint: the delivery ledger and the
+handover. Both are built after the cuts exist.
 
-The Skehans handover is the worked example: a nine-page document that reconciles what was planned
-against what landed, walks the client through every piece, flags what is still waiting on them, hands
-over ready-to-lift copy, and says where it lives and what happens next.
+Cutting is outside this skill. Do not call a skill that is not in this
+repository. Take the human's instruction for how the cuts were made, then
+reconcile and hand over.
+
+Match the handover to what was sold. A light handover is correct when the
+finish is files plus captions. A fuller handover is correct when a floor
+was sold and the client needs to see planned against landed.
 
 ---
 
 ## The delivery ledger
 
-The ledger reconciles three numbers:
+Use this when the scope stated a committed quantity or a conservative floor.
 
-- **Conservative floor.** What the shot list committed to as a planned minimum. On Skehans this was the
-  floor count carried in the shot list capture summary.
-- **Landed.** What the shoot actually produced, counted from the final asset list. On Skehans this came
-  in above floor.
-- **Upside ceiling.** The higher figure if masters get clipped into individual assets. On Skehans the
-  food master is the clearest case: cut into individual dish videos it lifts the count toward the
-  ceiling. This is held as an option pending the client's call, not counted as delivered.
+Reconcile three numbers:
 
-State all three plainly so the client sees the floor they were promised, the number they got, and the
-headroom still available. Do not inflate the landed figure with the upside. Keep the upside as a clearly
-marked "if we clip the masters" line.
+- **Conservative floor.** What was committed as the planned minimum.
+- **Landed.** What the shoot actually produced, counted from the final
+  asset list. Do not include optional clips.
+- **Upside ceiling.** The higher figure if masters get clipped into
+  individual assets. Held as an option pending the client's call. Never
+  counted as delivered.
 
-On the handover cover, the three numbers run as a hero row (the landed figure carried as the large
-hero), then a full ledger table inside lists each concept with its planned and landed counts and a note.
+State all three plainly. Do not inflate landed with the upside.
+
+On a full handover cover, the three numbers can run as a hero row (landed
+as the large figure), then a ledger table listing each concept with planned
+and landed counts and a note.
+
+If no floor was sold, skip the hero arithmetic. List what was delivered.
 
 ---
 
 ## Handover structure
 
-Page order, following the Skehans handover:
+A working order for a full sprint handover. Drop or merge pages when the
+job is smaller.
 
-1. **Cover.** "Delivered." The sprint named, with the ledger hero row (floor, landed, ceiling).
-2. **The numbers.** What the sprint produced. The full ledger table, concept by concept.
-3. **What we made / 01, the people.** The interview and portrait pieces (on Skehans: the View pieces,
-   Douglas, Chai, Julius, the regulars). One block per piece with a kicker, a line of description, and
-   a pull quote of the strongest line where there is one.
-4. **What we made / 02, the pub's character.** The place and atmosphere pieces (memorabilia, exteriors,
-   the comment-bait formats).
-5. **What we made / 03, the voices and the views.** The vox pop and view pieces.
-6. **Status, ready now and one word from you.** The short list of assets held pending client input.
-   Each gets a clear reason. On Skehans: Grant (held on the no-religion rule and consent), the dishes
-   (the clip-the-master decision), and the Blindboy co-post (a planned collaboration to co-post, not a
-   licensing issue).
-7. **Suggested copy.** Captions ready to lift, two columns, grouped. Each caption is six words or fewer
-   and pulled from a real line in the footage. Tag anything that is on hold, a co-post, or carries a
-   note.
-8. **Handover, where it lives and what is next.** Where the assets sit (on Skehans, Frame, with the
-   Frame instructions), the posting guidance (drip the assets out over time, do not dump them all at
-   once), and a pointer to the copy.
-9. **Sign-off.** A closing line in the house serif, with Rua Social contact details.
+1. **Cover.** Delivered. The engagement named. Ledger hero row if a floor
+   was sold.
+2. **The numbers.** Ledger table, concept by concept, when a floor exists.
+3. **What we made.** Grouped in whatever categories this work actually
+   produced (people, place, product, offer, or other). One block per piece:
+   a kicker, a line of description, a pull quote of the strongest real
+   line where there is one.
+4. **Status.** Assets held pending client input. Each gets a clear reason.
+5. **Suggested copy.** Captions ready to lift, grouped. Pulled from real
+   lines. Tagged if on hold, a collaboration, or carrying a note.
+6. **Where it lives and what is next.** Location of the files, how to use
+   them, posting guidance if that was part of the sale.
+7. **Sign-off.**
+
+Do not force a people / place / voices chapter plan onto a job that was
+not built that way.
 
 ---
 
 ## Pending items
 
-Anything that cannot ship without the client's word goes on the status page with a plain reason, never
-buried. The three Skehans holds are the template for the kinds of reasons that qualify:
+Anything that cannot ship without the client's word goes on the status
+page with a plain reason, never buried. Reasons that qualify:
 
-- An editorial-rule or consent hold (Grant: the no-religion rule plus consent, held for client review).
-- A production decision the client owns (the dishes: whether to clip the food master into individual
-  videos, which is what moves the count toward the ceiling).
-- A collaboration to coordinate (the Blindboy co-post: agreed as a co-post, so it waits on the
-  co-posting partner rather than on a rights problem).
+- Consent or a signed release is missing.
+- The client must decide whether to split a master into individual assets
+  (this is what moves a count toward the ceiling).
+- A collaboration or co-post waits on a third party.
+- An editorial or legal hold this client has set.
 
 ---
 
 ## Suggested copy
 
-Lift captions straight from the footage. Six words or fewer, in the client's voice, no formula. Tag
-each one so the client knows its state. The Skehans tags are the set to reuse:
+Lift captions from the footage. Use this client's voice and any length
+rule they actually have. Tag each line so they know its state:
 
-- **hold**, for a caption attached to an asset waiting on client review.
-- **copost**, for a caption on a collaboration asset.
-- **note**, for anything carrying a production note.
+- **hold**, waiting on client review
+- **copost**, collaboration asset
+- **note**, a production note attached
 
 ---
 
 ## Delivery-specific component CSS
 
-The handover uses the base CSS from `references/document-build.md` plus these components.
+The handover can use the base recipe in `document-build.md` plus these
+components. This is layout, not a requirement to use the navy/purple look
+when the client has their own assets.
 
 ```css
 /* HERO NUMBER ROW (on the cover) */
@@ -131,5 +136,5 @@ The handover uses the base CSS from `references/document-build.md` plus these co
 .signoff p { font-family: var(--serif); font-style: italic; font-size: 19px; color: var(--night); line-height: 1.4; }
 ```
 
-Export to PDF and QA pagination with the same recipe as every other deck (see
-`references/document-build.md`).
+Export to PDF and QA pagination with the same recipe as every other deck
+(see `references/document-build.md`).
