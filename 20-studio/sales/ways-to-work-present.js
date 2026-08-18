@@ -119,7 +119,7 @@ function build() {
 
     const cards = [
       { kicker: "RETAINER 01", name: "Edit", price: "€1,200", note: "Footage you already have", rec: false },
-      { kicker: "RETAINER 02  ·  RECOMMENDED", name: "Monthly", price: "€2,200", note: "One shoot, then the month", rec: true },
+      { kicker: "RETAINER 02  ·  RECOMMENDED", name: "Monthly", price: "€2,500", note: "One shoot, then the month", rec: true },
       { kicker: "RETAINER 03", name: "Studio", price: "€4,000", note: "Two days, higher volume", rec: false },
     ];
     const gap = 0.22;
@@ -216,7 +216,7 @@ function build() {
   });
 
   retainerSlide({
-    n: 5, dark: true, kicker: "RETAINER 02  ·  RECOMMENDED", name: "Monthly", price: "€2,200",
+    n: 5, dark: true, kicker: "RETAINER 02  ·  RECOMMENDED", name: "Monthly", price: "€2,500",
     blurb: "One shoot day and the month's output. The usual way to stay in a rhythm.",
     items: [
       "One full shoot day",

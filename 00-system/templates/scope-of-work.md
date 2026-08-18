@@ -21,7 +21,9 @@ Version: [v1]
 ## Engagement summary
 
 *One short paragraph: what this engagement is, in plain language, with its
-finish point named.*
+finish point named. If a job-shaped proposal exists for this engagement,
+copy deliverables, revision rounds, client inputs and the finish from it.
+The proposal is sales intent. This file is the contract.*
 
 ## Responsibilities
 

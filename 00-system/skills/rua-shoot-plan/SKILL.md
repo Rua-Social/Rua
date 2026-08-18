@@ -65,6 +65,11 @@ Confirm, from the human or from `10-clients/<slug>/`:
 - The payment gate in `20-studio/sales/README.md` has been passed, or the human
   has explicitly said this is still pre-commitment thinking and no date is held.
 
+If a job-shaped proposal exists for this engagement, read it as sales intent.
+A starting list, if any, enters as an alignment list (Stage 2b) and is
+green-lit or killed at Stage 3. Research still runs. Week 0 is still the
+first delivery document after the gate.
+
 If those are unclear, ask. Do not start a Week 0 deck to invent a sprint.
 
 Cutting, grade and per-asset edit guides are outside this skill. Do not hand off
@@ -119,8 +124,9 @@ The list is not locked until Stage 3.
 
 An early concept list sent to get buy-in before the greenlight call. Purpose is
 agreement, not specification. Use it when the gap between Week 0 and greenlight
-is long, or when the client needs to arrive already oriented. Do not treat it
-as the concepts deck.
+is long, when the client needs to arrive already oriented, or when a
+job-shaped proposal already carried a starting list. Do not treat it as the
+concepts deck.
 
 ### Stage 3, Concept review and greenlight
 

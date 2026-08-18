@@ -41,6 +41,27 @@ bounded engagement Rua legitimately accepts, whatever shape it takes.
 8. **Complete delivery and collect the remaining payment** under the agreed
    terms.
 
+### Job-shaped proposal
+
+After a real conversation, Stage 0 may produce a job-shaped proposal: how
+this engagement would run. It is optional. The generic offer, Week 0, the
+concepts deck, and the scope of work remain separate objects.
+
+If one is written:
+
+- Label it a proposal, on the cover and in the footer.
+- Carry the payment gate on the document. Dates are held only when the
+  required initial payment is received.
+- Keep anything that cannot be forwarded to the economic buyer out of the
+  shareable file. Cover notes sit beside the pack, not in it.
+- Days, if shown, are indicative. The scope names the deliverables.
+- A starting list, if any, stays unlocked until the scope.
+- When a job-shaped pack exists, the generic offer is the second
+  attachment, and only if they ask.
+
+If they go: fill the scope of work from the proposal. Production does not
+start from the PDF. Then follow step 6.
+
 The current working offer (three retainers plus a project) is
 `ways-to-work.pdf`, built from `ways-to-work.html`. It is a leave-behind.
 The one-page send is `pricing.pdf`, built from `pricing.html`. Same facts.
