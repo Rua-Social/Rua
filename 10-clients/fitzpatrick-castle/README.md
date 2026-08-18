@@ -144,7 +144,7 @@ Rua:
 - Follow-up sent 18 August on Tommy's thread, Alicia CC, Draft 4 attached.
 - Draft 4 is with them:
   `10-clients/fitzpatrick-castle/02-plan/fitzpatrickcastle_concepts_180826.pdf`
-  (HTML beside it). Copy in Downloads.
+  (HTML beside it).
 - No catch-up booked. They come back week of 24 August.
 
 ## Draft 4 change set (issued 18 August)
@@ -219,7 +219,7 @@ the floor of twelve.
   https://docs.google.com/document/d/1rTNQAqf080TNQqjSqzCbgyYGL7nIZBElA_WDedgtBew
 - History: `~/Downloads/History of Fitzpatrick Castle.doc`
   (email attachment name: `History of Castle.doc`)
-- Concepts deck: `~/Downloads/fitzpatrickcastle_concepts_160726.pdf`
+- Previous concepts deck: `~/Downloads/fitzpatrickcastle_concepts_160726.pdf`
 - 16 Jul run-through notes:
   `~/Downloads/Social concepts runthrough #1 - Rua Social _ Fitzpatrick Castle  – 2026_07_16 11_01 IST – Notes by Gemini.md`
 - Live mail thread: **Fitzpatrick Castle Tuesday 18th August**

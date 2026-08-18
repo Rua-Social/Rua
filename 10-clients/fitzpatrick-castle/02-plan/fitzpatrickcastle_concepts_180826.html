@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fitzpatrick Castle Hotel · Concept List Draft 4 · 18 August 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  @page { size: A4; margin: 0; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  :root {
+    --night: #1a1a2e; --purple: #7c3aed; --purple-light: #f3f0ff;
+    --stone: #4a4a68; --body: #2d2d3f; --muted: #71717a;
+    --border: #e4e4e7; --bg: #fafafa;
+    --serif: 'Instrument Serif', Georgia, serif;
+    --sans: 'DM Sans', system-ui, sans-serif;
+  }
+  body { font-family: var(--sans); background: var(--bg); color: var(--body); font-size: 15px; line-height: 1.6; }
+  .page { width: 210mm; height: 297mm; margin: 0 auto; background: white; position: relative; display: flex; flex-direction: column; overflow: hidden; page-break-after: always; break-after: page; }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+  @media print { body { margin: 0; } .page { margin: 0; box-shadow: none; } }
+
+  .cover { background: var(--night); color: white; padding: 64px 56px; min-height: 297mm; height: 297mm; display: flex; flex-direction: column; justify-content: space-between; }
+  .cover-agency { font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
+  .cover-main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 60px 0 40px; }
+  .cover-label { font-size: 10px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--purple); margin-bottom: 20px; }
+  .cover-title { font-family: var(--serif); font-style: italic; font-size: 58px; line-height: 1.1; color: white; margin-bottom: 24px; max-width: 520px; }
+  .cover-bar { width: 80px; height: 4px; background: var(--purple); margin-bottom: 28px; }
+  .cover-sub { font-size: 15px; color: rgba(255,255,255,0.55); max-width: 460px; line-height: 1.7; }
+  .cover-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 24px 40px; padding-top: 48px; border-top: 1px solid rgba(255,255,255,0.1); }
+  .cover-meta-item label { display: block; font-size: 9px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 4px; }
+  .cover-meta-item span { font-size: 14px; color: rgba(255,255,255,0.8); }
+
+  .page-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 56px; border-bottom: 1px solid var(--border); }
+  .page-header-agency { font-size: 10px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  .page-header-title { font-size: 10px; color: var(--muted); }
+  .page-content { flex: 1; padding: 36px 56px 36px; }
+  .page-footer { margin-top: auto; padding: 14px 56px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .page-footer span { font-size: 10px; color: var(--muted); }
+
+  .section-label { font-size: 9px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--purple); margin-bottom: 10px; }
+  h1 { font-family: var(--serif); font-style: italic; font-size: 36px; line-height: 1.15; color: var(--night); margin-bottom: 18px; }
+  h2 { font-family: var(--serif); font-style: italic; font-size: 26px; line-height: 1.2; color: var(--night); margin-bottom: 10px; }
+  h3 { font-size: 9px; font-weight: 500; color: var(--stone); margin-bottom: 6px; letter-spacing: 0.12em; text-transform: uppercase; }
+  p { margin-bottom: 12px; color: var(--body); font-size: 13px; line-height: 1.65; }
+  p:last-child { margin-bottom: 0; }
+
+  .tier-banner { background: var(--night); margin: -36px -56px 28px; padding: 14px 56px; display: flex; align-items: baseline; gap: 16px; }
+  .tier-banner-label { font-size: 9px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--purple); }
+  .tier-banner-title { font-size: 13px; font-weight: 500; color: white; }
+  .tier-banner-note { font-size: 11.5px; color: rgba(255,255,255,0.45); margin-left: auto; }
+
+  .concept-badges { display: flex; align-items: center; gap: 7px; margin-bottom: 11px; flex-wrap: wrap; }
+  .badge { font-size: 9px; font-weight: 500; letter-spacing: 0.11em; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; display: inline-block; }
+  .badge-num { color: var(--muted); border: 1px solid var(--border); background: white; }
+  .badge-green { color: #065f46; background: #d1fae5; border: 1px solid #6ee7b7; }
+  .badge-amber { color: #92400e; background: #fef3c7; border: 1px solid #fcd34d; }
+  .badge-killed { color: #52525b; background: #f4f4f5; border: 1px solid #d4d4d8; }
+  .badge-series { color: var(--purple); background: var(--purple-light); border: 1px solid #c4b5fd; }
+  .badge-recurring { color: var(--stone); background: var(--bg); border: 1px solid var(--border); }
+
+  .insight-box { background: var(--purple-light); border-left: 3px solid var(--purple); padding: 12px 16px; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  .insight-box .box-label { font-size: 9px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--purple); margin-bottom: 4px; display: block; }
+  .insight-box p { font-size: 12px; color: var(--stone); margin: 0; line-height: 1.6; }
+  .neutral-box { background: var(--bg); border-left: 3px solid var(--stone); padding: 12px 16px; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  .neutral-box .box-label { font-size: 9px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--stone); margin-bottom: 4px; display: block; }
+  .neutral-box p { font-size: 12px; color: var(--stone); margin: 0; line-height: 1.6; }
+  .warning-box { background: #fef3c7; border-left: 3px solid #f59e0b; padding: 12px 16px; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  .warning-box .box-label { font-size: 9px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: #92400e; margin-bottom: 4px; display: block; }
+  .warning-box p { font-size: 12px; color: #78350f; margin: 0; line-height: 1.6; }
+
+  .feel-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin: 22px 0 18px; }
+  .feel-card { border: 1px solid var(--border); border-radius: 6px; padding: 18px 16px 16px; }
+  .feel-card h2 { font-size: 24px; margin-bottom: 8px; }
+  .feel-card p { font-size: 12px; color: var(--stone); margin: 0; line-height: 1.55; }
+
+  .logistics-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; margin: 11px 0; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .logistics-cell { padding: 11px 13px; border-right: 1px solid var(--border); }
+  .logistics-cell:last-child { border-right: none; }
+  .logistics-cell .lc-label { font-size: 9px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; display: block; }
+  .logistics-cell p { font-size: 11.5px; color: var(--body); margin: 0; line-height: 1.5; }
+
+  .episode-grid-4 { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin: 12px 0; }
+  .episode-card { border: 1px solid var(--border); border-radius: 6px; padding: 11px 13px; }
+  .episode-card .ep-num { font-size: 9px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--purple); margin-bottom: 3px; display: block; }
+  .episode-card .ep-title { font-size: 12px; font-weight: 500; color: var(--night); margin-bottom: 5px; display: block; }
+  .episode-card p { font-size: 11.5px; color: var(--stone); margin: 0 0 4px; line-height: 1.45; }
+  .episode-card p:last-child { margin: 0; }
+
+  .q-list { list-style: none; padding: 0; margin: 8px 0; }
+  .q-list li { font-size: 12.5px; color: var(--body); padding: 5px 0 5px 15px; border-bottom: 1px solid var(--border); position: relative; line-height: 1.5; }
+  .q-list li:last-child { border-bottom: none; }
+  .q-list li::before { content: ''; position: absolute; left: 0; top: 12px; width: 5px; height: 5px; background: var(--purple); border-radius: 50%; }
+  .shot-list { list-style: none; padding: 0; margin: 8px 0; }
+  .shot-list li { display: flex; gap: 11px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12.5px; color: var(--body); line-height: 1.5; }
+  .shot-list li:last-child { border-bottom: none; }
+  .shot-num { font-size: 10px; font-weight: 500; color: var(--purple); min-width: 26px; padding-top: 2px; flex-shrink: 0; }
+  .shot-detail { flex: 1; }
+  .shot-detail strong { color: var(--night); }
+
+  .overview-table { width: 100%; border-collapse: collapse; font-size: 11.5px; margin: 8px 0; }
+  .overview-table th { text-align: left; padding: 6px 10px; font-size: 9px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: white; background: var(--night); }
+  .overview-table td { padding: 5px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .tier-row td { background: var(--bg); padding: 4px 10px; }
+  .tier-row-label { font-size: 9px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--night); }
+  .ov-num { font-size: 10px; font-weight: 500; color: var(--muted); }
+  .ov-title { font-weight: 500; color: var(--night); display: block; font-size: 12px; }
+  .ov-sub { font-size: 10.5px; color: var(--muted); display: block; }
+  .who-pill { font-size: 9px; font-weight: 500; color: var(--stone); background: white; border: 1px solid var(--border); padding: 2px 7px; border-radius: 3px; white-space: nowrap; }
+  .ov-killed .ov-title, .ov-killed .ov-sub { color: var(--muted); }
+
+  .window-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 10px 0 16px; }
+  .window-table th { text-align: left; padding: 8px 12px; font-size: 9px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: white; background: var(--night); }
+  .window-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+  .window-table td:first-child { font-weight: 500; color: var(--purple); width: 150px; white-space: nowrap; }
+
+  .copy-bank-table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 10px 0; }
+  .copy-bank-table th { background: var(--night); color: white; padding: 8px 12px; text-align: left; font-size: 9px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; }
+  .copy-bank-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.55; font-size: 11.5px; }
+  .copy-bank-table tr:nth-child(even) td { background: var(--bg); }
+  .cb-concept { font-weight: 500; color: var(--night); display: block; margin-bottom: 2px; font-size: 12px; }
+  .cb-onscreen { color: var(--purple); font-style: italic; font-size: 11px; margin-bottom: 5px; display: block; }
+  .cb-none { color: var(--muted); font-size: 11px; font-style: italic; }
+
+  .action-table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 10px 0; }
+  .action-table th { text-align: left; padding: 7px 10px; font-size: 9px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: white; background: var(--night); }
+  .action-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 12px; line-height: 1.45; }
+  .action-table td:nth-child(2) { width: 150px; color: var(--stone); }
+  .action-table td:nth-child(3) { width: 150px; color: var(--purple); font-weight: 500; }
+
+  .log-table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 10px 0; }
+  .log-table th { text-align: left; padding: 7px 10px; font-size: 9px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: white; background: var(--night); }
+  .log-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 11.5px; line-height: 1.5; }
+  .log-table td:first-child { width: 92px; color: var(--purple); font-weight: 500; white-space: nowrap; }
+  .log-table td:nth-child(2) { width: 88px; color: var(--stone); }
+
+  .next { background: var(--night); color: white; padding: 64px 56px; min-height: 297mm; height: 297mm; display: flex; flex-direction: column; justify-content: space-between; }
+  .next-main { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .next-label { font-size: 10px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--purple); margin-bottom: 20px; }
+  .next-title { font-family: var(--serif); font-style: italic; font-size: 46px; line-height: 1.12; color: white; margin-bottom: 24px; max-width: 520px; }
+  .next-bar { width: 80px; height: 4px; background: var(--purple); margin-bottom: 28px; }
+  .next-sub { font-size: 15px; color: rgba(255,255,255,0.55); max-width: 460px; line-height: 1.7; }
+  .next-sign { padding-top: 48px; border-top: 1px solid rgba(255,255,255,0.1); }
+  .next-sign .agency { font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 8px; }
+  .next-sign p { font-size: 14px; color: rgba(255,255,255,0.8); margin: 0; }
+
+  .page-dense .page-content { padding: 28px 56px 20px; }
+  .page-dense .tier-banner { margin: -28px -56px 18px; padding: 12px 56px; }
+  .page-dense .insight-box,
+  .page-dense .neutral-box,
+  .page-dense .warning-box { margin: 8px 0; padding: 10px 14px; }
+  .page-dense .episode-grid-4 { margin: 8px 0; gap: 8px; }
+  .page-dense .episode-card { padding: 9px 11px; }
+  .page-dense .q-list li { padding: 3px 0 3px 15px; font-size: 12px; }
+  .page-dense p { margin-bottom: 8px; }
+  .page-dense h1 { margin-bottom: 10px; font-size: 32px; }
+
+  .page-crush .page-content { padding: 22px 56px 16px; }
+  .page-crush .tier-banner { margin: -22px -56px 12px; padding: 10px 56px; }
+  .page-crush h1 { font-size: 28px; margin-bottom: 8px; }
+  .page-crush p { font-size: 12px; line-height: 1.5; margin-bottom: 7px; }
+  .page-crush .insight-box,
+  .page-crush .neutral-box,
+  .page-crush .warning-box { margin: 6px 0; padding: 8px 12px; }
+  .page-crush .insight-box p,
+  .page-crush .neutral-box p,
+  .page-crush .warning-box p { font-size: 11px; line-height: 1.45; }
+  .page-crush .episode-grid-4 { margin: 6px 0; gap: 7px; }
+  .page-crush .episode-card { padding: 8px 10px; }
+  .page-crush .episode-card p { font-size: 11px; line-height: 1.35; }
+  .page-crush .q-list { margin: 4px 0; }
+  .page-crush .q-list li { padding: 2px 0 2px 14px; font-size: 11.5px; }
+  .page-crush h3 { margin: 6px 0 2px; }
+  .page-crush .concept-badges { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<!-- 01 COVER -->
+<div class="page">
+  <div class="cover">
+    <div class="cover-agency">Rua Social</div>
+    <div class="cover-main">
+      <p class="cover-label">Content sprint · Concept list</p>
+      <div class="cover-title">Show, don't tell</div>
+      <div class="cover-bar"></div>
+      <p class="cover-sub">The list reissued after the catch-up on 18 August. Nine concepts are live. 007 Biddy's Cottage is retired. The changes agreed are folded in, and every one is logged at the back.</p>
+    </div>
+    <div class="cover-meta">
+      <div class="cover-meta-item"><label>Client</label><span>Fitzpatrick Castle Hotel</span></div>
+      <div class="cover-meta-item"><label>Prepared for</label><span>Alicia, Tommy &amp; Mark</span></div>
+      <div class="cover-meta-item"><label>Stage</label><span>Reissued list, post catch-up</span></div>
+      <div class="cover-meta-item"><label>Version</label><span>Draft 4 · 18 August 2026</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 02 DIRECTION -->
+<div class="page">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <p class="section-label">The direction</p>
+    <h1>Where these are heading.</h1>
+    <p>Everything here moves away from friendly, safe and stock, towards three feelings. Each piece should land at least one of them. If a piece doesn't, it isn't for us.</p>
+    <div class="feel-grid">
+      <div class="feel-card">
+        <h2>Curiosity</h2>
+        <p>A reason to stop scrolling. The small surprise, the thing people didn't know was here.</p>
+      </div>
+      <div class="feel-card">
+        <h2>Charm</h2>
+        <p>Real people, lovely to be around. Scripted enough to hold, loose enough for the unplanned moment.</p>
+      </div>
+      <div class="feel-card">
+        <h2>Grandeur</h2>
+        <p>The castle, the heritage, the scale. Shown, never announced. We earn the name.</p>
+      </div>
+    </div>
+    <div class="neutral-box">
+      <span class="box-label">How to read this</span>
+      <p>Nine live concepts, grouped by how much they need on the day, lightest first. Some are single pieces, some are series or banks that yield several. Green means ready to shoot. Amber means one thing is still open, usually a name, a date, or a stop. 007 was retired on 18 August. That number is not reused.</p>
+    </div>
+    <div class="insight-box">
+      <span class="box-label">The number</span>
+      <p>Counted conservatively, the nine live concepts yield around twenty-one finished pieces, comfortably past the floor of twelve, and more again once the longer pieces get clipped into shorts. Repeatable formats are doing that work, not volume for its own sake. If the 004 bubbles swap is confirmed, that bank yields one more.</p>
+    </div>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>02</span></div>
+</div>
+
+<!-- 03 THE LIST -->
+<div class="page">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <p class="section-label">The list</p>
+    <h1>Nine live, one retired.</h1>
+    <p>Ordered by how much each one needs on the day. We build from the pieces that need nobody, up to the ones that need a named person in a set window.</p>
+    <table class="overview-table">
+      <thead>
+        <tr>
+          <th style="width:36px;">#</th>
+          <th>Concept</th>
+          <th style="width:92px;">Type</th>
+          <th style="width:118px;">Needs</th>
+          <th style="width:52px;">Pieces</th>
+          <th style="width:128px;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="tier-row"><td colspan="6"><span class="tier-row-label">Tier 1 · Needs nobody</span></td></tr>
+        <tr>
+          <td><span class="ov-num">001</span></td>
+          <td><span class="ov-title">The Castle From Above</span><span class="ov-sub">Approach, terrace, paddle, exterior</span></td>
+          <td>Drone bank</td>
+          <td><span class="who-pill">Drone operator</span></td>
+          <td>3+</td>
+          <td><span class="badge badge-amber">Pending refresh</span></td>
+        </tr>
+        <tr>
+          <td><span class="ov-num">002</span></td>
+          <td><span class="ov-title">Grand Spaces</span><span class="ov-sub">Library Bar and the dungeon</span></td>
+          <td>B-roll bank</td>
+          <td><span class="who-pill">Nobody</span></td>
+          <td>3+</td>
+          <td><span class="badge badge-green">Ready</span></td>
+        </tr>
+        <tr class="tier-row"><td colspan="6"><span class="tier-row-label">Tier 2 · One staff member on site</span></td></tr>
+        <tr>
+          <td><span class="ov-num">003</span></td>
+          <td><span class="ov-title">Anatomy Of</span><span class="ov-sub">Tea, pastry, cocktail, pizza oven</span></td>
+          <td>Recurring</td>
+          <td><span class="who-pill">One per subject</span></td>
+          <td>4+</td>
+          <td><span class="badge badge-green">Ready</span></td>
+        </tr>
+        <tr>
+          <td><span class="ov-num">004</span></td>
+          <td><span class="ov-title">The Coffee Hatch</span><span class="ov-sub">This and this, coffee then bubbles</span></td>
+          <td>Asset bank</td>
+          <td><span class="who-pill">One staffer</span></td>
+          <td>2+</td>
+          <td><span class="badge badge-green">Ready</span></td>
+        </tr>
+        <tr class="tier-row"><td colspan="6"><span class="tier-row-label">Tier 3 · Named or coordinated subject</span></td></tr>
+        <tr>
+          <td><span class="ov-num">005</span></td>
+          <td><span class="ov-title">A View From A Castle</span><span class="ov-sub">Long-serving staff vignettes</span></td>
+          <td>Mini-series</td>
+          <td><span class="who-pill">Named staff</span></td>
+          <td>3</td>
+          <td><span class="badge badge-amber">Roster pending</span></td>
+        </tr>
+        <tr>
+          <td><span class="ov-num">006</span></td>
+          <td><span class="ov-title">The Regulars</span><span class="ov-sub">Long-time guests, observed</span></td>
+          <td>Light</td>
+          <td><span class="who-pill">A regular + Mark</span></td>
+          <td>1</td>
+          <td><span class="badge badge-amber">Back-pocket</span></td>
+        </tr>
+        <tr class="ov-killed">
+          <td><span class="ov-num">007</span></td>
+          <td><span class="ov-title">Biddy's Cottage</span><span class="ov-sub">Retired 18 August. Number not reused.</span></td>
+          <td>Retired</td>
+          <td>-</td>
+          <td>-</td>
+          <td><span class="badge badge-killed">Killed</span></td>
+        </tr>
+        <tr>
+          <td><span class="ov-num">008</span></td>
+          <td><span class="ov-title">The Memorabilia Walk</span><span class="ov-sub">Mark, the boardroom, the family</span></td>
+          <td>Series</td>
+          <td><span class="who-pill">Mark</span></td>
+          <td>2</td>
+          <td><span class="badge badge-amber">Date TBC</span></td>
+        </tr>
+        <tr>
+          <td><span class="ov-num">009</span></td>
+          <td><span class="ov-title">Hidden Corners</span><span class="ov-sub">Mark, the details guests miss</span></td>
+          <td>Series</td>
+          <td><span class="who-pill">Mark</span></td>
+          <td>3</td>
+          <td><span class="badge badge-amber">Stops pending</span></td>
+        </tr>
+        <tr>
+          <td><span class="ov-num">010</span></td>
+          <td><span class="ov-title">Inside The Studio</span><span class="ov-sub">Pilates, myth by myth</span></td>
+          <td>Mini-series</td>
+          <td><span class="who-pill">In-house instructor</span></td>
+          <td>2</td>
+          <td><span class="badge badge-green">In-house set</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="neutral-box">
+      <span class="box-label">Conservative floor</span>
+      <p>Around twenty-one finished pieces across the nine live concepts, before any longer piece is clipped into shorts. The drone bank, Grand Spaces and Anatomy Of each keep giving after the shoot, which is where the real upside sits.</p>
+    </div>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>03</span></div>
+</div>
+
+<!-- 04 THE WINDOW -->
+<div class="page">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <p class="section-label">The window</p>
+    <h1>When this all happens.</h1>
+    <p>Mid-September is the shoot window. Alicia does not want to go later than that, for the weather. The dates below are what everything else hangs off.</p>
+    <table class="window-table">
+      <thead><tr><th>When</th><th>What</th></tr></thead>
+      <tbody>
+        <tr><td>Week of 24 August</td><td>Catch-up once Alicia is back from London. Mid-September date to lock then.</td></tr>
+        <tr><td>Now</td><td>Roof green-zone and red-zone map, Tommy via Christian. The drone brief hangs off this.</td></tr>
+        <tr><td>Now</td><td>Site: chairs arrived 14 August in pieces. Desks still outstanding. Reception unfinished. The breakfast room in 002 stays held.</td></tr>
+        <tr><td>Mid-September</td><td>The shoot, first clear day the site is camera-ready. No later than mid-September.</td></tr>
+        <tr><td>September</td><td>Mark is on paternity leave through August, so the Memorabilia Walk and Hidden Corners session runs as its own date once he's back.</td></tr>
+      </tbody>
+    </table>
+    <div class="neutral-box">
+      <span class="box-label">Format and delivery</span>
+      <p>Everything is shot in 4K and delivered in HD, 9:16 first, which is the priority format across Meta. Running paid? We supply the cut in whatever spec the placement needs. Horizontal cuts are possible from the masters if the website needs them. Stills are delivered portrait-first, framed with headroom for text-behind-subject graphics.</p>
+    </div>
+    <div class="insight-box">
+      <span class="box-label">Staff on camera</span>
+      <p>Anyone appearing is being asked to do something outside their job, so vouchers are on the table, as agreed. A small thank-you buys the second take, and the second take is usually the one we use.</p>
+    </div>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>04</span></div>
+</div>
+
+<!-- 05 001 -->
+<div class="page">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <div class="tier-banner">
+      <span class="tier-banner-label">Tier 1</span>
+      <span class="tier-banner-title">Needs nobody</span>
+      <span class="tier-banner-note">Shot on a separate day, off the main shoot</span>
+    </div>
+    <div class="concept-badges">
+      <span class="badge badge-num">001</span>
+      <span class="badge badge-amber">Pending refresh</span>
+      <span class="badge badge-recurring">Asset bank</span>
+    </div>
+    <h1>The Castle From Above</h1>
+    <p>Fresh aerial coverage of the approach, the grounds and the refreshed exterior, with Dublin Bay behind. The footage you have now predates the roof work, the terrace and the paddle court, and needed digital patching last time. This replaces it cleanly, shot on a clear day by a dedicated operator so nothing is compromised for the sake of the diary.</p>
+    <div class="insight-box">
+      <span class="box-label">Why it works</span>
+      <p>Grandeur is the pillar the channel under-serves, and height is how you show scale without a single word. It sits in the background of every other piece too, which makes it the footage the whole sprint leans on.</p>
+    </div>
+    <div class="logistics-grid">
+      <div class="logistics-cell"><span class="lc-label">Who</span><p>A solo drone operator. No hotel coordination on the day.</p></div>
+      <div class="logistics-cell"><span class="lc-label">Where</span><p>Approach through the bottom gate, terrace, paddle court, castle exterior.</p></div>
+      <div class="logistics-cell"><span class="lc-label">When</span><p>A separate day, once the refresh is done and the weather holds.</p></div>
+    </div>
+    <h3>Starting points, ahead of your list</h3>
+    <ul class="shot-list">
+      <li><span class="shot-num">01</span><span class="shot-detail"><strong>Both approaches.</strong> Opening from the bottom gate opposite the hatch, matching the drive guests already know.</span></li>
+      <li><span class="shot-num">02</span><span class="shot-detail"><strong>The terrace, both directions.</strong> Facing the castle and facing away. Missing entirely from the current footage.</span></li>
+      <li><span class="shot-num">03</span><span class="shot-detail"><strong>The paddle court.</strong> A tight site, so we run test shots on the day and mind the privacy signage.</span></li>
+      <li><span class="shot-num">04</span><span class="shot-detail"><strong>The exterior reveal.</strong> A slow pull off the castle with the bay behind.</span></li>
+      <li><span class="shot-num">05</span><span class="shot-detail"><strong>The balconies.</strong> Establishing passes only, no close work with guests in frame.</span></li>
+    </ul>
+    <div class="warning-box">
+      <span class="box-label">Open</span>
+      <p>Roof coverage still waits on the green-zone and red-zone map, with Christian via Tommy. That is the brief the drone operator needs. The shots above are our starting points, and your list leads. Once both land we hand it to the operator and fly in the mid-September window, the first clear day the site is camera-ready.</p>
+    </div>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>05</span></div>
+</div>
+
+<!-- 06 002 -->
+<div class="page">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <div class="tier-banner">
+      <span class="tier-banner-label">Tier 1</span>
+      <span class="tier-banner-title">Needs nobody</span>
+      <span class="tier-banner-note">Proposed addition</span>
+    </div>
+    <div class="concept-badges">
+      <span class="badge badge-num">002</span>
+      <span class="badge badge-green">Ready</span>
+      <span class="badge badge-recurring">Asset bank</span>
+    </div>
+    <h1>Grand Spaces</h1>
+    <p>The interiors that carry the castle feeling on their own, captured as atmospheric footage. The Library Bar and the dungeon, the two rooms that transport you the moment you walk in. No people, no dialogue, just the room doing the work. One setup, several cuts.</p>
+    <div class="insight-box">
+      <span class="box-label">Why it works</span>
+      <p>Your own line on the call: show the grandeur, don't talk about it. These rooms are already renovated and shootable with nobody rostered, which makes this the lowest-friction way to build the grandeur pillar. It also gives every voiced piece its cutaway material.</p>
+    </div>
+    <div class="logistics-grid">
+      <div class="logistics-cell"><span class="lc-label">Who</span><p>Nobody. Empty rooms, shot around the voiced pieces.</p></div>
+      <div class="logistics-cell"><span class="lc-label">Where</span><p>Library Bar and the dungeon, shot early while the rooms are quiet.</p></div>
+      <div class="logistics-cell"><span class="lc-label">When</span><p>Any point on the shoot day, in the gaps.</p></div>
+    </div>
+    <h3>Shots in the bank</h3>
+    <ul class="shot-list">
+      <li><span class="shot-num">01</span><span class="shot-detail"><strong>The Library Bar.</strong> The room in full, the piano, then slow detail on the bar itself.</span></li>
+      <li><span class="shot-num">02</span><span class="shot-detail"><strong>The dungeon.</strong> The descent and the sense of being taken somewhere else.</span></li>
+      <li><span class="shot-num">03</span><span class="shot-detail"><strong>The breakfast room, later.</strong> Still held. Chairs arrived 14 August in pieces; desks and reception unfinished. It joins the bank once the refresh is in.</span></li>
+    </ul>
+    <div class="neutral-box">
+      <span class="box-label">Format note</span>
+      <p>Atmospheric B-roll, scored in the edit. The Library Bar appears here as a room and again in Anatomy Of as the setting for the cocktail, doing two jobs from one visit.</p>
+    </div>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>06</span></div>
+</div>
+
+<!-- 07 003 -->
+<div class="page page-crush">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <div class="tier-banner">
+      <span class="tier-banner-label">Tier 2</span>
+      <span class="tier-banner-title">One staff member on site</span>
+      <span class="tier-banner-note">A format, not a one-off</span>
+    </div>
+    <div class="concept-badges">
+      <span class="badge badge-num">003</span>
+      <span class="badge badge-green">Ready</span>
+      <span class="badge badge-recurring">Recurring format</span>
+    </div>
+    <h1>Anatomy Of</h1>
+    <p>One thing being made or served, captured close and in real time, narrated by whoever's doing it. No wide shots, no styling, no soft music. The detail is the point and the voice carries it. The format runs across as many subjects as the property offers. Three are ready to shoot now.</p>
+    <div class="insight-box">
+      <span class="box-label">Why it works</span>
+      <p>This is the strongest instinct in your own data. The pastry chef piece was one of only two things that actually performed. Real, close, unstyled and voiced beats every polished plate on the channel. Because it's a format, each new subject is another finished piece with no new thinking required.</p>
+    </div>
+    <div class="episode-grid-4">
+      <div class="episode-card">
+        <span class="ep-num">003A</span>
+        <span class="ep-title">Afternoon Tea</span>
+        <p>One service assembled start to finish, through the eyes of whoever makes or serves it. The room and the fine detail carry grandeur, the narration carries charm.</p>
+        <p>Sue (lobby) or Allesia (pastry)</p>
+      </div>
+      <div class="episode-card">
+        <span class="ep-num">003B</span>
+        <span class="ep-title">The Pastry</span>
+        <p>The pastry chef's own craft, close on the hands. This is the one that already worked on your channel, so it anchors the format rather than testing it.</p>
+        <p>Allesia (pastry chef)</p>
+      </div>
+      <div class="episode-card">
+        <span class="ep-num">003C</span>
+        <span class="ep-title">The Cocktail</span>
+        <p>A cocktail built at the Library Bar, piano behind, hands and glass close. If the right person doesn't land, the fallback is a neat whiskey from the collection or a Wicklow Wolf brewed down the road.</p>
+        <p>Tommy has a candidate, to confirm</p>
+      </div>
+      <div class="episode-card">
+        <span class="ep-num">003D</span>
+        <span class="ep-title">The Pizza Oven</span>
+        <p>The oven, open and running on the terrace: dough to fire to table, narrated by whoever runs it. Summer on the terrace does the rest of the frame.</p>
+        <p>Whoever runs the oven, with Tommy</p>
+      </div>
+    </div>
+    <div class="neutral-box">
+      <span class="box-label">Format note</span>
+      <p>Handheld, close, real-time. Voice primary, kitchen and bar sounds kept in. Afternoon Tea can be clipped into shorter pieces once shot. One variant worth holding: a named chef with the recipe overlaid as text, one good line of personality carrying it. Same shoot material, different edit.</p>
+    </div>
+    <h3>Prompts for the narrated pieces</h3>
+    <ul class="q-list">
+      <li>Talk me through it exactly as you do it, and stop me when a step matters more than it looks.</li>
+      <li>How do you know when it's right? What are you looking for, listening for, smelling for?</li>
+      <li>What's the step you'd never rush, and what goes wrong if you do?</li>
+      <li>Who taught you this, and what did they insist on?</li>
+      <li>What do guests always ask about this, and what still surprises them?</li>
+    </ul>
+    <div class="insight-box">
+      <span class="box-label">References</span>
+      <p>The Ritz, tea cart and tableside crepes · the primary direction, everything framed around the person doing it.<br>
+      Ballynahinch Castle, slow-mo cocktail · the 003C fallback if the right talker doesn't land. No dialogue needed.<br>
+      Ashford Castle, Ann Gibbons' pancakes · the recipe-overlay variant: a named chef and one good line.</p>
+    </div>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>07</span></div>
+</div>
+
+<!-- 08 004 -->
+<div class="page page-dense">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <div class="tier-banner">
+      <span class="tier-banner-label">Tier 2</span>
+      <span class="tier-banner-title">One staff member on site</span>
+      <span class="tier-banner-note">Lowest setup on the list</span>
+    </div>
+    <div class="concept-badges">
+      <span class="badge badge-num">004</span>
+      <span class="badge badge-green">Ready</span>
+      <span class="badge badge-recurring">Asset bank</span>
+    </div>
+    <h1>The Coffee Hatch</h1>
+    <p>Drive-thru coffee without leaving the car, which is a genuinely unusual detail for a hotel like this. Iced drinks, latte art, the specialty coffee feel, sitting next to paddle and the outdoors as part of the casual, active side of the place.</p>
+    <div class="insight-box">
+      <span class="box-label">Why it works</span>
+      <p>Curiosity does the work here. A castle hotel with a coffee hatch is a small surprise worth showing, and it reads younger than the rest of the channel. The still vignettes slow it down and give the charm somewhere to live, so the piece hits the feelings rather than just the offer.</p>
+    </div>
+    <div class="logistics-grid">
+      <div class="logistics-cell"><span class="lc-label">Who</span><p>One person on the hatch with a bit of pep, not a flat read.</p></div>
+      <div class="logistics-cell"><span class="lc-label">Where</span><p>The hatch, then the quiet spots around it: the garden, the padel courts.</p></div>
+      <div class="logistics-cell"><span class="lc-label">When</span><p>Shoot day, minimal setup, worked in around the bigger pieces.</p></div>
+    </div>
+    <h3>The shape of it</h3>
+    <ul class="shot-list">
+      <li><span class="shot-num">01</span><span class="shot-detail"><strong>The hand-off.</strong> Cars pulling up, the latte art, the pass through the hatch. Quick and bright.</span></li>
+      <li><span class="shot-num">01b</span><span class="shot-detail"><strong>Same hatch, glass of bubbles.</strong> Same hands, same height. A pre-poured glass goes through the hatch the way the cup does. No pour, no garnish.</span></li>
+      <li><span class="shot-num">02</span><span class="shot-detail"><strong>This.</strong> Static, slow zoom: the cup on a table, the garden behind it.</span></li>
+      <li><span class="shot-num">02b</span><span class="shot-detail"><strong>Then this.</strong> Same table, same zoom, glass on the cup's mark.</span></li>
+      <li><span class="shot-num">03</span><span class="shot-detail"><strong>And this.</strong> Static, slow zoom: a padel rally mid-game, the sound of play kept in. One take. Do not double this as a drinks shot.</span></li>
+      <li><span class="shot-num">04</span><span class="shot-detail"><strong>And this.</strong> One more still moment found on the day, the castle or the terrace behind.</span></li>
+    </ul>
+    <div class="neutral-box">
+      <span class="box-label">Format note</span>
+      <p>Opens quick and candid at the hatch, then the pace drops into a run of static, slow-zoom vignettes, each introduced with two words of on-screen text: this, and this. The stillness is where the charm lands and the castle setting earns the curiosity. Scored, light on dialogue. Coffee and bubbles share the same marks, so one setup yields two cuts. Internal slates 004-coffee and 004-bubbles. This is not the Library Bar craft piece; that stays 003C.</p>
+    </div>
+    <div class="insight-box">
+      <span class="box-label">References</span>
+      <p>The Rabbit · the pace and tone, pointed at the hatch, the terrace and the paddle court rather than the wider brand.</p>
+    </div>
+    <div class="warning-box">
+      <span class="box-label">Open</span>
+      <p>Bubbles on standby for the same This and This setups, Alicia to confirm. The glass stands in for the cup. The hatch and the setting stay the surprise.</p>
+    </div>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>08</span></div>
+</div>
+
+<!-- 09 005 -->
+<div class="page page-crush">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <div class="tier-banner">
+      <span class="tier-banner-label">Tier 3</span>
+      <span class="tier-banner-title">Named subject</span>
+      <span class="tier-banner-note">Customer-facing staff only</span>
+    </div>
+    <div class="concept-badges">
+      <span class="badge badge-num">005</span>
+      <span class="badge badge-amber">Roster pending</span>
+      <span class="badge badge-series">Mini-series</span>
+    </div>
+    <h1>A View From A Castle</h1>
+    <p>Long-serving, customer-facing staff telling a real story. Two treatments: the signature pull-back, where the subject sits small and distant in frame and the shot slowly reveals them in the full context of the hotel, and a mic on the subject mid-service, camera static, the room's hustle carrying the frame. Each episode is a ninety-second vignette. Three or four in the series, and the lead cut goes to the longest-serving name in the building, a real number in the opening line.</p>
+    <div class="insight-box">
+      <span class="box-label">Why it works</span>
+      <p>People make the place, and your data proves it. The moments that landed were real people, not stock, and the post marking John Fitzgerald's retirement drew engagement the channel rarely sees. These are Dubliners who have been here decades and talk to guests every day. The charm you promise at the desk is the charm this captures on camera.</p>
+    </div>
+    <div class="episode-grid-4">
+      <div class="episode-card">
+        <span class="ep-num">Episode 1</span>
+        <span class="ep-title">Sandra Jay</span>
+        <p>Senior executive manager, here forty-odd years. A natural anchor for the series.</p>
+      </div>
+      <div class="episode-card">
+        <span class="ep-num">Episode 2</span>
+        <span class="ep-title">Alan</span>
+        <p>The porter who runs the front and makes every arrival easy. Suits the mic'd service treatment, pottering the morning shift, or the pull-back to a full portrait of the hotel front.</p>
+      </div>
+      <div class="episode-card">
+        <span class="ep-num">Episode 3</span>
+        <span class="ep-title">James</span>
+        <p>On reception, and the example Alicia reaches for herself: he remembers a guest's name five minutes after check-in.</p>
+      </div>
+      <div class="episode-card">
+        <span class="ep-num">Episode 4 · Wildcard</span>
+        <span class="ep-title">Tommy</span>
+        <p>The bookend. The newest person in the building against the forty-year servers: kitchen porter, then the bar, then a design degree, now the group's social.</p>
+      </div>
+    </div>
+    <h3>Prompts</h3>
+    <ul class="q-list">
+      <li>Who's the guest you still remember, years later?</li>
+      <li>What's changed here, and what's exactly the same?</li>
+      <li>What would you tell someone about this place that they'd never guess?</li>
+    </ul>
+    <div class="insight-box">
+      <span class="box-label">References</span>
+      <p>A View From A Bridge · the original inspiration for the pull-back treatment.<br>
+      Skehans Free House, a regular · our own version of the format, proven.<br>
+      Ashford Castle, 50 years of Paddy Costello · the tenure lead: a named person and a real number, the account's highest-engagement post.<br>
+      Ballynahinch Castle, Pat at breakfast · the same device at smaller scale, still their top post.</p>
+    </div>
+    <div class="warning-box">
+      <span class="box-label">Open</span>
+      <p>Customer-facing is the rule; anyone hesitant is cut. Cast four to land two. Tommy is putting the callout through HR and the staff forum with a voucher behind it, and the longest tenure in the building comes back with the names. Jennifer (gym, forty-odd years, if customer-facing) and John Fitzgerald, invited back as a guest, are the named backups.</p>
+    </div>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>09</span></div>
+</div>
+
+<!-- 10 006 -->
+<div class="page">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <div class="tier-banner">
+      <span class="tier-banner-label">Tier 3</span>
+      <span class="tier-banner-title">Coordinated subject</span>
+      <span class="tier-banner-note">Lightest touch of the named pieces</span>
+    </div>
+    <div class="concept-badges">
+      <span class="badge badge-num">006</span>
+      <span class="badge badge-amber">Back-pocket</span>
+    </div>
+    <h1>The Regulars</h1>
+    <p>The guests who have been coming for years, captured lightly. This needs no formal interview. It can be as simple as Mark introducing a group who come for lunch every month, the tea in the cups, a familiar welcome. Observed, not staged.</p>
+    <div class="insight-box">
+      <span class="box-label">Why it works</span>
+      <p>It's the charm pillar at its most effortless, and it says something no brochure can: people choose to keep coming back. It also earns conversation through locality, which your data shows travels further than the property alone.</p>
+    </div>
+    <div class="logistics-grid">
+      <div class="logistics-cell"><span class="lc-label">Who</span><p>A regular guest or group, plus a light intro from Mark. No interview needed.</p></div>
+      <div class="logistics-cell"><span class="lc-label">Where</span><p>Wherever they usually sit, doing what they usually do.</p></div>
+      <div class="logistics-cell"><span class="lc-label">When</span><p>Decided on the shoot day itself.</p></div>
+    </div>
+    <div class="neutral-box">
+      <span class="box-label">Format note</span>
+      <p>Candid and warm, minimal direction. A different register to the staff series, which is why it stands on its own rather than folding into it.</p>
+    </div>
+    <div class="warning-box">
+      <span class="box-label">Open</span>
+      <p>Held in the back pocket and decided on the day. No named guest chased in advance, no prep carried. If a real regular is in the building during the shoot, we take it; if not, it drops without any cost to the rest. Alicia holds the names.</p>
+    </div>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>10</span></div>
+</div>
+
+<!-- 11 007 KILLED -->
+<div class="page">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <div class="tier-banner">
+      <span class="tier-banner-label">Tier 3</span>
+      <span class="tier-banner-title">Named subject</span>
+      <span class="tier-banner-note">Retired 18 August</span>
+    </div>
+    <div class="concept-badges">
+      <span class="badge badge-num">007</span>
+      <span class="badge badge-killed">Killed</span>
+      <span class="badge badge-killed">Number retired</span>
+    </div>
+    <h1>Biddy's Cottage</h1>
+    <p>Retired after the 18 August catch-up, so the day stays tighter. Number 007 is not reused.</p>
+    <p>The history document Tommy sent that afternoon now feeds Hidden Corners (009). Mark, one stop at a time, architecture and the building. The outside-historian slot is gone. Locality as a standalone piece stays gone. 006 still holds light locality if a regular is in the building.</p>
+    <div class="neutral-box">
+      <span class="box-label">What this was</span>
+      <p>Biddy McLaughlin, or a voice from the Killiney history group, telling the area's history from inside the rooms it happened around. Kept here so the number stays in the record. The treatment is not live.</p>
+    </div>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>11</span></div>
+</div>
+
+<!-- 12 008 -->
+<div class="page">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <div class="tier-banner">
+      <span class="tier-banner-label">Tier 3</span>
+      <span class="tier-banner-title">Named subject</span>
+      <span class="tier-banner-note">Batched with Hidden Corners, separate date</span>
+    </div>
+    <div class="concept-badges">
+      <span class="badge badge-num">008</span>
+      <span class="badge badge-green">Confirmed</span>
+      <span class="badge badge-series">Series</span>
+    </div>
+    <h1>The Memorabilia Walk</h1>
+    <p>Mark in the boardroom, walking through the family memorabilia: grandfather signing the cheque, the uniforms his mother sewed, decades of history in one room. One deep session, cut into two or three pieces.</p>
+    <div class="insight-box">
+      <span class="box-label">Why it works</span>
+      <p>Generational heritage, told first-hand, which is exactly the grandeur the channel needs to earn. There is said to be hours of material in that room alone. The precedent is strong: a reluctant publican in London talked for twenty-five minutes once he got going, and that became three deep cuts.</p>
+    </div>
+    <div class="logistics-grid">
+      <div class="logistics-cell"><span class="lc-label">Who</span><p>Mark. He's confirmed and happy to do whatever the business needs.</p></div>
+      <div class="logistics-cell"><span class="lc-label">Where</span><p>The boardroom, among the memorabilia.</p></div>
+      <div class="logistics-cell"><span class="lc-label">When</span><p>One focused session, batched with Hidden Corners to protect his time.</p></div>
+    </div>
+    <h3>Prompts</h3>
+    <ul class="q-list">
+      <li>Whose signature is that, and what were they signing?</li>
+      <li>What's in here that you walk past every day without thinking about?</li>
+      <li>Why is the restaurant called PJ's?</li>
+    </ul>
+    <div class="neutral-box">
+      <span class="box-label">Format note</span>
+      <p>A deeper cut, two to two and a half minutes each. Allow the longer form here. Charm and grandeur, first-hand, in the family room. Paddy, Vico Road, the Gresham and PJ's stay with the objects. Default is this room. Off-site only if the shot list asks for it.</p>
+    </div>
+    <div class="warning-box">
+      <span class="box-label">Open</span>
+      <p>Mark is on paternity leave for August, so this runs as its own date once he's back, still batched with Hidden Corners. The concept holds; only the date moves.</p>
+    </div>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>12</span></div>
+</div>
+
+<!-- 13 009 -->
+<div class="page page-crush">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <div class="tier-banner">
+      <span class="tier-banner-label">Tier 3</span>
+      <span class="tier-banner-title">Named subject</span>
+      <span class="tier-banner-note">Same session as the Memorabilia Walk</span>
+    </div>
+    <div class="concept-badges">
+      <span class="badge badge-num">009</span>
+      <span class="badge badge-amber">Stops pending</span>
+      <span class="badge badge-series">Series</span>
+    </div>
+    <h1>Hidden Corners</h1>
+    <p>Mark surfacing the specific things a guest walks straight past: one object, one room, one detail at a time, with the story behind it. The focus is the architecture and the building's history, not family anecdote; the family material is parked for a possible Mark and Joe piece later. A handful of shorts, each its own piece. The dungeon is the first confirmed stop.</p>
+    <div class="insight-box">
+      <span class="box-label">Why it works</span>
+      <p>Curiosity and grandeur in the reveal. The man who built the house also put that stone on the hill, in a hard year. This ground was stone, then meadow, then a road around the hill, and the trees are still hers. When he was in, a flag went up so the hill would know the house was occupied. Mark points and remembers. We hold the dates.</p>
+    </div>
+    <div class="logistics-grid">
+      <div class="logistics-cell"><span class="lc-label">Who</span><p>Mark, same as the Memorabilia Walk.</p></div>
+      <div class="logistics-cell"><span class="lc-label">Where</span><p>The dungeon, the maid's quarters corridor in the old wing, the Mapas room, plus stops Mark nominates.</p></div>
+      <div class="logistics-cell"><span class="lc-label">When</span><p>The same session, batched with 008.</p></div>
+    </div>
+    <h3>Prompts</h3>
+    <p style="font-size:11.5px;color:var(--muted);margin:0 0 6px;">What Mark hears. Ask them standing next to the thing, then wait.</p>
+    <ul class="q-list">
+      <li>What would a guest think this room is?</li>
+      <li>What was this actually?</li>
+      <li>What are they looking at that they never ask about?</li>
+      <li>What was this ground before?</li>
+      <li>Where did the flag fly from?</li>
+      <li>Which of these trees were here before your family?</li>
+    </ul>
+    <div class="neutral-box">
+      <span class="box-label">In our pocket</span>
+      <p>Mapas, 1741. The 1742 inscription and NISI DOMINUS FRUSTRA, if the hill is in frame. Loftus and the road. Warren and the flag. Mrs Chippendale Higgan and the trees. He does not recite these. We use them as OST or a read if he is looking at the thing. Default is the castle and the grounds. The hill, the church, Vico Road stay open until the shot list.</p>
+    </div>
+    <div class="insight-box">
+      <span class="box-label">References</span>
+      <p>Ashford Castle, The Guinness Legacy Experience · a historian walking hidden spaces: the architecture-and-history focus, working.</p>
+    </div>
+    <div class="warning-box">
+      <span class="box-label">Open</span>
+      <p>Dungeon confirmed. Maid's corridor and Mapas room still candidates. Mark nominates the finals. Same date as 008: Mark is out for August.</p>
+    </div>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>13</span></div>
+</div>
+
+<!-- 14 010 -->
+<div class="page page-dense">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <div class="tier-banner">
+      <span class="tier-banner-label">Tier 3</span>
+      <span class="tier-banner-title">Named subject</span>
+      <span class="tier-banner-note">Separate premium brand</span>
+    </div>
+    <div class="concept-badges">
+      <span class="badge badge-num">010</span>
+      <span class="badge badge-green">In-house set</span>
+      <span class="badge badge-series">Mini-series</span>
+    </div>
+    <h1>Inside The Studio</h1>
+    <p>The reformer studio as a separate, premium experience, captured through the instructor on camera. Myth-busting is the natural format: one misconception per short, positioned as part of a holistic, retreat-style stay rather than a gym add-on.</p>
+    <div class="insight-box">
+      <span class="box-label">Why it works</span>
+      <p>Pilates content travels well, and the studio's premium, separate positioning gives it a distinct audience. Framing it as an upsell within the stay, look what's here, matches how you want it to sit in the offering.</p>
+    </div>
+    <div class="logistics-grid">
+      <div class="logistics-cell"><span class="lc-label">Who</span><p>The in-house instructor. Of the three, she is the one on staff and already takes most of the classes.</p></div>
+      <div class="logistics-cell"><span class="lc-label">Where</span><p>The reformer studio, open from 20 July.</p></div>
+      <div class="logistics-cell"><span class="lc-label">When</span><p>Shoot day, or its own window given the separate brand.</p></div>
+    </div>
+    <h3>The myths, one per short</h3>
+    <ul class="q-list">
+      <li>"It's basically stretching." What's actually happening on the reformer, and what it asks of you.</li>
+      <li>"You need to be flexible to start." Who actually walks in the door, and where they begin.</li>
+      <li>"It isn't a real workout." What you feel the morning after a first session.</li>
+      <li>"The machine looks complicated." The reformer, part by part, and what each piece does.</li>
+      <li>"It's a gym add-on." Where a session sits in a night's stay, and what it changes about the stay.</li>
+    </ul>
+    <div class="neutral-box">
+      <span class="box-label">Format note</span>
+      <p>Episodic, one myth per short; we shoot the strongest three or four from the list above. Cross-posts as a genuine collaboration between the studio's own Instagram and the hotel account, rather than an internal mention.</p>
+    </div>
+    <div class="warning-box">
+      <span class="box-label">Open</span>
+      <p>Decided 18 August with Tommy: we go with the in-house instructor of the three. Name not being chased. Confirmed as a genuine collaboration with the studio's own account rather than an internal mention.</p>
+    </div>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>14</span></div>
+</div>
+
+<!-- 15 COPY BANK -->
+<div class="page">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <p class="section-label">Copy bank</p>
+    <h1>On-screen text and post copy.</h1>
+    <p>Post copy is pulled from real lines in the footage, not written to a formula. Where the line only comes from the shoot, it's marked as a placeholder. Captions run six words or fewer.</p>
+    <table class="copy-bank-table">
+      <thead><tr><th>Concept</th><th>On-screen</th><th>Post copy</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="cb-concept">001 · Castle From Above</span></td>
+          <td><span class="cb-none">None. Scored, no text.</span></td>
+          <td>Placeholder. A short line on the view or the approach, set in the edit.</td>
+        </tr>
+        <tr>
+          <td><span class="cb-concept">002 · Grand Spaces</span></td>
+          <td><span class="cb-none">None. Atmospheric, no text.</span></td>
+          <td>Placeholder. One line per room, drawn from the space itself.</td>
+        </tr>
+        <tr>
+          <td><span class="cb-concept">003A · Afternoon Tea</span></td>
+          <td><span class="cb-onscreen">Anatomy of an afternoon tea</span></td>
+          <td>Placeholder. Lifted from the narration on the day.</td>
+        </tr>
+        <tr>
+          <td><span class="cb-concept">003B · The Pastry</span></td>
+          <td><span class="cb-onscreen">Anatomy of a pastry</span></td>
+          <td>Placeholder. Lifted from the pastry chef's own words.</td>
+        </tr>
+        <tr>
+          <td><span class="cb-concept">003C · The Cocktail</span></td>
+          <td><span class="cb-onscreen">Anatomy of a cocktail</span></td>
+          <td>Placeholder. From whoever builds it, at the bar.</td>
+        </tr>
+        <tr>
+          <td><span class="cb-concept">003D · The Pizza Oven</span></td>
+          <td><span class="cb-onscreen">Anatomy of a pizza</span></td>
+          <td>Placeholder. From the oven, once it's lit.</td>
+        </tr>
+        <tr>
+          <td><span class="cb-concept">004 · The Coffee Hatch</span></td>
+          <td><span class="cb-onscreen">This. And this.</span>Two words per vignette, nothing else. Coffee and bubbles share the same two words. The glass is the change.</td>
+          <td>Placeholder. Light and quick, set in the edit.</td>
+        </tr>
+        <tr>
+          <td><span class="cb-concept">005 · A View From A Castle</span></td>
+          <td>Name and years, revealed on the pull-back.</td>
+          <td>Placeholder. The line that means something, cut from fifteen minutes rolled.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>15</span></div>
+</div>
+
+<!-- 16 COPY BANK 2 -->
+<div class="page">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <p class="section-label">Copy bank, continued</p>
+    <h1>The Tier 3 pieces.</h1>
+    <table class="copy-bank-table">
+      <thead><tr><th>Concept</th><th>On-screen</th><th>Post copy</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="cb-concept">006 · The Regulars</span></td>
+          <td><span class="cb-none">None, or a light intro line from Mark.</span></td>
+          <td>Placeholder. Warm and short, from the moment itself.</td>
+        </tr>
+        <tr>
+          <td><span class="cb-concept">007 · Biddy's Cottage</span></td>
+          <td><span class="cb-none">Killed 18 August. Number retired. None.</span></td>
+          <td><span class="cb-none">None.</span></td>
+        </tr>
+        <tr>
+          <td><span class="cb-concept">008 · The Memorabilia Walk</span></td>
+          <td>A title per cut, taken from the object Mark's on.</td>
+          <td>Placeholder. First-hand, from the boardroom session.</td>
+        </tr>
+        <tr>
+          <td><span class="cb-concept">009 · Hidden Corners</span></td>
+          <td>The name of the spot, revealed as Mark tells it. If the hill stop lands: <span class="cb-onscreen">NISI DOMINUS FRUSTRA</span> or the 1742 inscription as a read, not a caption.</td>
+          <td>Placeholder. One line per stop, from Mark.</td>
+        </tr>
+        <tr>
+          <td><span class="cb-concept">010 · Inside The Studio</span></td>
+          <td><span class="cb-onscreen">The myth, stated plainly</span>e.g. the misconception each short answers.</td>
+          <td>Placeholder. From the instructor, once talking points are set.</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="neutral-box">
+      <span class="box-label">A note on the caption rule</span>
+      <p>The best lines almost always come from the footage, not from a desk. That's why most of this bank is a placeholder at this stage. Once we shoot, the copy writes itself from what people actually say, and every gap here fills in from a real line.</p>
+    </div>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>16</span></div>
+</div>
+
+<!-- 17 ACTIONS -->
+<div class="page">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <p class="section-label">Actions</p>
+    <h1>Still to close before the shoot.</h1>
+    <p>Everything open, with an owner against it. Most of it lands once Alicia is back, week of 24 August.</p>
+    <table class="action-table">
+      <thead><tr><th>Action</th><th>Owner</th><th>By</th></tr></thead>
+      <tbody>
+        <tr><td>Roof zones for the drone, green and red. Google Map is enough.</td><td>Tommy, via Christian</td><td>Before the next call</td></tr>
+        <tr><td>Must-have drone shot list</td><td>Your team</td><td>Once the roof map lands</td></tr>
+        <tr><td>Bubbles on standby for the coffee hatch, same This and This setups</td><td>Alicia, via Tommy</td><td>Week of 24 August</td></tr>
+        <tr><td>Vignette roster via the HR callout, the longest tenure in the building, plus a check on Jennifer and a word with John Fitzgerald</td><td>Alicia, then Tommy</td><td>Week of 24 August</td></tr>
+        <tr><td>Vouchers for staff on camera</td><td>Alicia</td><td>Week of 24 August</td></tr>
+        <tr><td>Cocktail person for the Library Bar</td><td>The group</td><td>Week of 24 August</td></tr>
+        <tr><td>Regular guests happy to feature</td><td>Alicia</td><td>Held for the day</td></tr>
+        <tr><td>Two or three more Hidden Corners stops. History document is in.</td><td>Mark, via Alicia</td><td>Before his session</td></tr>
+        <tr><td>Mid-September date</td><td>Together</td><td>Week of 24 August</td></tr>
+        <tr><td>Drone day date</td><td>Together</td><td>Once the site is camera-ready</td></tr>
+        <tr><td>Shoot running order, once the date is set</td><td>Rua</td><td>Ahead of the shoot</td></tr>
+      </tbody>
+    </table>
+    <div class="neutral-box">
+      <span class="box-label">Closed 18 August</span>
+      <p>Biddy sounded out: killed. Building history document: received. Pilates instructor: the in-house instructor of the three. Name not being chased.</p>
+    </div>
+    <p style="margin-top:14px;font-size:12.5px;color:var(--stone);">Anything here that can't land before we lock the date, say so on the next call and we re-sequence around it rather than find out in September.</p>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>17</span></div>
+</div>
+
+<!-- 18 NEXT -->
+<div class="page">
+  <div class="next">
+    <div class="cover-agency">Rua Social</div>
+    <div class="next-main">
+      <p class="next-label">Next</p>
+      <div class="next-title">Nine live. A date to lock.</div>
+      <div class="next-bar"></div>
+      <p class="next-sub">007 is retired. The rest of the list still stands. What's left is the roof map, the bubbles yes or no, the roster, and a mid-September date once Alicia is back.</p>
+    </div>
+    <div class="next-sign">
+      <div class="agency">Rua Social</div>
+      <p>Darragh Hoare · darragh@ruasocial.ie</p>
+    </div>
+  </div>
+</div>
+
+<!-- 19 CHANGE LOG 1 -->
+<div class="page">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <p class="section-label">Appendix · Change log</p>
+    <h1>What's baked in, and why.</h1>
+    <p>The decisions carried from the Week 0 call, so the reasoning travels with the document.</p>
+    <table class="log-table">
+      <thead><tr><th>Date</th><th>Affects</th><th>Change</th></tr></thead>
+      <tbody>
+        <tr><td>1 Jul 2026</td><td>All</td><td>Concept list v1 built from the Week 0 call. Two themes confirmed: People &amp; Place, and Process &amp; Craft. Direction confirmed as curiosity, charm, grandeur.</td></tr>
+        <tr><td>1 Jul 2026</td><td>Scope</td><td>Club and gym excluded from the shoot. Low performance on channel and difficult logistics. Long-servers based in the gym can still feature if they're customer-facing.</td></tr>
+        <tr><td>1 Jul 2026</td><td>Scope</td><td>Styled food and conference or event content excluded. It underperforms and you can produce it in-house. The sprint prioritises what's harder to get without a planned shoot.</td></tr>
+        <tr><td>1 Jul 2026</td><td>002, 003C</td><td>Library Bar cocktail reframed. There's no mixologist role, so the drink becomes craft under Anatomy Of (003C) and the room becomes a grandeur bank (002).</td></tr>
+        <tr><td>1 Jul 2026</td><td>003</td><td>Anatomy Of set up as a recurring format rather than a single afternoon tea piece, so craft keeps yielding pieces across subjects.</td></tr>
+        <tr><td>1 Jul 2026</td><td>002</td><td>Grand Spaces added as a Tier 1 asset bank, to serve the grandeur direction with no coordination on the day.</td></tr>
+        <tr><td>1 Jul 2026</td><td>010</td><td>Pilates placed under People &amp; Place as an instructor-led experience, not a craft process. Cross-posts from the studio's separate account.</td></tr>
+        <tr><td>1 Jul 2026</td><td>Process</td><td>No written pre-read before Call 2, by preference. Concepts are presented live and refined from your input afterwards.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>19</span></div>
+</div>
+
+<!-- 20 CHANGE LOG 2 -->
+<div class="page">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <p class="section-label">Appendix · Change log, continued</p>
+    <h1>Draft 2, what changed.</h1>
+    <p>A second pass through both call transcripts, catching what the first draft missed.</p>
+    <table class="log-table">
+      <thead><tr><th>Date</th><th>Affects</th><th>Change</th></tr></thead>
+      <tbody>
+        <tr><td>1 Jul 2026</td><td>005</td><td>Draft 2. Alan confirmed as the porter, one person rather than two episodes. James (reception) added, Tommy added as the wildcard bookend, Jennifer and John Fitzgerald named as backups. Second treatment added: mic on the subject mid-service, camera static.</td></tr>
+        <tr><td>1 Jul 2026</td><td>003C, 002</td><td>Reframed from the pour to the cocktail, per your steer on the call: it's the library cocktail bar, so the cocktail is the piece, with whiskey or Wicklow Wolf held as the fallback. Piano added to the Grand Spaces coverage.</td></tr>
+        <tr><td>1 Jul 2026</td><td>002, 003</td><td>Third grand room shortlisted from the calls: the new reception or Scotty's snooker room. Pizza oven added as 003D, the fourth Anatomy Of subject, once it reopens.</td></tr>
+        <tr><td>1 Jul 2026</td><td>Scope</td><td>Events exclusion softened: if a live event lands in the shoot window, flag it and we trade schedule for it. Empty function rooms stay out either way.</td></tr>
+        <tr><td>1 Jul 2026</td><td>005, 007</td><td>Renamed A View From A Castle. Biddy's session restaged: established at the cottage, then brought into the castle so the story lands inside the building. Her status set to confirm until she's asked.</td></tr>
+        <tr><td>1 Jul 2026</td><td>001, 004</td><td>Pool removed from the drone bank. Drone shots framed as starting points, with your must-have list leading. Coffee Hatch rebuilt around static slow-zoom vignettes and the this-and-this device, so the piece carries the feelings, not just the offer.</td></tr>
+        <tr><td>1 Jul 2026</td><td>003, 010</td><td>Prompt sets deepened for the narrated craft pieces. Pilates myth list drafted, closing the talking-points action.</td></tr>
+        <tr><td>1 Jul 2026</td><td>Process</td><td>Open items pulled out of the change log onto a standalone actions page, each with an owner and a date. Change log moved to an appendix at the back, so the document closes on the actions.</td></tr>
+        <tr><td>1 Jul 2026</td><td>Process</td><td>Working window page added: mid-August shoot, drone list by end of July, roster and sign-offs before the 21st. Delivery spec recorded: shot in 4K, delivered HD in 9:16 first, paid cuts supplied on request. Staff on camera incentivised with vouchers, as agreed.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>20</span></div>
+</div>
+
+<!-- 21 CHANGE LOG 3 -->
+<div class="page">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <p class="section-label">Appendix · Change log, continued</p>
+    <h1>Draft 3, after the run-through.</h1>
+    <p>The decisions from the 16 July call, folded in. All ten concepts kept; nothing killed.</p>
+    <table class="log-table">
+      <thead><tr><th>Date</th><th>Affects</th><th>Change</th></tr></thead>
+      <tbody>
+        <tr><td>16 Jul 2026</td><td>001</td><td>Drone bank agreed: both approaches, terrace in both directions, paddle court with test shots and privacy signage minded, exterior reveal, balconies without close work. Roof pending the green-zone and red-zone answer via Christian. Flying end of July or the first week of August.</td></tr>
+        <tr><td>16 Jul 2026</td><td>002</td><td>Third room cut. Library Bar and the dungeon only, shot early while quiet. Breakfast room held for the bank once the new drapes and chairs land.</td></tr>
+        <tr><td>16 Jul 2026</td><td>003</td><td>Cocktail candidate sits with Tommy. Pizza oven confirmed open, reopening caveat removed. Recipe-overlay variant added to the format note, from Ashford's named-chef pancake piece.</td></tr>
+        <tr><td>16 Jul 2026</td><td>005</td><td>Reframed around the tenure lead: the longest-serving name takes the first cut, a real number in the opening line. Backed by the top posts on both comparable accounts, Ashford's fifty years of Paddy Costello and Ballynahinch's Pat. Callout runs through HR and the staff forum with a voucher, Tommy driving.</td></tr>
+        <tr><td>16 Jul 2026</td><td>006</td><td>Moved to the back pocket: decided on the shoot day, no names chased in advance, no prep carried.</td></tr>
+        <tr><td>16 Jul 2026</td><td>007</td><td>Broadened to Biddy or the Killiney history group, whoever answers; Tommy ringing Biddy. Reframed as the authority piece on the area's history. Dungeon fireside set as the anchor image, cottage kept if feasible.</td></tr>
+        <tr><td>16 Jul 2026</td><td>008, 009</td><td>Mark on paternity leave for August; the batched session moves to its own date once he's back. Hidden Corners locked to architecture and building history, family material parked for a possible Mark and Joe piece. Maid's corridor and the Mapas room added as candidate stops; building history document with Tommy.</td></tr>
+        <tr><td>16 Jul 2026</td><td>010</td><td>Confirmed as a collaboration with the studio's own account. Studio opens the 20th; instructor named a week or two after.</td></tr>
+        <tr><td>16 Jul 2026</td><td>Refs</td><td>Ten visual references added across 003, 004, 005, 007 and 009: five supplied on the call, five surfaced from Ashford Castle and Ballynahinch Castle account research and verified against the source posts.</td></tr>
+        <tr><td>16 Jul 2026</td><td>Delivery</td><td>Stills spec added: portrait-first, framed with headroom for text-behind-subject graphics.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>21</span></div>
+</div>
+
+<!-- 22 CHANGE LOG 4 -->
+<div class="page">
+  <div class="page-header"><span class="page-header-agency">Rua Social</span><span class="page-header-title">Fitzpatrick Castle · Concept List</span></div>
+  <div class="page-content">
+    <p class="section-label">Appendix · Change log, continued</p>
+    <h1>Draft 4, after the 18 August catch-up.</h1>
+    <p>Tommy only; Alicia in London from 19 August. History document received the same afternoon.</p>
+    <table class="log-table">
+      <thead><tr><th>Date</th><th>Affects</th><th>Change</th></tr></thead>
+      <tbody>
+        <tr><td>18 Aug 2026</td><td>007</td><td>Biddy's Cottage killed. Number 007 retired, not reused. No 011 opened. The outside-historian slot is gone.</td></tr>
+        <tr><td>18 Aug 2026</td><td>008, 009</td><td>History worked through against Curiosity, Charm, Grandeur. Mark's questions shortened to one breath. The cost-to-the-family question is out of 008. Dates, Latin and owner names stay in our pocket. Default is on the premises. Off-site stays open until the shot list.</td></tr>
+        <tr><td>18 Aug 2026</td><td>008</td><td>One prompt added from the 1970 beat: why is the restaurant called PJ's? Family stays in the boardroom.</td></tr>
+        <tr><td>18 Aug 2026</td><td>004</td><td>Recast from standalone to asset bank. Same This and This marks, coffee then a glass of bubbles, Alicia to confirm. Padel take is not doubled. Not the 003C Library Bar craft piece.</td></tr>
+        <tr><td>18 Aug 2026</td><td>010</td><td>In-house instructor of the three. Name not being chased. Status moves off instructor pending.</td></tr>
+        <tr><td>18 Aug 2026</td><td>002</td><td>Breakfast room still held. Chairs arrived 14 August in pieces; desks and reception unfinished.</td></tr>
+        <tr><td>18 Aug 2026</td><td>Window</td><td>Mid-September is the shoot window. Alicia does not want to go later, for the weather. Catch-up week of 24 August. Roof map still the drone brief.</td></tr>
+        <tr><td>18 Aug 2026</td><td>006</td><td>Regulars stay in the back pocket. Alicia holds the names.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="page-footer"><span>Rua Social × Fitzpatrick Castle Hotel</span><span>22</span></div>
+</div>
+
+</body>
+</html>
