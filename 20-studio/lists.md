@@ -48,7 +48,12 @@ Opened 17 August 2026 from a messy voice note. Enough structure for now.
 
 ### Do
 
-- Nothing captured.
+- 18 Aug — chase the Fitzpatrick deposit on a dated thread: the
+  mid-September window holds on receipt. Draft 4 is with them; the gate
+  now locks dates and production, not concept work.
+- 18 Aug — send the Ecoplex month-1 pack. Send order is in
+  `10-clients/ecoplex/cover-note.md`; pack reprinted with three amend
+  rounds, card matches.
 
 ### Ideas
 
@@ -56,7 +61,8 @@ Street captures from the phone. Not the walking brief.
 
 ### Planned
 
-- Nothing captured.
+- 18 Aug — pickup day rate for FW Earghal: €500/day. His number. Move
+  it into an engagement record if one opens.
 
 ### Waiting on the desk
 
