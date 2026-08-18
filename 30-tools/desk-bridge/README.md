@@ -30,6 +30,9 @@ The launchd job does not inherit a login shell. Phone Grok also
 loads `~/.grok/secrets/xpoz.env` and `moonshot.env` so MCP keys
 match the dashboard.
 
+Set `DESK_ENGINE=claude` in `desk-bridge.env` to run the phone
+on Claude Code instead of Grok. `/status` shows which engine.
+
 Voice notes also need `~/.grok/secrets/elevenlabs.env`:
 
 ```

@@ -17,7 +17,7 @@ not this seat.
 | --- | --- | --- |
 | Help | `/help` or `/start` | Commands, pairing, and that `/new` does not restart the Mac. |
 | New session | `/new` | Drop the Grok session and any queued asks. Next message starts fresh. Cuts the line. |
-| Status | `/status`, `/statua`, or the word status | Owner, session, effort, queue, pending, last run, last error, whether the next ask will keep or reset. Last run is timing, not JSON. |
+| Status | `/status`, `/statua`, or the word status | Owner, engine, session, effort, queue, pending, last run, last error, whether the next ask will keep or reset. Last run is timing, not JSON. |
 | Brief | `/brief` or the word brief | Walking picture from the lists and `10-clients/`. Not live Google. |
 | Park | `/park …`, `park …`, `backlog …`, or a voice note that starts that way | Instant. Lands on Founder → Ideas. No Grok. |
 | Idea | `/idea …` or `idea …` | Instant. Short stays on the list. Longer goes to `20-studio/ideas/`. |
@@ -156,4 +156,6 @@ completeness, engagement.
 4. Space connectors on the phone `grok -p` process.
 5. Claude-for-Google. Drive and Gmail worked on Haiku; Calendar
    auth failed. A second Google path. Not this seat.
-6. Alternate-model fallback. It needs a controlled quality result first.
+6. Automatic fallback between engines. The phone runs one brain:
+   `DESK_ENGINE=grok` or `DESK_ENGINE=claude` in
+   `~/.grok/secrets/desk-bridge.env`. Switch is explicit.

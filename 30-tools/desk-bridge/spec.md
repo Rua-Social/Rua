@@ -49,6 +49,10 @@ dependency, host, service, or chat surface. Changing Telegram's look.
   studio log. Reaction + typing are best effort and never delay Grok.
 - The poller remains live while one Grok worker handles asks in order.
   A second ask receives the queue sentence in `EXPERIENCE.md`.
+- Phone runs Grok (`grok -p`) or Claude Code (`claude -p`) from
+  `DESK_ENGINE` in the desk-bridge secrets file. Default is grok.
+  Claude uses `--dangerously-skip-permissions` because the launchd
+  job cannot click allow.
 - Phone Grok runs at effective medium effort. Missing, over the history
   byte cap, or wrong-effort sessions start fresh and say so. A large
   prompt-token total from MCP tools does not reset the next ask.

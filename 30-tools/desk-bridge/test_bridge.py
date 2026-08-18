@@ -809,6 +809,10 @@ class SessionResetTest(RuntimeCase):
         ):
             self.assertTrue(bridge.should_drop_session("sid"))
 
+    def test_claude_engine_does_not_drop_for_missing_grok_history(self):
+        with mock.patch.object(bridge, "desk_engine", return_value="claude"):
+            self.assertEqual(bridge.session_reset_reason("claude-sid"), "")
+
     def test_prompt_token_total_does_not_drop_a_live_session(self):
         history = self.make_history()
         with mock.patch.object(
@@ -1036,6 +1040,23 @@ class GrokStreamingTest(RuntimeCase):
         reply, _ = self.run_with_process(process)
         self.assertEqual(reply, "Desk hit an error. /status")
         self.assertEqual(bridge.read_text(bridge.LAST_ERROR_FILE), "boom")
+
+    def test_claude_engine_builds_claude_print_command(self):
+        with mock.patch.object(bridge, "desk_engine", return_value="claude"):
+            cmd = bridge.desk_command("hello", "")
+        self.assertEqual(cmd[0], bridge.claude_bin())
+        self.assertIn("-p", cmd)
+        self.assertIn("--append-system-prompt", cmd)
+        self.assertNotIn(bridge.grok_bin(), cmd)
+
+    def test_claude_result_event_is_the_phone_text(self):
+        stream = "\n".join([
+            '{"type":"assistant","message":{"content":[{"type":"text","text":"Hi."}]}}',
+            '{"type":"result","result":"Parked.","session_id":"claude-sid"}',
+        ])
+        text, session_id = bridge.phone_text_from_stream(stream)
+        self.assertEqual(text, "Parked.")
+        self.assertEqual(session_id, "claude-sid")
 
     def test_metrics_do_not_store_prompt_content(self):
         private_prompt = "private words that must not enter metrics"
@@ -1315,6 +1336,7 @@ class CommandReplyTest(RuntimeCase):
         run_grok.assert_not_called()
         self.assertIn("owner: 42", reply)
         self.assertIn("effort: medium", reply)
+        self.assertIn("engine: grok", reply)
         self.assertIn("queue: 2", reply)
         self.assertIn("pending: 1", reply)
         self.assertIn("last run: 1s", reply)

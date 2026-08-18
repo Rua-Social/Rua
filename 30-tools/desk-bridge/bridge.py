@@ -340,9 +340,26 @@ def phone_text_from_stream(stdout: str) -> tuple[str, str]:
         except json.JSONDecodeError:
             continue
         kind = ev.get("type")
-        if kind == "text":
+        if kind == "result":
             saw_event = True
-            bit = ev.get("data") or ""
+            saw_end = True
+            session_id = ev.get("session_id") or ev.get("sessionId") or session_id
+            result = ev.get("result")
+            if isinstance(result, str) and result.strip():
+                last_block = [result]
+                all_text.append(result)
+        elif kind == "assistant":
+            saw_event = True
+            message = ev.get("message") or {}
+            for block in message.get("content") or []:
+                if isinstance(block, dict) and block.get("type") == "text":
+                    bit = block.get("text") or ""
+                    if bit:
+                        last_block.append(bit)
+                        all_text.append(bit)
+        elif kind == "text":
+            saw_event = True
+            bit = ev.get("data") or ev.get("text") or ""
             if bit:
                 last_block.append(bit)
                 all_text.append(bit)
@@ -438,6 +455,13 @@ def session_metadata(session_id: str) -> dict:
 def session_reset_reason(session_id: str, limit: int = SESSION_BYTES) -> str:
     if not session_id:
         return ""
+    saved = read_json(SESSION_META_FILE, {})
+    if isinstance(saved, dict) and saved.get("engine") and saved.get("engine") != desk_engine():
+        return "wrong-engine"
+    if desk_engine() == "claude":
+        if isinstance(saved, dict) and saved.get("effort") and saved.get("effort") != PHONE_EFFORT:
+            return "wrong-effort"
+        return ""
     hist = session_history_path(session_id)
     if hist is None:
         return "missing"
@@ -517,6 +541,70 @@ def grok_bin() -> str:
     if fallback.is_file():
         return str(fallback)
     return "grok"
+
+
+def claude_bin() -> str:
+    found = shutil.which("claude")
+    if found:
+        return found
+    fallback = Path.home() / ".local" / "bin" / "claude"
+    if fallback.is_file():
+        return str(fallback)
+    return "claude"
+
+
+def desk_engine() -> str:
+    raw = (
+        os.environ.get("DESK_ENGINE")
+        or load_secrets().get("DESK_ENGINE")
+        or "grok"
+    )
+    engine = raw.strip().lower()
+    if engine in {"claude", "claude-code", "anthropic"}:
+        return "claude"
+    return "grok"
+
+
+def desk_command(prompt: str, session_id: str) -> list[str]:
+    if desk_engine() == "claude":
+        cmd = [
+            claude_bin(),
+            "-p",
+            prompt,
+            "--output-format",
+            "stream-json",
+            "--verbose",
+            "--dangerously-skip-permissions",
+            "--effort",
+            PHONE_EFFORT,
+            "--append-system-prompt",
+            DESK_RULES,
+        ]
+        if session_id:
+            cmd.extend(["--resume", session_id])
+        return cmd
+    cmd = [
+        grok_bin(),
+        "-p",
+        prompt,
+        "--cwd",
+        str(REPO),
+        "--output-format",
+        "streaming-json",
+        "--yolo",
+        "--no-subagents",
+        "--no-plan",
+        "--rules",
+        DESK_RULES,
+        "--no-auto-update",
+        "--effort",
+        PHONE_EFFORT,
+        "--max-turns",
+        str(PHONE_MAX_TURNS),
+    ]
+    if session_id:
+        cmd.extend(["--resume", session_id])
+    return cmd
 
 
 def api(
@@ -1227,6 +1315,9 @@ def _meaningful_stream_event(event: dict) -> bool:
                 "thought",
                 "reasoning",
                 "retrying",
+                "result",
+                "assistant",
+                "system",
             }
             or "toolcall" in kind
             or "assistant" in kind
@@ -1263,6 +1354,9 @@ def _provider_busy_event(event: dict) -> bool:
             "service unavailable",
             "rate limit",
             "overloaded",
+            "usage limit",
+            "out of extra usage",
+            "credit balance",
         )
     )
 
@@ -1422,27 +1516,7 @@ def run_grok(
         session_id = ""
         SESSION_FILE.unlink(missing_ok=True)
         reset = True
-    cmd = [
-        grok_bin(),
-        "-p",
-        prompt,
-        "--cwd",
-        str(REPO),
-        "--output-format",
-        "streaming-json",
-        "--yolo",
-        "--no-subagents",
-        "--no-plan",
-        "--rules",
-        DESK_RULES,
-        "--no-auto-update",
-        "--effort",
-        PHONE_EFFORT,
-        "--max-turns",
-        str(PHONE_MAX_TURNS),
-    ]
-    if session_id:
-        cmd.extend(["--resume", session_id])
+    cmd = desk_command(prompt, session_id)
     started = time.monotonic()
     try:
         total_timeout = bounded_timeout(deadline, GROK_TIMEOUT)
@@ -1460,8 +1534,13 @@ def run_grok(
             start_new_session=True,
         )
     except FileNotFoundError:
-        write_text(LAST_ERROR_FILE, "grok not on PATH")
-        return with_reset(reset, "grok is not installed on this Mac.")
+        write_text(LAST_ERROR_FILE, f"{desk_engine()} not on PATH")
+        missing = (
+            "claude is not installed on this Mac."
+            if desk_engine() == "claude"
+            else "grok is not installed on this Mac."
+        )
+        return with_reset(reset, missing)
 
     set_active_grok_process(proc)
     try:
@@ -1527,6 +1606,8 @@ def run_grok(
         write_text(LAST_ERROR_FILE, "grok max_turns_reached")
         keep_error = True
 
+    effective_effort = meta.get("effort") or PHONE_EFFORT
+    effective_model = meta.get("model") or ""
     if new_id:
         observed = session_metadata(new_id)
         effective_effort = meta.get("effort") or observed.get("effort") or PHONE_EFFORT
@@ -1539,6 +1620,7 @@ def run_grok(
             SESSION_META_FILE,
             {
                 "session_id": new_id,
+                "engine": desk_engine(),
                 "model": effective_model,
                 "effort": effective_effort,
                 "prompt_tokens": meta.get("prompt_tokens") or 0,
@@ -1710,6 +1792,7 @@ def handle_prompt(
                 f"effort: {meta.get('effort') or PHONE_EFFORT}",
                 f"queue: {current_queue_depth()}",
                 f"pending: {pending_outbox_count()}",
+                f"engine: {desk_engine()}",
                 f"last run: {format_last_run(read_text(LAST_RUN_FILE))}",
                 f"last error: {read_text(LAST_ERROR_FILE) or 'none'}",
                 f"next: {format_next_session(session_id)}",
@@ -2137,6 +2220,14 @@ def cmd_check() -> int:
         return 1
     line = (ver.stdout or ver.stderr or "").strip().splitlines()
     print(f"grok ok      {line[0] if line else grok}")
+    engine = desk_engine()
+    print(f"engine      {engine}")
+    if engine == "claude":
+        claude = claude_bin()
+        if not shutil.which(claude) and not Path(claude).is_file():
+            print("claude missing")
+            return 1
+        print(f"claude ok    {claude}")
     print(f"repo         {REPO}")
     if not grok_env().get("XPOZ_API_KEY"):
         print("xpoz         missing XPOZ_API_KEY (phone MCP will 401)")
