@@ -68,19 +68,10 @@ The commercial model for the second is unresolved. Do not invent one.
 
 ## Candidate operating direction
 
-Leading candidate direction, not adopted or commercially validated.
-
-The August 2026 synthesis and minimum financial verification (both closed;
-evidence in `founder-context-provenance.md`) identified defined creative
-ownership as the leading candidate for Rua's operating model: clearly
-defined, paid creative projects where the client brings the business need
-and retains the final decision, while Rua owns the creative response and
-production of a defined body of work with a clear finish.
-
-The founder found this attractive but has not adopted it, and has said it
-may be too early to treat it as settled. It is an evidence-informed
-possibility for the future operating model, not current organisational
-policy. Do not use it to accept, reject or rank work.
+Cut to one line, 18 August, on the founder's instruction: an August 2026
+synthesis named defined creative ownership as a possible operating model.
+It was never adopted and is not policy. Evidence, if it is ever revisited:
+`founder-context-provenance.md`.
 
 ## Acquisition
 
