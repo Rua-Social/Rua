@@ -25,10 +25,11 @@ Opened 17 August 2026 from a messy voice note. Enough structure for now.
 
 - These two lists, so the next blocked thing has a place to land.
 - 18 Aug — Ecoplex reference links parked in `10-clients/ecoplex/links.md` (9 TikTok, 1 IG reel, 1 IG story). Waiting on what they are for.
-- 18 Aug — Fitzpatrick Draft 4 concepts file built at `10-clients/fitzpatrick-castle/02-plan/fitzpatrickcastle_concepts_180826.pdf`. Not sent. Reply draft still on Tommy's thread. Alicia back week of 24 Aug: roof map, bubbles yes/no, mid-September date, deposit.
+- 18 Aug — Fitzpatrick follow-up sent on **Fitzpatrick Castle Tuesday 18th August** (Alicia CC) with Draft 4. Waiting on Alicia back week of 24 Aug: roof map, bubbles yes/no, mid-September date, deposit.
 
 ### Done
 
+- 18 Aug — Fitzpatrick follow-up sent to Tommy (Alicia CC) with Draft 4.
 - 17 Aug — desk-bridge fail-closed on Google. Bot reloaded. Model roster in `desk.md`: live `haiku`, `sonnet`, `opus`, `gemini-3-flash-preview`, `gpt-5.6-luna`. Not `kimi-code`, not `gemini-2.5-flash`, not `gpt-5.6-sol`.
 - 18 Aug — resolved the phone stall: owner lock, streamed first/idle/total deadlines, durable queue/outbox recovery, and asynchronous delivery are installed and live. The 17 Aug 451.8s timeout remains the incident record; no live ask was run during this deploy.
 - 18 Aug — phone Grok `exit 1` / "Desk hit an error": three of six runs (00:23, 00:30, 08:54 voice) hit `--max-turns 10` after xpoz 401s. Launchd did not load `xpoz.env`. `/status` then showed a getUpdates idle timeout. Fix: load xpoz/moonshot secret files, keep last_error, send any text if the turn limit hits.
@@ -48,7 +49,7 @@ Opened 17 August 2026 from a messy voice note. Enough structure for now.
 
 ### Do
 
-- Send the Fitzpatrick reply (Gmail, thread **Fitzpatrick Castle Tuesday 18th August**). Review before send. Do not send the unused recap on Social media references.
+- Nothing captured.
 
 ### Ideas
 
