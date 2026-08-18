@@ -110,6 +110,7 @@ on. Park the other in Git. Do not keep a room per old client.
 | Talk through one class of work | The matching room | Four chats for the same job |
 | Independent lookup while you keep talking | A subagent under that room | A new top-level session |
 | Cheap extract on Moonshot | `kimi` MCP tool `kimi_run` (or `/model kimi`) | `spawn_subagent` / workflow `model=kimi` — Grok rejects those slugs. Fake `kimi` agent types just run grok-4.6 |
+| Cheap Moonshot write | `/model kimi-code` in the `tools` room (full Grok hands) | `kimi_run` with `kimi-code` (reader cage, 240s). Grok calling Claude Code pointed at Moonshot |
 | Hostile / long-context on Moonshot | `kimi_run` with model `kimi-k3` | Making K3 the default |
 | Same parallel pass every sit-down | `/desk-brief` from a session in `~/Rua` | Launching it from `$HOME` |
 | Second opinion from Claude / Gemini / Codex | `ai-cli` with the slugs that worked, below | Opening a second terminal for a one-line review |
@@ -124,11 +125,19 @@ call them. Pull a seat when the job matches. Do not pull all four
 for courtesy, and do not skip them to keep the chat tidy.
 
 - Long extract or first read of a fat file or folder: `kimi_run`
-  with `kimi`. Do not use `kimi-code` (timed out 17 Aug; founder
-  does not want it). The slug stays installed. Do not pull it.
+  with `kimi`. `kimi_run` stays a reader (no write). Do not put
+  `kimi-code` through `kimi_run` (240s cage, 17 Aug).
+- Cheap Moonshot builder: `/model kimi-code` in `tools`. Same
+  one-shot as `ai-cli` `sonnet` on 18 Aug (`html-to-pdf --print-chrome`).
+  Kimi-code shipped in 142s, 17 tests green. Sonnet shipped the
+  same job in ~26s. Prefer Sonnet when speed matters. Prefer
+  kimi-code when you want the Moonshot bill instead of Anthropic.
 - Hostile or 1M-context read: `kimi_run` with `kimi-k3`.
 - Second opinion on a ship or a judgement call: `ai-cli` with the
   slugs that worked, below. Do not pass `gpt-5.3-codex`.
+- Never: Grok calling Claude Code with a Moonshot env. That nest
+  hijacks `rua-desk claude` or adds a third conductor. Untested
+  because both writers already work without it.
 
 Claude and Gemini via `ai-cli`, tried 17 Aug on desk-bridge.
 Use the live aliases. There is no current Haiku 4.6 id.
@@ -156,9 +165,10 @@ review prompt):
 - Multimodal: Gemini CLI, or `ai-cli` Gemini for a one-shot.
 - Phone: never Kimi, never a four-seat fan-out.
 
-Kimi is a reader. `kimi_run` cannot write files. That is the point.
-The false start was routing (OpenRouter, `model=kimi` children),
-not the model. Do not rule Kimi out. Do not make K3 the default.
+`kimi_run` is a reader. That is still the point of the MCP.
+`/model kimi-code` can write. The 17 Aug timeout was the cage, not
+the weights. Do not rule Kimi out. Do not make K3 the default.
+Do not put Kimi inside Claude Code for Grok to call.
 
 ## Which seat for which Rua class
 
