@@ -377,6 +377,18 @@ class HtmlToPdfSafetyTests(unittest.TestCase):
         self.assertIn('<!-- <base href="wrong/"> -->', record["html"])
         self.assert_no_temporary_files()
 
+    def test_print_chrome_flag_prints_path_and_exits_cleanly(self) -> None:
+        argv = [str(MODULE_PATH), "--print-chrome"]
+        with (
+            mock.patch.object(sys, "argv", argv),
+            mock.patch.object(html_to_pdf, "find_chrome", return_value=str(self.chrome)),
+            contextlib.redirect_stdout(io.StringIO()) as stdout,
+        ):
+            with self.assertRaises(SystemExit) as ctx:
+                html_to_pdf.main()
+        self.assertEqual(0, ctx.exception.code)
+        self.assertEqual(f"{self.chrome}\n", stdout.getvalue())
+
     def test_dependency_free_validation_rejects_structural_failures(self) -> None:
         pdf = self.root / "candidate.pdf"
         good = valid_pdf()

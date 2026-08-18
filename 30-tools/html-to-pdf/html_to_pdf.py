@@ -272,7 +272,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Print an HTML deck to A4 PDF with local Chrome. No Playwright."
     )
-    parser.add_argument("html", type=Path, help="source HTML deck")
+    parser.add_argument("html", type=Path, nargs="?", help="source HTML deck")
     parser.add_argument(
         "pdf",
         type=Path,
@@ -285,7 +285,18 @@ def main() -> None:
         default=8000,
         help="Chrome virtual-time budget so webfonts can load (default: 8000)",
     )
+    parser.add_argument(
+        "--print-chrome",
+        action="store_true",
+        help="print resolved Chrome path and exit",
+    )
     args = parser.parse_args()
+
+    if args.print_chrome:
+        print(find_chrome())
+        sys.exit(0)
+    if not args.html:
+        parser.error("the following arguments are required: html")
 
     src = args.html.expanduser().resolve()
     if not src.is_file():
