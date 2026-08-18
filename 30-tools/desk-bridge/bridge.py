@@ -67,15 +67,19 @@ DESK_RULES = """You are the Rua desk conductor, reached by Telegram while the fo
 Read 20-studio/desk.md and AGENTS.md when the class of work needs them.
 Name the class to yourself before loading doctrine. Do not invent work.
 Do the work. Do not narrate loading, searching, or thinking.
+Filter like a chief of staff. Escalate what would blindside the founder. Handle the ask. Park niceties.
 Telegram gets one short result: what happened, where it is, what they need.
 No markdown tables. No class label in the chat. No process talk.
 A line starting with Voice note: is a spoken message. Treat it as the ask.
+Instagram and TikTok links in the message are intake, not decoration. Capture them, do the asked work, reply with what landed and where.
+A client-facing document is written for the person who will sit with it and the person it is for. No internal paths, no steal-language, no studio process, no names they did not put in the room. References they sent appear as the thing itself: a still they recognise, then a link.
 Do not ask them to sit down at the Mac unless the machine itself is the blocker.
 This bridge sends text only. If work creates a file, name its repo path; do not claim it is attached.
 Mail, calendar, and Drive are Grok Space connectors. This phone seat does not have them.
 Do not use Mail.app, Calendar.app, icalBuddy, Chrome, or local mail CLIs as a stand-in.
 If an ambiguous ask still needs those, stop and reply exactly: Google isn't on this phone seat. Parked on the desk list.
 Do not spawn subagents or call another model from this phone seat.
+If a tool fails auth or 401s, try it once, then answer with what you have. Do not burn the turn budget retrying.
 """
 
 
@@ -212,6 +216,48 @@ def chunk_text(text: str, limit: int = TG_LIMIT) -> list[str]:
 
 
 PHONE_FAIL = "Desk hit an error. /status"
+STATUS_COMMANDS = {"/status", "/statua", "/stat", "status", "statua", "stat"}
+KNOWN_SLASH = {"/start", "/help", "/new"} | {
+    cmd for cmd in STATUS_COMMANDS if cmd.startswith("/")
+}
+
+
+def is_status_command(text: str) -> bool:
+    return text.strip().lower() in STATUS_COMMANDS
+
+
+def format_last_run(raw: str) -> str:
+    if not raw:
+        return "none"
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return raw
+    if not isinstance(data, dict):
+        return raw
+    seconds = data.get("seconds")
+    first = data.get("first_event_seconds")
+    tools = data.get("tool_events")
+    reset = data.get("reset_reason")
+    bits: list[str] = []
+    if isinstance(seconds, (int, float)):
+        bits.append(f"{round(seconds)}s")
+    if isinstance(first, (int, float)):
+        bits.append(f"first {round(first)}s")
+    if isinstance(tools, int):
+        bits.append(f"{tools} tools")
+    if reset:
+        bits.append("reset")
+    return ", ".join(bits) if bits else "ok"
+
+
+def format_next_session(session_id: str) -> str:
+    if not session_id:
+        return "fresh"
+    reason = session_reset_reason(session_id)
+    if not reason:
+        return "keep"
+    return f"reset ({reason})"
 
 
 def phone_text_from_stream(stdout: str) -> tuple[str, str]:
@@ -257,11 +303,11 @@ def phone_text_from_stream(stdout: str) -> tuple[str, str]:
             if data.get("type") == "error":
                 raise RuntimeError(data.get("message") or "grok error")
             return ((data.get("text") or "").strip(), data.get("sessionId") or "")
-    if not saw_end:
-        raise RuntimeError("grok stream incomplete")
     text = "".join(last_block).strip()
     if not text and not saw_tool:
         text = "".join(all_text).strip()
+    if not saw_end and not text:
+        raise RuntimeError("grok stream incomplete")
     return (text, session_id)
 
 
@@ -335,8 +381,9 @@ def session_reset_reason(session_id: str, limit: int = SESSION_BYTES) -> str:
     meta = session_metadata(session_id)
     if meta["history_bytes"] > limit:
         return "history-bytes"
-    if meta["prompt_tokens"] > SESSION_PROMPT_TOKENS:
-        return "prompt-tokens"
+    # Prompt-token totals include the MCP catalog. A normal success is
+    # already over 80k; resetting on that number makes every follow-up
+    # forget. Byte cap and wrong-effort stay.
     if meta["effort"] and meta["effort"] != PHONE_EFFORT:
         return "wrong-effort"
     return ""
@@ -702,7 +749,7 @@ def typing_pulse(token: str, chat_id: int, stop: threading.Event) -> None:
                 {"chat_id": chat_id, "action": "typing"},
                 timeout=TG_ACTION_TIMEOUT,
             )
-        except RuntimeError:
+        except (RuntimeError, TimeoutError):
             return
         if stop.wait(4):
             return
@@ -723,7 +770,7 @@ def feedback_pulse(
                 timeout=TG_ACTION_TIMEOUT,
             )
             typing_ok = True
-        except RuntimeError:
+        except (RuntimeError, TimeoutError):
             typing_ok = False
     append_metric(
         {
@@ -744,7 +791,7 @@ def feedback_pulse(
                 {"chat_id": chat_id, "action": "typing"},
                 timeout=TG_ACTION_TIMEOUT,
             )
-        except RuntimeError:
+        except (RuntimeError, TimeoutError):
             return
 
 
@@ -825,6 +872,13 @@ def grok_env() -> dict[str, str]:
     ]
     env["PATH"] = ":".join(path_bits)
     env["GROK_DISABLE_AUTOUPDATER"] = "1"
+    # Launchd does not inherit the interactive shell. Phone grok still
+    # needs the same MCP keys the dashboard already uses.
+    secrets_dir = SECRETS.parent
+    for name in ("xpoz.env", "moonshot.env"):
+        for key, value in load_env(secrets_dir / name).items():
+            if key and value and not env.get(key):
+                env[key] = value
     return env
 
 
@@ -953,6 +1007,21 @@ def _meaningful_stream_event(event: dict) -> bool:
     )
 
 
+def _max_turns_event(event: dict) -> bool:
+    kind = _event_kind(event)
+    if kind not in {"turn_ended", "turnended"} and "turn_ended" not in kind:
+        return False
+    contexts = [
+        event.get("cancellation_context") or {},
+        ((event.get("params") or {}).get("update") or {}).get("cancellation_context")
+        or {},
+    ]
+    return any(
+        isinstance(ctx, dict) and ctx.get("reason") == "max_turns_reached"
+        for ctx in contexts
+    )
+
+
 def _provider_busy_event(event: dict) -> bool:
     text = _event_text(event)
     return any(
@@ -1046,6 +1115,7 @@ def stream_grok_process(
         "prompt_tokens": 0,
         "output_tokens": 0,
         "reasoning_tokens": 0,
+        "max_turns": False,
     }
     for pipe, name in ((proc.stdout, "stdout"), (proc.stderr, "stderr")):
         threading.Thread(
@@ -1093,6 +1163,8 @@ def stream_grok_process(
         if not isinstance(event, dict):
             continue
         _update_stream_meta(event, meta)
+        if _max_turns_event(event):
+            meta["max_turns"] = True
         if _provider_busy_event(event) and meta["tool_events"] == 0:
             terminate_process(proc)
             raise GrokProviderBusy("grok provider capacity")
@@ -1198,7 +1270,15 @@ def run_grok(
         set_active_grok_process(None)
 
     stdout = (stdout or "").strip()
-    if proc.returncode != 0:
+    try:
+        text, new_id = phone_text_from_stream(stdout)
+    except RuntimeError as exc:
+        text, new_id = "", ""
+        if proc.returncode == 0:
+            write_text(LAST_ERROR_FILE, str(exc))
+            return with_reset(reset, PHONE_FAIL)
+
+    if proc.returncode != 0 and not text:
         err = (stderr or stdout or f"exit {proc.returncode}")[-800:]
         write_text(LAST_ERROR_FILE, err)
         append_metric(
@@ -1211,11 +1291,10 @@ def run_grok(
         )
         return with_reset(reset, PHONE_FAIL)
 
-    try:
-        text, new_id = phone_text_from_stream(stdout)
-    except RuntimeError as exc:
-        write_text(LAST_ERROR_FILE, str(exc))
-        return with_reset(reset, PHONE_FAIL)
+    keep_error = False
+    if proc.returncode != 0 and meta.get("max_turns"):
+        write_text(LAST_ERROR_FILE, "grok max_turns_reached")
+        keep_error = True
 
     if new_id:
         observed = session_metadata(new_id)
@@ -1234,7 +1313,8 @@ def run_grok(
                 "prompt_tokens": meta.get("prompt_tokens") or 0,
             },
         )
-    LAST_ERROR_FILE.unlink(missing_ok=True)
+    if not keep_error:
+        LAST_ERROR_FILE.unlink(missing_ok=True)
     elapsed = round(time.monotonic() - started, 3)
     run_record = {
         "seconds": elapsed,
@@ -1381,26 +1461,27 @@ def handle_prompt(
     low = stripped.lower()
     if low in {"/start", "/help"}:
         return help_text()
+    if low.startswith("/") and low not in KNOWN_SLASH:
+        return help_text()
     if low == "/new":
         SESSION_FILE.unlink(missing_ok=True)
         SESSION_META_FILE.unlink(missing_ok=True)
         return "New session. Next message starts fresh."
-    if low == "/status":
+    if is_status_command(low):
         env = load_secrets()
-        last = read_text(LAST_RUN_FILE)
         session_id = read_text(SESSION_FILE)
         meta = session_metadata(session_id) if session_id else {}
         owner = (env.get("TELEGRAM_USER_ID") or "").strip()
         return "\n".join(
             [
-                f"repo: {REPO}",
                 f"owner: {owner or '(missing)'}",
-                f"session: {session_id or '(none)'}",
-                f"effective effort: {meta.get('effort') or PHONE_EFFORT}",
+                f"session: {'set' if session_id else 'none'}",
+                f"effort: {meta.get('effort') or PHONE_EFFORT}",
                 f"queue: {current_queue_depth()}",
-                f"pending delivery: {pending_outbox_count()}",
-                f"last run: {last or 'none'}",
+                f"pending: {pending_outbox_count()}",
+                f"last run: {format_last_run(read_text(LAST_RUN_FILE))}",
                 f"last error: {read_text(LAST_ERROR_FILE) or 'none'}",
+                f"next: {format_next_session(session_id)}",
             ]
         )
     if is_google_ask(stripped):
@@ -1582,7 +1663,7 @@ def process_work_item(token: str, job: dict, delivery_notify=None) -> None:
     message_id = job.get("message_id")
     text = job.get("text") or ""
     voice = job.get("voice")
-    command = text.strip().lower() in {"/start", "/help", "/new", "/status"}
+    command = text.strip().startswith("/") or is_status_command(text)
     stop = threading.Event()
     pulse: threading.Thread | None = None
     expired = time.monotonic() >= deadline and not command
@@ -1708,7 +1789,9 @@ def poll_loop(token: str) -> None:
                 timeout=70,
             )
         except Exception as exc:  # noqa: BLE001 — stay up
-            write_text(LAST_ERROR_FILE, str(exc))
+            # Long-poll idle timeout is expected. Do not overwrite a real desk miss.
+            if str(exc) != "telegram getUpdates timed out":
+                write_text(LAST_ERROR_FILE, str(exc))
             time.sleep(5)
             continue
         for upd in data.get("result") or []:
@@ -1760,6 +1843,10 @@ def cmd_check() -> int:
     line = (ver.stdout or ver.stderr or "").strip().splitlines()
     print(f"grok ok      {line[0] if line else grok}")
     print(f"repo         {REPO}")
+    if not grok_env().get("XPOZ_API_KEY"):
+        print("xpoz         missing XPOZ_API_KEY (phone MCP will 401)")
+    else:
+        print("xpoz         ok")
     print("check ok")
     return 0
 

@@ -26,6 +26,10 @@ Set `TELEGRAM_USER_ID` to the founder's numeric Telegram user id before
 installing. The bridge refuses to start when it is blank. It never trusts
 the first person who happens to find the bot.
 
+The launchd job does not inherit a login shell. Phone Grok also
+loads `~/.grok/secrets/xpoz.env` and `moonshot.env` so MCP keys
+match the dashboard.
+
 Voice notes also need `~/.grok/secrets/elevenlabs.env`:
 
 ```

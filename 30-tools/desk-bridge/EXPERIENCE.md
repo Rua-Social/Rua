@@ -17,7 +17,7 @@ not this seat.
 | --- | --- | --- |
 | Help | `/help` or `/start` | The three commands. Text or a voice note. |
 | New session | `/new` | Drop the Grok session. Next message starts fresh. |
-| Status | `/status` | Owner, session, effective effort, queue, pending delivery, last run, last error. |
+| Status | `/status`, `/statua`, or the word status | Owner, session, effort, queue, pending, last run, last error, whether the next ask will keep or reset. Last run is timing, not JSON. |
 | Desk ask | Other text from the paired user | One short result from the desk. |
 | Voice ask | A voice note from the paired user | Transcribe, then the same path as text. |
 | Working | After an ask is accepted | Eyes reaction plus typing. |
@@ -40,6 +40,9 @@ not this seat.
 | "Couldn't transcribe that. Try again or type it." | Guess at a garbled note |
 | Name the repo path when work creates a file | Claim the text-only bridge attached it |
 | "Google isn't on this phone seat. Parked on the desk list." | Mail.app, Calendar.app, Chrome, "wire it at the Mac" |
+| Filter: escalate what blindsides, handle the ask, park niceties | A studio essay, a second org, "on it" |
+| Client-facing files: written for the person who sits with them, and the person they are for | Internal paths, steal-language, process notes, names that are not in the room |
+| Links they send are the thing: a still they recognise, then a click | A table of URLs the founder has to talk through |
 
 The bot does not rewrite Grok. Final text is sent as-is after the
 last tool. The bridge gives Grok the minimum matching phone rules;
@@ -63,7 +66,7 @@ this table.
 | Voice, no key | "Voice is wired. ElevenLabs key is missing." |
 | Voice, no file | "That voice note had no file." |
 | Voice fail | "Couldn't transcribe that. Try again or type it." |
-| Fat or stale session | "Session reset. The last one was too big or gone." then the new reply. |
+| Fat or stale session | "Session reset. The last one was too big or gone." then the new reply. Only when the history file is missing, over the byte cap, or at the wrong effort. A normal success does not reset the next ask. |
 | Session restored at the wrong effort | "Session reset. The last one was too big or gone." then the new reply. |
 | Wrong inbound type | "Text or a voice note." |
 | Long reply | Extra Telegram messages, no "1/2". |
@@ -73,6 +76,7 @@ this table.
 ## What you can send
 
 Text, voice note, `/help`, `/start`, `/new`, `/status`.
+An unknown `/command` is help, not a Grok ask. The word `status` is `/status`.
 
 Not this seat: Slack, TTS, images, video notes, the official
 Telegram plugin, anyone else's Telegram, a fifth Grok room.
@@ -107,7 +111,7 @@ completeness, engagement.
 ### Flow 2 — The desk forgot (founder, same footpath)
 
 1. Texts something that needed the last chat.
-2. History is gone, over the byte fallback, or over the prompt-token budget. Session is dropped.
+2. History is gone, over the byte fallback, or at the wrong effort. Session is dropped. A big MCP ask does not count as gone.
 3. **Worked:** first line is "Session reset. The last one was too big or gone." then a fresh answer.
 4. He can restate the ask. `/status` will not say "none" as if nothing happened.
 
@@ -119,6 +123,13 @@ completeness, engagement.
    Google is missing from this seat: "Google isn't on this phone
    seat. Parked on the desk list."
 4. Failure: Mail.app, Calendar.app, or a two-minute hunt. Do not.
+
+### Flow 4 — Links from the street (founder, after a meeting)
+
+1. Texts Instagram or TikTok links, usually with a short ask.
+2. Eyes and typing.
+3. **Worked:** the links are treated as intake. The reply names what landed, where the file is, and what they need. If they asked for a client document, that file can be sat with without the founder talking. References show as the clip itself, not a URL list.
+4. Failure: a photo of a link ("Text or a voice note."); a research dump; a file that still needs a talk-track to make sense.
 
 ## Parked
 

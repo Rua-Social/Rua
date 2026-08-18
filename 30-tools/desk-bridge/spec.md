@@ -41,8 +41,9 @@ dependency, host, service, or chat surface. Changing Telegram's look.
   studio log. Reaction + typing are best effort and never delay Grok.
 - The poller remains live while one Grok worker handles asks in order.
   A second ask receives the queue sentence in `EXPERIENCE.md`.
-- Phone Grok runs at effective medium effort. Fat, missing, over-budget,
-  or wrong-effort sessions start fresh and say so.
+- Phone Grok runs at effective medium effort. Missing, over the history
+  byte cap, or wrong-effort sessions start fresh and say so. A large
+  prompt-token total from MCP tools does not reset the next ask.
 - Grok output is parsed while it runs. No first meaningful event within 60 seconds
   uses the provider-busy sentence. Idle work and the whole ask have
   separate deadlines; the total phone budget is five minutes and ten turns.
@@ -60,6 +61,11 @@ dependency, host, service, or chat surface. Changing Telegram's look.
   shutdown terminates the active Grok process group.
 - Phone `grok -p` does not inherit grok.com Space connectors
   (Gmail, Calendar, Drive). Those stay on the dashboard session.
+  It does load `~/.grok/secrets/xpoz.env` and `moonshot.env` so
+  dashboard MCP keys exist in the launchd child.
+- A Telegram `getUpdates` idle timeout is not written to `last_error`.
+  `/status` keeps the last real desk miss. If Grok hits the turn
+  limit after producing text, that text is sent.
   An explicit mail, calendar, or Drive ask fails closed with the sentence
   in `EXPERIENCE.md` before Grok starts and is parked once on the desk
   list. It does not open Mail.app or Calendar.app.
@@ -78,7 +84,7 @@ python3 30-tools/desk-bridge/bridge.py --install
 
 Then DM `@Rua_desk_bot`; send a text, a second text while the first
 is running, an obvious Google ask, and a voice note. `/status` must
-show effective effort, queue depth, pending delivery, and last timing.
+show effort, queue depth, pending, and last timing as plain lines, not JSON.
 
 `EXPERIENCE.md` is the session contract. A later change that
 touches pairing, waiting, voice-fail, or session-drop must

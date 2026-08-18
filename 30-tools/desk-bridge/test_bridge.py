@@ -239,6 +239,24 @@ class EnvAndOwnerTest(RuntimeCase):
         self.assertEqual(env["TELEGRAM_USER_ID"], "42")
         self.assertEqual(env["ELEVENLABS_API_KEY"], "voice-key")
 
+    def test_grok_env_loads_sibling_secret_files_without_bot_token(self):
+        self.write_owner_secrets("42")
+        (self.secrets.parent / "xpoz.env").write_text(
+            "export XPOZ_API_KEY=test-xpoz-key\n"
+        )
+        (self.secrets.parent / "moonshot.env").write_text(
+            "export MOONSHOT_API_KEY=test-moonshot-key\n"
+        )
+        with mock.patch.dict(
+            os.environ,
+            {"XPOZ_API_KEY": "", "MOONSHOT_API_KEY": ""},
+            clear=False,
+        ):
+            env = bridge.grok_env()
+        self.assertEqual(env.get("XPOZ_API_KEY"), "test-xpoz-key")
+        self.assertEqual(env.get("MOONSHOT_API_KEY"), "test-moonshot-key")
+        self.assertNotEqual(env.get("TELEGRAM_BOT_TOKEN"), "token")
+
     def test_configured_owner_strips_and_returns_id(self):
         self.assertEqual(bridge.configured_owner({"TELEGRAM_USER_ID": " 42 "}), "42")
 
@@ -382,6 +400,30 @@ class RoutingTest(RuntimeCase):
             with self.assertRaises(StopPolling):
                 bridge.poll_loop("token")
         self.assertEqual(bridge.read_offset(), 5)
+
+    def test_poller_does_not_overwrite_last_error_with_getupdates_timeout(self):
+        class StopPolling(BaseException):
+            pass
+
+        bridge.write_text(bridge.LAST_ERROR_FILE, "grok max_turns_reached")
+        coordinator = mock.Mock()
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"TELEGRAM_USER_ID": "42"}
+        ), mock.patch.object(
+            bridge, "WorkCoordinator", return_value=coordinator
+        ), mock.patch.object(
+            bridge, "deliver_outbox", return_value=True
+        ), mock.patch.object(
+            bridge,
+            "api",
+            side_effect=[
+                RuntimeError("telegram getUpdates timed out"),
+                StopPolling(),
+            ],
+        ):
+            with self.assertRaises(StopPolling):
+                bridge.poll_loop("token")
+        self.assertEqual(bridge.read_text(bridge.LAST_ERROR_FILE), "grok max_turns_reached")
 
 
 class QueuePersistenceTest(RuntimeCase):
@@ -691,9 +733,16 @@ class PhoneTextTest(unittest.TestCase):
         self.assertEqual(text, "")
         self.assertEqual(session_id, "s")
 
-    def test_incomplete_stream(self):
+    def test_incomplete_stream_with_text_is_kept(self):
+        text, session_id = bridge.phone_text_from_stream(
+            '{"type":"text","data":"partial"}'
+        )
+        self.assertEqual(text, "partial")
+        self.assertEqual(session_id, "")
+
+    def test_incomplete_stream_without_text_raises(self):
         with self.assertRaises(RuntimeError):
-            bridge.phone_text_from_stream('{"type":"text","data":"partial"}')
+            bridge.phone_text_from_stream('{"type":"tool_call","toolCallId":"1"}')
 
 
 class SessionResetTest(RuntimeCase):
@@ -728,21 +777,20 @@ class SessionResetTest(RuntimeCase):
         ):
             self.assertTrue(bridge.should_drop_session("sid"))
 
-    def test_prompt_token_budget_drops_session(self):
+    def test_prompt_token_total_does_not_drop_a_live_session(self):
         history = self.make_history()
         with mock.patch.object(
-            bridge, "SESSION_PROMPT_TOKENS", 100, create=True
-        ), mock.patch.object(
             bridge, "session_history_path", return_value=history
         ), mock.patch.object(
             bridge, "session_metadata",
             return_value={
                 "effort": "medium",
-                "prompt_tokens": 101,
+                "prompt_tokens": 250_000,
                 "history_bytes": 10,
             },
         ):
-            self.assertTrue(bridge.should_drop_session("sid"))
+            self.assertFalse(bridge.should_drop_session("sid"))
+            self.assertEqual(bridge.session_reset_reason("sid"), "")
 
     def test_matching_session_under_budget_is_kept(self):
         history = self.make_history()
@@ -927,6 +975,35 @@ class GrokStreamingTest(RuntimeCase):
             reply.startswith("Session reset. The last one was too big or gone.")
         )
         self.assertTrue(reply.endswith("Fresh answer."))
+
+    def test_max_turns_with_text_is_delivered_despite_nonzero_exit(self):
+        session_id = "max-turns-session"
+        events = [
+            (0.0, json.dumps({
+                "type": "session", "sessionId": session_id,
+                "model": "grok-4.6-build", "effort": "medium",
+            }) + "\n"),
+            (0.0, json.dumps({"type": "text", "data": "Here is the short answer."}) + "\n"),
+            (0.0, json.dumps({
+                "type": "turn_ended",
+                "outcome": "cancelled",
+                "cancellation_context": {"reason": "max_turns_reached", "limit": 10},
+            }) + "\n"),
+        ]
+        process = PipeProcess(events, returncode=1)
+        reply, _ = self.run_with_process(process)
+        self.assertEqual(reply, "Here is the short answer.")
+        self.assertEqual(bridge.read_text(bridge.LAST_ERROR_FILE), "grok max_turns_reached")
+
+    def test_nonzero_exit_without_text_keeps_fail_sentence(self):
+        process = PipeProcess(
+            [(0.0, '{"type":"session","sessionId":"x"}\n')],
+            returncode=1,
+            stderr="boom",
+        )
+        reply, _ = self.run_with_process(process)
+        self.assertEqual(reply, "Desk hit an error. /status")
+        self.assertEqual(bridge.read_text(bridge.LAST_ERROR_FILE), "boom")
 
     def test_metrics_do_not_store_prompt_content(self):
         private_prompt = "private words that must not enter metrics"
@@ -1169,6 +1246,13 @@ class RulesTest(unittest.TestCase):
             "read 30-tools/desk-bridge/experience.md", bridge.DESK_RULES.lower()
         )
 
+    def test_phone_rules_filter_intake_and_client_facing(self):
+        rules = bridge.DESK_RULES.lower()
+        self.assertIn("filter like a chief of staff", rules)
+        self.assertIn("instagram and tiktok links", rules)
+        self.assertIn("client-facing", rules)
+        self.assertIn("still they recognise", rules)
+
     def test_reset_prefix(self):
         self.assertEqual(bridge.with_reset(False, "hi"), "hi")
         self.assertTrue(
@@ -1197,10 +1281,37 @@ class CommandReplyTest(RuntimeCase):
             reply = bridge.handle_prompt("token", 420, 7, "/status")
         run_grok.assert_not_called()
         self.assertIn("owner: 42", reply)
-        self.assertIn("effective effort: medium", reply)
+        self.assertIn("effort: medium", reply)
         self.assertIn("queue: 2", reply)
-        self.assertIn("pending delivery: 1", reply)
-        self.assertIn("last run:", reply)
+        self.assertIn("pending: 1", reply)
+        self.assertIn("last run: 1s", reply)
+        self.assertIn("last error:", reply)
+        self.assertIn("next:", reply)
+        self.assertNotIn("{", reply)
+
+    def test_status_typo_is_status(self):
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"TELEGRAM_USER_ID": "42"}
+        ), mock.patch.object(bridge, "run_grok") as run_grok:
+            reply = bridge.handle_prompt("token", 420, 7, "/statua")
+        run_grok.assert_not_called()
+        self.assertIn("owner: 42", reply)
+        self.assertIn("last run: none", reply)
+        self.assertIn("next:", reply)
+
+    def test_bare_status_word_is_status(self):
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"TELEGRAM_USER_ID": "42"}
+        ), mock.patch.object(bridge, "run_grok") as run_grok:
+            reply = bridge.handle_prompt("token", 420, 7, "status")
+        run_grok.assert_not_called()
+        self.assertIn("owner: 42", reply)
+
+    def test_unknown_slash_command_is_help_not_grok(self):
+        with mock.patch.object(bridge, "run_grok") as run_grok:
+            reply = bridge.handle_prompt("token", 420, 7, "/statux")
+        run_grok.assert_not_called()
+        self.assertIn("/status", reply)
 
     def test_new_drops_session_and_metadata(self):
         bridge.write_text(bridge.SESSION_FILE, "sid")
