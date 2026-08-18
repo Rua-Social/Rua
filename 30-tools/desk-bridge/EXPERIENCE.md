@@ -15,15 +15,16 @@ not this seat.
 
 | Surface | Reached from | Purpose |
 | --- | --- | --- |
-| Help | `/help` or `/start` | The three commands. Text or a voice note. |
-| New session | `/new` | Drop the Grok session. Next message starts fresh. |
+| Help | `/help` or `/start` | Commands, pairing, and that `/new` does not restart the Mac. |
+| New session | `/new` | Drop the Grok session and any queued asks. Next message starts fresh. Cuts the line. |
 | Status | `/status`, `/statua`, or the word status | Owner, session, effort, queue, pending, last run, last error, whether the next ask will keep or reset. Last run is timing, not JSON. |
+| Brief | `/brief` or the word brief | Walking picture from the lists and `10-clients/`. Not live Google. |
 | Desk ask | Other text from the paired user | One short result from the desk. |
 | Voice ask | A voice note from the paired user | Transcribe, then the same path as text. |
 | Working | After an ask is accepted | Eyes reaction plus typing. |
 | Queue | A second ask while one is running | "Queued. One ask is already running." |
 | Setup | `--check` or `--install` with no owner id | "Set TELEGRAM_USER_ID before starting the desk." |
-| Foreign | Anyone else in a DM | "This desk is paired to someone else." |
+| Foreign | Anyone else in a DM | "This desk is paired to another Telegram account." |
 | Wrong type | Photo, video note, sticker, document | "Text or a voice note." |
 | Group | Any non-private chat | No reply. |
 
@@ -54,7 +55,7 @@ this table.
 | State | What the phone says |
 | --- | --- |
 | Missing configured owner | On the Mac: "Set TELEGRAM_USER_ID before starting the desk." The bridge does not start. |
-| Foreign DM | "This desk is paired to someone else." |
+| Foreign DM | "This desk is paired to another Telegram account." |
 | Group or channel | Nothing. |
 | Working | Eyes + typing every 4s. |
 | Queued behind one ask | "Queued. One ask is already running." |
@@ -70,13 +71,14 @@ this table.
 | Session restored at the wrong effort | "Session reset. The last one was too big or gone." then the new reply. |
 | Wrong inbound type | "Text or a voice note." |
 | Long reply | Extra Telegram messages, no "1/2". |
-| Google not on this seat | "Google isn't on this phone seat. Parked on the desk list." |
+| Google not on this seat | "Google isn't on this phone seat. Parked on the desk list." Then the pocket brief from the lists, if any. |
 | Reply completed but Telegram is unavailable | The result is held locally and delivered without rerunning Grok when Telegram returns. `/status` shows a pending delivery. |
 
 ## What you can send
 
-Text, voice note, `/help`, `/start`, `/new`, `/status`.
-An unknown `/command` is help, not a Grok ask. The word `status` is `/status`.
+Text, voice note, `/help`, `/start`, `/new`, `/status`, `/brief`.
+An unknown `/command` is help, not a Grok ask. The words `status` and `brief` are commands.
+`/new` and the other commands cut the line. They do not wait behind a Grok ask.
 
 Not this seat: Slack, TTS, images, video notes, the official
 Telegram plugin, anyone else's Telegram, a fifth Grok room.
@@ -119,9 +121,9 @@ completeness, engagement.
 
 1. Asks what's on the calendar tomorrow, last doc on Drive, last mail.
 2. Eyes and typing.
-3. **Worked:** the meeting, the last file, the last thread. Or, if
-   Google is missing from this seat: "Google isn't on this phone
-   seat. Parked on the desk list."
+3. **Worked:** "Google isn't on this phone seat. Parked on the desk
+   list." Then the pocket brief: what he must do, what is planned,
+   the live client cards from Git. Not a live calendar lookup.
 4. Failure: Mail.app, Calendar.app, or a two-minute hunt. Do not.
 
 ### Flow 4 — Links from the street (founder, after a meeting)

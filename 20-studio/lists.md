@@ -25,7 +25,7 @@ Opened 17 August 2026 from a messy voice note. Enough structure for now.
 
 - These two lists, so the next blocked thing has a place to land.
 - 18 Aug — Ecoplex reference links parked in `10-clients/ecoplex/links.md` (9 TikTok, 1 IG reel, 1 IG story). Waiting on what they are for.
-- 18 Aug — Fitzpatrick Draft 4 change set written in the instance record, not issued. Waiting on go-ahead to reissue the concepts file. Reply draft still on Tommy's thread. Alicia back week of 24 Aug: roof map, bubbles yes/no, mid-September date, deposit.
+- 18 Aug — Fitzpatrick Draft 4 concepts file built at `10-clients/fitzpatrick-castle/02-plan/fitzpatrickcastle_concepts_180826.pdf`. Not sent. Reply draft still on Tommy's thread. Alicia back week of 24 Aug: roof map, bubbles yes/no, mid-September date, deposit.
 
 ### Done
 
@@ -58,5 +58,5 @@ Opened 17 August 2026 from a messy voice note. Enough structure for now.
 
 - Phone still cannot see Gmail, Calendar, or Drive.
 - Phone hung and timed out on 17 Aug. Error report is on Desk → Blocked.
-- 18 Aug CoS slice on the phone: false Session-reset after MCP success is off; `/status` shows keep/reset; bare `status` and unknown `/` are commands. Live DM to confirm follow-up memory.
+- 18 Aug CoS slice 2: `/brief` + Google miss now return the pocket card from the lists; `/new` cuts the queue; pairing is explained on `/help`.
 - Fitzpatrick: Alicia back from London, then roof map, bubbles for the coffee hatch, mid-September date, deposit. History is in. Pilates is the in-house instructor.

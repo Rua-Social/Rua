@@ -35,6 +35,11 @@ dependency, host, service, or chat surface. Changing Telegram's look.
 - Secrets stay in `~/.grok/secrets/`, not Git.
 - Secret and state directories are owner-only (`0700`); secret,
   state, metric, outbox, and log files are owner-only (`0600`).
+- `/brief` and a Google fail-closed ask return a pocket brief from
+  `20-studio/lists.md` and `10-clients/*/README.md`. They do not open
+  Mail.app, Calendar.app, or Drive.
+- `/new` drops the session and any queued asks. Control commands do
+  not wait behind Grok.
 - A live text from the phone gets a real desk reply.
 - A voice note from the paired user is transcribed and answered.
 - The phone gets the last assistant text after the last tool, not the

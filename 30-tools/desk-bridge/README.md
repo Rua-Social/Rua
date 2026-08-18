@@ -61,7 +61,8 @@ pending replies, and launchd logs at startup.
 | --- |---|
 | `/help` | Short usage |
 | `/new` | Fresh Grok session |
-| `/status` | Owner, effective session effort, queue, pending delivery, last timing/error |
+| `/status` | Owner, effort, queue, pending, last timing, last error, next keep/reset |
+| `/brief` | Walking brief from the lists and client records |
 
 Anything else, including a voice note, is handed to the desk.
 

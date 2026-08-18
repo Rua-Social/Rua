@@ -78,6 +78,8 @@ This bridge sends text only. If work creates a file, name its repo path; do not 
 Mail, calendar, and Drive are Grok Space connectors. This phone seat does not have them.
 Do not use Mail.app, Calendar.app, icalBuddy, Chrome, or local mail CLIs as a stand-in.
 If an ambiguous ask still needs those, stop and reply exactly: Google isn't on this phone seat. Parked on the desk list.
+Named clients: read 10-clients/<slug>/ first. That record is the pocket card. Do not hunt Drive for a fact the instance already has.
+Hold a craft conversation if he asked for a hold. Do not write the deck or the concept list unless he asked for the file.
 Do not spawn subagents or call another model from this phone seat.
 If a tool fails auth or 401s, try it once, then answer with what you have. Do not burn the turn budget retrying.
 """
@@ -217,13 +219,29 @@ def chunk_text(text: str, limit: int = TG_LIMIT) -> list[str]:
 
 PHONE_FAIL = "Desk hit an error. /status"
 STATUS_COMMANDS = {"/status", "/statua", "/stat", "status", "statua", "stat"}
-KNOWN_SLASH = {"/start", "/help", "/new"} | {
+BRIEF_COMMANDS = {"/brief", "brief"}
+KNOWN_SLASH = {"/start", "/help", "/new", "/brief"} | {
     cmd for cmd in STATUS_COMMANDS if cmd.startswith("/")
 }
 
 
 def is_status_command(text: str) -> bool:
     return text.strip().lower() in STATUS_COMMANDS
+
+
+def is_brief_command(text: str) -> bool:
+    return text.strip().lower() in BRIEF_COMMANDS
+
+
+def is_instant_command(text: str) -> bool:
+    low = (text or "").strip().lower()
+    if not low:
+        return False
+    if is_status_command(low) or is_brief_command(low):
+        return True
+    if low.startswith("/"):
+        return True
+    return False
 
 
 def format_last_run(raw: str) -> str:
@@ -799,9 +817,11 @@ def help_text() -> str:
     return (
         "Rua desk on Telegram.\n"
         "/help — this\n"
-        "/new — fresh Grok session\n"
+        "/new — drop the chat and the queue. Does not restart the Mac.\n"
         "/status — desk state\n"
-        "Text or a voice note goes to the desk."
+        "/brief — walking brief from the lists\n"
+        "Text or a voice note goes to the desk.\n"
+        "This desk is yours. Another Grok window is not a second owner."
     )
 
 
@@ -820,7 +840,11 @@ GOOGLE_ASK_PATTERNS = [
         r"\bwhat(?:'s| is)\s+happening\s+(?:today|tomorrow|this\s+week)\b",
         r"\bwhat\s+(?:calls|meetings|appointments)\s+do\s+i\s+have\b",
         r"\bwhat\s+do\s+i\s+have\s+on\s+(?:today|tomorrow|this\s+week)\b",
-        r"\bdo\s+i\s+have\s+(?:anything|something|a\s+(?:call|meeting|appointment))\b.{0,50}\b(?:today|tomorrow|this\s+week|at\s+\d)",
+        r"\bdo\s+i\s+have\s+(?:any\s+)?meetings?\b",
+        r"\bdo\s+i\s+have\s+(?:anything|something|a\s+(?:call|meeting|appointment))\b.{0,50}\b(?:today|tomorrow|tom+or+ow|this\s+week|at\s+\d)",
+        r"\bmeetings?\s+tom+or+ow\b",
+        r"\blast\s+(?:document|doc|deck|file)\s+i\s+sent\b",
+        r"\btranscript\b.{0,40}\b(?:drive|google)\b",
         r"\bam\s+i\s+(?:free|busy|available)\b.{0,50}\b(?:today|tomorrow|this\s+week|at\s+\d)",
         r"\b(?:when\s+(?:is|are)|what\s+time\s+is)\b.{0,60}\b(?:my\s+|the\s+)?(?:call|meeting|appointment)\b",
         r"\b(?:what(?:'s| is)|check|show|open|read|view|look\s+at)\b.{0,50}\b(?:my\s+)?(?:google\s+)?calendar\b",
@@ -838,6 +862,100 @@ GOOGLE_ASK_PATTERNS = [
 
 def is_google_ask(prompt: str) -> bool:
     return any(pattern.search(prompt or "") for pattern in GOOGLE_ASK_PATTERNS)
+
+
+def section_bullets(text: str, heading: str, limit: int = 2) -> list[str]:
+    marker = f"### {heading}\n"
+    start = text.find(marker)
+    if start < 0:
+        return []
+    rest = text[start + len(marker) :]
+    nxt = rest.find("\n### ")
+    if nxt < 0:
+        nxt = rest.find("\n## ")
+    if nxt >= 0:
+        rest = rest[:nxt]
+    found: list[str] = []
+    skip_needles = (
+        "cannot see Gmail",
+        "Phone hung",
+        "CoS slice",
+        "phone Google request",
+    )
+    for line in rest.splitlines():
+        line = line.strip()
+        if not line.startswith("- "):
+            continue
+        bullet = line[2:].strip().replace("**", "")
+        if any(needle in bullet for needle in skip_needles):
+            continue
+        if len(bullet) > 140:
+            cut = bullet.rfind(" ", 0, 140)
+            bullet = bullet[: cut if cut > 40 else 140].rstrip() + "…"
+        found.append(bullet)
+        if len(found) >= limit:
+            break
+    return found
+
+
+def client_cards(root: Path | None = None, limit: int = 3) -> list[str]:
+    base = root or (REPO / "10-clients")
+    if not base.is_dir():
+        return []
+    cards: list[str] = []
+    for child in sorted(base.iterdir()):
+        if not child.is_dir() or child.name.startswith("."):
+            continue
+        readme = child / "README.md"
+        if not readme.is_file():
+            continue
+        try:
+            body = readme.read_text(encoding="utf-8")[:4000]
+        except OSError:
+            continue
+        status = ""
+        last = ""
+        for line in body.splitlines():
+            if line.startswith("**Status:**"):
+                status = line.split(":**", 1)[-1].strip().strip("*").strip()
+            if "Latest client document:" in line:
+                last = line.split(":", 1)[-1].strip().strip("`")
+        name = child.name.replace("-", " ")
+        bit = name
+        if status:
+            bit += f": {status}"
+        if last:
+            bit += f". Last file {last}"
+        if bit != name:
+            cards.append(bit)
+        if len(cards) >= limit:
+            break
+    return cards
+
+
+def pocket_brief(lists_path: Path | None = None, clients_root: Path | None = None) -> str:
+    target = lists_path or (REPO / "20-studio" / "lists.md")
+    try:
+        text = target.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        text = ""
+    lines: list[str] = []
+    for label, heading in (
+        ("Do", "Do"),
+        ("Next", "Planned"),
+        ("Waiting", "Waiting on the desk"),
+    ):
+        for bullet in section_bullets(text, heading, 1):
+            lines.append(f"{label}: {bullet}")
+    lines.extend(client_cards(clients_root))
+    return "\n".join(lines[:8])
+
+
+def google_reply() -> str:
+    brief = pocket_brief()
+    if brief:
+        return PHONE_GOOGLE + "\n\n" + brief
+    return PHONE_GOOGLE
 
 
 def park_google_ask(prompt: str, path: Path | None = None) -> bool:
@@ -1484,9 +1602,11 @@ def handle_prompt(
                 f"next: {format_next_session(session_id)}",
             ]
         )
+    if is_brief_command(low):
+        return pocket_brief() or "No walking brief on the lists yet."
     if is_google_ask(stripped):
         park_google_ask(stripped)
-        return PHONE_GOOGLE
+        return google_reply()
     return run_grok(stripped, deadline=deadline)
 
 
@@ -1563,6 +1683,7 @@ class WorkCoordinator:
         self.delivery_notify = delivery_notify
         self.jobs: queue.Queue = queue.Queue()
         self.lock = threading.Lock()
+        self.epoch = 0
         for item in inbox_items():
             try:
                 next_offset = int(item["id"]) + 1
@@ -1600,6 +1721,24 @@ class WorkCoordinator:
             advance_offset(next_offset)
             self.jobs.put(job)
             return position
+
+    def cancel_pending(self) -> int:
+        with self.lock:
+            self.epoch += 1
+            drained = 0
+            while True:
+                try:
+                    job = self.jobs.get_nowait()
+                except queue.Empty:
+                    break
+                remove_inbox_job(job.get("id"))
+                try:
+                    self.jobs.task_done()
+                except (ValueError, RuntimeError):
+                    pass
+                drained += 1
+            stop_active_grok_process()
+            return drained
 
     def depth(self) -> int:
         # unfinished_tasks covers queued and currently running work without
@@ -1663,7 +1802,11 @@ def process_work_item(token: str, job: dict, delivery_notify=None) -> None:
     message_id = job.get("message_id")
     text = job.get("text") or ""
     voice = job.get("voice")
-    command = text.strip().startswith("/") or is_status_command(text)
+    command = is_instant_command(text)
+    epoch = 0
+    coordinator = globals().get("WORK_COORDINATOR")
+    if coordinator is not None:
+        epoch = coordinator.epoch
     stop = threading.Event()
     pulse: threading.Thread | None = None
     expired = time.monotonic() >= deadline and not command
@@ -1691,6 +1834,9 @@ def process_work_item(token: str, job: dict, delivery_notify=None) -> None:
         stop.set()
         if pulse is not None:
             pulse.join(timeout=0.05)
+    if coordinator is not None and coordinator.epoch != epoch:
+        remove_inbox_job(job["id"])
+        return
     enqueue_outbox(job["id"], chat_id, reply)
     # Once the result is durable, the work is complete. Retire the inbox job
     # before delivery so a crash after Telegram accepts the reply cannot cause
@@ -1732,12 +1878,36 @@ def handle_update(token: str, update: dict, enqueue) -> int:
         write_text(LAST_ERROR_FILE, str(exc))
         return next_offset
     if status == "foreign":
-        safe_send(token, int(chat_id), "This desk is paired to someone else.")
+        safe_send(
+            token,
+            int(chat_id),
+            "This desk is paired to another Telegram account.",
+        )
         return next_offset
     text = msg.get("text")
     voice = msg.get("voice")
     if not text and not voice:
         safe_send(token, int(chat_id), "Text or a voice note.")
+        return next_offset
+    if text and is_instant_command(text):
+        if text.strip().lower() == "/new":
+            coordinator = globals().get("WORK_COORDINATOR")
+            if coordinator is not None:
+                coordinator.cancel_pending()
+        reply = handle_prompt(
+            token, int(chat_id), msg.get("message_id"), text
+        )
+        safe_send(token, int(chat_id), reply)
+        append_metric(
+            {
+                "stage": "pickup",
+                "outcome": "accepted",
+                "kind": "text",
+                "pickup_seconds": None,
+                "queue_position": 0,
+                "queue_ack": None,
+            }
+        )
         return next_offset
     job = {
         "id": update_id,

@@ -321,7 +321,10 @@ class RoutingTest(RuntimeCase):
         self.assertEqual(next_offset, 11)
         enqueue.assert_not_called()
         send.assert_called_once_with(
-            "token", 700, "This desk is paired to someone else.", timeout=5
+            "token",
+            700,
+            "This desk is paired to another Telegram account.",
+            timeout=5,
         )
 
     def test_group_is_silent_even_when_sent_by_owner(self):
@@ -499,6 +502,9 @@ class GoogleFailClosedTest(RuntimeCase):
             "Do I have anything on at 3 tomorrow?",
             "Open the budget spreadsheet in Google Docs",
             "What meetings do I have this week?",
+            "do i have any meetings tomorrow?",
+            "ok do i have any meetings tommroow?",
+            "Can you check my calendar tomorrow and the last document I sent",
         ]
         for ask in asks:
             with self.subTest(ask=ask):
@@ -530,12 +536,38 @@ class GoogleFailClosedTest(RuntimeCase):
         )
         self.assertNotIn(ask, twice)
 
+    def test_pocket_brief_reads_lists_and_client_status(self):
+        self.lists.write_text(
+            "# Lists\n\n## Founder\n\n### Do\n\n- Send the Fitzpatrick reply.\n\n"
+            "### Planned\n\n- Catch-up week of 24 Aug.\n"
+        )
+        clients = self.repo / "10-clients" / "fitzpatrick-castle"
+        clients.mkdir(parents=True)
+        (clients / "README.md").write_text(
+            "# Instance\n\n**Status:** deposit waiting\n\n"
+            "Latest client document: `draft4.pdf`\n"
+        )
+        brief = bridge.pocket_brief(self.lists, self.repo / "10-clients")
+        self.assertIn("Do: Send the Fitzpatrick reply.", brief)
+        self.assertIn("Next: Catch-up week of 24 Aug.", brief)
+        self.assertIn("fitzpatrick castle: deposit waiting", brief)
+        self.assertIn("draft4.pdf", brief)
+
+    def test_brief_command_does_not_start_grok(self):
+        self.lists.write_text(
+            "# Lists\n\n## Founder\n\n### Do\n\n- Send the reply.\n"
+        )
+        with mock.patch.object(bridge, "run_grok") as run_grok:
+            reply = bridge.handle_prompt("token", 420, 7, "brief")
+        run_grok.assert_not_called()
+        self.assertIn("Do: Send the reply.", reply)
+
     def test_google_ask_never_reaches_grok(self):
         ask = "Read my latest Gmail message"
         with mock.patch.object(bridge, "run_grok") as run_grok:
             reply = bridge.handle_prompt("token", 420, 7, ask)
         run_grok.assert_not_called()
-        self.assertEqual(reply, GOOGLE_REPLY)
+        self.assertTrue(reply.startswith(GOOGLE_REPLY))
         self.assertEqual(
             self.lists.read_text().count(
                 "phone Google request blocked by desk-bridge"
@@ -1249,6 +1281,7 @@ class RulesTest(unittest.TestCase):
     def test_phone_rules_filter_intake_and_client_facing(self):
         rules = bridge.DESK_RULES.lower()
         self.assertIn("filter like a chief of staff", rules)
+        self.assertIn("10-clients/<slug>/", rules)
         self.assertIn("instagram and tiktok links", rules)
         self.assertIn("client-facing", rules)
         self.assertIn("still they recognise", rules)
@@ -1322,6 +1355,35 @@ class CommandReplyTest(RuntimeCase):
         self.assertFalse(bridge.SESSION_FILE.exists())
         self.assertFalse(bridge.SESSION_META_FILE.exists())
         run_grok.assert_not_called()
+
+    def test_status_command_is_not_enqueued(self):
+        enqueue = mock.Mock()
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"TELEGRAM_USER_ID": "42"}
+        ), mock.patch.object(bridge, "send") as send:
+            bridge.handle_update(
+                "token", update(text="/status"), enqueue
+            )
+        enqueue.assert_not_called()
+        send.assert_called_once()
+        self.assertIn("effort:", send.call_args.args[2])
+
+    def test_new_cancels_queued_asks(self):
+        coordinator = bridge.WorkCoordinator("token")
+        job = {
+            "id": 10,
+            "chat_id": 420,
+            "message_id": 110,
+            "text": "do the thing",
+            "voice": None,
+            "enqueued_at": 1.0,
+        }
+        coordinator.enqueue(job)
+        self.assertEqual(coordinator.depth(), 1)
+        drained = coordinator.cancel_pending()
+        self.assertEqual(drained, 1)
+        self.assertEqual(coordinator.depth(), 0)
+        self.assertEqual(len(bridge.inbox_items()), 0)
 
 
 class CommandFailureTest(RuntimeCase):
