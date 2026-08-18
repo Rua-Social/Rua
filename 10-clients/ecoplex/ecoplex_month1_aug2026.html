@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ecoplex × Rua · Proposal · Month 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@page { size: A4; margin: 0; }
+* { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+:root {
+  --night: #000000;
+  --cyan: #00F0FA;
+  --cyan-wash: #e8fcff;
+  --yellow: #FFF628;
+  --stone: #666666;
+  --body: #111111;
+  --muted: #666666;
+  --border: #d5d5d5;
+  --paper: #fff;
+  --sans: Inter, system-ui, sans-serif;
+}
+body { font-family: var(--sans); background: #f4f3ef; color: var(--body); }
+.page {
+  width: 210mm; height: 297mm; margin: 0 auto; background: var(--paper);
+  position: relative; display: flex; flex-direction: column; overflow: hidden;
+  page-break-after: always; break-after: page;
+}
+.page:last-child { page-break-after: auto; break-after: auto; }
+@media print { body { margin: 0; } .page { margin: 0; } }
+
+.cover {
+  background: #00F0FA url("thumbs/sky.jpg") center / cover no-repeat;
+  color: #000;
+  padding: 48px 48px 40px;
+  min-height: 297mm;
+  display: flex;
+  flex-direction: column;
+}
+.cover-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.cover-logo { display: block; width: 520px; height: auto; }
+.cover-from { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(0,0,0,0.55); padding-top: 8px; }
+.cover-main { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 24px 0 36px; }
+.cover-label { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
+.cover-title { font-size: 56px; font-weight: 700; line-height: 0.95; letter-spacing: -0.04em; margin-bottom: 14px; }
+.cover-sub { font-size: 22px; font-weight: 500; line-height: 1.35; }
+.cover-meta { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; padding-top: 28px; border-top: 1px solid rgba(0,0,0,0.18); }
+.cover-meta label { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(0,0,0,0.5); margin-bottom: 5px; }
+.cover-meta span { font-size: 14px; font-weight: 500; }
+
+.page-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 44px; border-bottom: 1px solid var(--border); }
+.page-header-logo { display: block; height: 18px; width: auto; }
+.page-header-title { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.page-content { flex: 1; padding: 28px 44px 20px; }
+.page-footer { margin-top: auto; padding: 12px 44px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; }
+.page-footer span { font-size: 10px; color: var(--muted); }
+
+h1 { font-size: 28px; line-height: 1.15; color: var(--night); margin-bottom: 22px; font-weight: 700; letter-spacing: -0.03em; }
+
+.split { display: grid; grid-template-columns: 1fr 1.15fr; gap: 16px; margin-bottom: 22px; }
+.side { padding: 20px 20px 18px; min-height: 318px; }
+.side-you { background: var(--cyan-wash); }
+.side-us { background: var(--night); color: #fff; }
+.side-who { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.side-us .side-who { color: var(--cyan); }
+.side-n { font-size: 52px; font-weight: 700; letter-spacing: -0.05em; line-height: 0.9; }
+.side-unit { display: block; font-size: 13px; font-weight: 500; margin: 8px 0 14px; color: var(--stone); }
+.side-us .side-unit { color: rgba(255,255,255,0.55); }
+.side ul { list-style: none; }
+.side li { font-size: 13.5px; line-height: 1.4; padding: 7px 0; border-top: 1px solid rgba(0,0,0,0.1); }
+.side-us li { border-top-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.88); }
+.side li:first-of-type { border-top: none; }
+
+.month { width: 100%; border-collapse: collapse; }
+.month th, .month td { text-align: left; vertical-align: top; padding: 11px 12px 11px 0; border-bottom: 1px solid var(--border); }
+.month th { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.month td { font-size: 13.5px; line-height: 1.35; color: var(--night); }
+.month .when { width: 22%; font-weight: 600; }
+.month .who { width: 22%; color: var(--stone); }
+.closer { margin-top: 20px; font-size: 15px; font-weight: 500; color: var(--night); }
+.quiet { margin-top: 8px; font-size: 13px; color: var(--stone); line-height: 1.45; }
+
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.tile {
+  display: grid; grid-template-columns: 88px 1fr; gap: 14px;
+  color: inherit;
+  border: 1px solid var(--border); padding: 14px;
+}
+.tile-url { display: block; margin-top: 10px; font-size: 11px; font-weight: 500; color: #00a8b3; word-break: break-all; }
+.tile img { width: 88px; aspect-ratio: 9 / 16; object-fit: cover; display: block; background: var(--night); }
+.tile .who { font-size: 11px; font-weight: 500; color: #00a8b3; margin-bottom: 4px; }
+.tile h3 { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 10px; color: var(--night); }
+.tile .lab { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 8px 0 3px; }
+.tile p { font-size: 13px; line-height: 1.4; color: var(--stone); }
+.ref-lead { font-size: 13px; color: var(--stone); margin: -8px 0 16px; }
+
+.bands { display: grid; grid-template-columns: 1fr 1.35fr; gap: 28px; }
+.band-lab { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--night); }
+.shot { display: grid; grid-template-columns: 28px 1fr; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.shot:last-child { border-bottom: none; }
+.shot-n { font-size: 11px; font-weight: 600; color: var(--muted); padding-top: 1px; }
+.shot p { font-size: 13.5px; line-height: 1.4; color: var(--night); }
+.from-you { margin-top: 22px; font-size: 13px; color: var(--stone); line-height: 1.5; }
+.from-you strong { color: var(--night); font-weight: 600; }
+
+.price-grid { display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 12px; align-items: stretch; margin: 8px 0 20px; }
+.tier { border: 1px solid var(--border); padding: 18px 16px; }
+.tier-rec { background: var(--night); border-color: var(--night); color: white; }
+.tier-kicker { font-size: 9px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.tier-rec .tier-kicker { color: var(--cyan); }
+.tier-name { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px; }
+.tier-rec .tier-name { color: white; }
+.tier-price { font-size: 28px; font-weight: 700; color: #00a8b3; line-height: 1; letter-spacing: -0.03em; }
+.tier-unit { font-size: 11px; color: var(--muted); margin: 6px 0 12px; }
+.tier-rec .tier-unit { color: rgba(255,255,255,0.5); }
+.tier-rule { height: 1px; background: var(--border); margin: 0 0 12px; }
+.tier-rec .tier-rule { background: rgba(255,255,255,0.12); }
+.tier-blurb { font-size: 12.5px; line-height: 1.45; color: var(--stone); margin-bottom: 10px; }
+.tier-rec .tier-blurb { color: rgba(255,255,255,0.74); }
+.tier ul { list-style: none; }
+.tier li { font-size: 12.5px; line-height: 1.4; padding: 6px 0 6px 12px; border-bottom: 1px solid var(--border); position: relative; }
+.tier li:last-child { border-bottom: none; }
+.tier li::before { content: ''; position: absolute; left: 0; top: 12px; width: 4px; height: 4px; background: #00a8b3; border-radius: 50%; }
+.tier-rec li { color: rgba(255,255,255,0.86); border-bottom-color: rgba(255,255,255,0.1); }
+.note { font-size: 13.5px; color: var(--stone); line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<section class="page cover">
+  <div class="cover-top">
+    <img class="cover-logo" src="ecoplex-lockup-black.png" alt="ecoplex. Installers of feelgood">
+    <div class="cover-from">Rua Social</div>
+  </div>
+  <div class="cover-main">
+    <div class="cover-label">Proposal</div>
+    <h1 class="cover-title">Month 1</h1>
+    <p class="cover-sub">How we would work.</p>
+  </div>
+  <div class="cover-meta">
+    <div><label>For</label><span>Victoria Henman</span></div>
+    <div><label>Prepared by</label><span>Rua Social</span></div>
+    <div><label>Date</label><span>August 2026</span></div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="page-header">
+    <img class="page-header-logo" src="ecoplex-wordmark-black.png" alt="ecoplex">
+    <span class="page-header-title">The month</span>
+  </div>
+  <div class="page-content">
+    <h1>How a month would run.</h1>
+    <div class="split">
+      <div class="side side-you">
+        <div class="side-who">Ecoplex</div>
+        <div class="side-n">2</div>
+        <span class="side-unit">days, indicative</span>
+        <ul>
+          <li>Planning call. Line up one house.</li>
+          <li>On site for the shoot.</li>
+          <li>Review and approve.</li>
+          <li>No concepts. No camera. No edit.</li>
+        </ul>
+      </div>
+      <div class="side side-us">
+        <div class="side-who">Rua</div>
+        <div class="side-n">5</div>
+        <span class="side-unit">days, indicative</span>
+        <ul>
+          <li>Two days pre-production.</li>
+          <li>One day on site.</li>
+          <li>Two days edit.</li>
+        </ul>
+      </div>
+    </div>
+    <table class="month">
+      <thead>
+        <tr><th>When</th><th>What</th><th class="who">Who is in it</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="when">Week 1</td><td>Pre-production.</td><td class="who">Rua. You on the call.</td></tr>
+        <tr><td class="when">Week 2</td><td>Shoot day.</td><td class="who">Both. You on site.</td></tr>
+        <tr><td class="when">Week 3</td><td>Edit.</td><td class="who">Rua only.</td></tr>
+        <tr><td class="when">Week 4</td><td>Two amend rounds. Ready to post.</td><td class="who">Rua. You approve.</td></tr>
+      </tbody>
+    </table>
+    <p class="closer">Pre-production. Shoot. Edit. Handover.</p>
+    <p class="quiet">A starting shape for the scope. Days are indicative. Ten videos from one shoot, ready to post.</p>
+  </div>
+  <div class="page-footer">
+    <span>Proposal · Rua Social · Ecoplex Energy</span>
+    <span>2 / 7</span>
+  </div>
+</section>
+
+<section class="page">
+  <div class="page-header">
+    <img class="page-header-logo" src="ecoplex-wordmark-black.png" alt="ecoplex">
+    <span class="page-header-title">References</span>
+  </div>
+  <div class="page-content">
+    <h1>What it is. What we take.</h1>
+    <p class="ref-lead">Format only. The lines are Ecoplex.</p>
+    <div class="tiles">
+      <div class="tile">
+        <img src="thumbs/recharge-tips.jpg" alt="">
+        <div>
+          <div class="who">@rechargerenewable</div>
+          <h3>Already on solar</h3>
+          <span class="lab">What it is</span>
+          <p>A lad on a drive talking to people who already have panels.</p>
+          <span class="lab">What we take</span>
+          <p>Neighbour voice. Already in.</p>
+          <a class="tile-url" href="https://vm.tiktok.com/ZN81dRcvD/">vm.tiktok.com/ZN81dRcvD</a>
+        </div>
+      </div>
+      <div class="tile">
+        <img src="thumbs/recharge-watch.jpg" alt="">
+        <div>
+          <div class="who">@rechargerenewable</div>
+          <h3>Watch this first</h3>
+          <span class="lab">What it is</span>
+          <p>Cold open in hi-vis. No countdown.</p>
+          <span class="lab">What we take</span>
+          <p>Straight. Funny because he is not performing.</p>
+          <a class="tile-url" href="https://vm.tiktok.com/ZNRoba22s/">vm.tiktok.com/ZNRoba22s</a>
+        </div>
+      </div>
+      <div class="tile">
+        <img src="thumbs/recharge-money.jpg" alt="">
+        <div>
+          <div class="who">@rechargerenewable</div>
+          <h3>How it pays</h3>
+          <span class="lab">What it is</span>
+          <p>Money talk beside the van.</p>
+          <span class="lab">What we take</span>
+          <p>The first bill. Not a quote on screen.</p>
+          <a class="tile-url" href="https://vm.tiktok.com/ZNRobFNmA/">vm.tiktok.com/ZNRobFNmA</a>
+        </div>
+      </div>
+      <div class="tile">
+        <img src="thumbs/recharge-battery.jpg" alt="">
+        <div>
+          <div class="who">@rechargerenewable</div>
+          <h3>Do you need a battery</h3>
+          <span class="lab">What it is</span>
+          <p>A real question, answered on the job.</p>
+          <span class="lab">What we take</span>
+          <p>Answer it. Do not dodge it.</p>
+          <a class="tile-url" href="https://vm.tiktok.com/ZNRxPKW5U/">vm.tiktok.com/ZNRxPKW5U</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>Proposal · Rua Social · Ecoplex Energy</span>
+    <span>3 / 7</span>
+  </div>
+</section>
+
+<section class="page">
+  <div class="page-header">
+    <img class="page-header-logo" src="ecoplex-wordmark-black.png" alt="ecoplex">
+    <span class="page-header-title">References</span>
+  </div>
+  <div class="page-content">
+    <h1>What it is. What we take.</h1>
+    <p class="ref-lead">An Irish house, then the crew.</p>
+    <div class="tiles">
+      <div class="tile">
+        <img src="thumbs/churchfield-day.jpg" alt="">
+        <div>
+          <div class="who">@churchfieldhomeservices</div>
+          <h3>The thermostat</h3>
+          <span class="lab">What it is</span>
+          <p>A thermostat in an Irish house. How much are you using in the day.</p>
+          <span class="lab">What we take</span>
+          <p>The question everyone has.</p>
+          <a class="tile-url" href="https://vm.tiktok.com/ZNRobDcMn/">vm.tiktok.com/ZNRobDcMn</a>
+        </div>
+      </div>
+      <div class="tile">
+        <img src="thumbs/churchfield-jason.jpg" alt="">
+        <div>
+          <div class="who">@churchfieldhomeservices</div>
+          <h3>A son</h3>
+          <span class="lab">What it is</span>
+          <p>A son talking about his parents’ bills.</p>
+          <span class="lab">What we take</span>
+          <p>A family. Not a case study.</p>
+          <a class="tile-url" href="https://vm.tiktok.com/ZNRobSHmj/">vm.tiktok.com/ZNRobSHmj</a>
+        </div>
+      </div>
+      <div class="tile">
+        <img src="thumbs/bri.jpg" alt="">
+        <div>
+          <div class="who">@br.solar</div>
+          <h3>On the roof</h3>
+          <span class="lab">What it is</span>
+          <p>A tradesperson on a roof, slightly delighted.</p>
+          <span class="lab">What we take</span>
+          <p>On the job. Calm.</p>
+          <a class="tile-url" href="https://vm.tiktok.com/ZN88hvoHE/">vm.tiktok.com/ZN88hvoHE</a>
+        </div>
+      </div>
+      <div class="tile">
+        <img src="thumbs/dae.jpg" alt="">
+        <div>
+          <div class="who">@daerenewables</div>
+          <h3>The grant</h3>
+          <span class="lab">What it is</span>
+          <p>Thirty seconds of grant talk, walking.</p>
+          <span class="lab">What we take</span>
+          <p>Real money. Not a leaflet.</p>
+          <a class="tile-url" href="https://vm.tiktok.com/ZN8dTbsfA/">vm.tiktok.com/ZN8dTbsfA</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>Proposal · Rua Social · Ecoplex Energy</span>
+    <span>4 / 7</span>
+  </div>
+</section>
+
+<section class="page">
+  <div class="page-header">
+    <img class="page-header-logo" src="ecoplex-wordmark-black.png" alt="ecoplex">
+    <span class="page-header-title">References</span>
+  </div>
+  <div class="page-content">
+    <h1>What it is. What we take.</h1>
+    <p class="ref-lead">The house running, then how a clip should cut.</p>
+    <div class="tiles">
+      <div class="tile">
+        <img src="thumbs/edtricity.jpg" alt="">
+        <div>
+          <div class="who">@renewable_edtricity</div>
+          <h3>The house, running</h3>
+          <span class="lab">What it is</span>
+          <p>A customer, twenty-three panels, the kettle on their own power.</p>
+          <span class="lab">What we take</span>
+          <p>Solar. Battery. The car. Same house.</p>
+          <a class="tile-url" href="https://vm.tiktok.com/ZN81de9RC/">vm.tiktok.com/ZN81de9RC</a>
+        </div>
+      </div>
+      <div class="tile">
+        <img src="thumbs/ig-reel.jpg" alt="">
+        <div>
+          <div class="who">Instagram</div>
+          <h3>How it cuts</h3>
+          <span class="lab">What it is</span>
+          <p>Short cuts. Three or four words on screen, then the next picture.</p>
+          <span class="lab">What we take</span>
+          <p>The pace. Not the subject.</p>
+          <a class="tile-url" href="https://www.instagram.com/reel/DaNSb4Did8v/">instagram.com/reel/DaNSb4Did8v</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>Proposal · Rua Social · Ecoplex Energy</span>
+    <span>5 / 7</span>
+  </div>
+</section>
+
+<section class="page">
+  <div class="page-header">
+    <img class="page-header-logo" src="ecoplex-wordmark-black.png" alt="ecoplex">
+    <span class="page-header-title">A proposed day</span>
+  </div>
+  <div class="page-content">
+    <h1>A customer in the morning. The team after lunch.</h1>
+    <div class="bands">
+      <div>
+        <div class="band-lab">Morning · Customer</div>
+        <div class="shot"><span class="shot-n">01</span><p>Three companies priced the house and never came out.</p></div>
+        <div class="shot"><span class="shot-n">02</span><p>How do you price a roof you have never stood under?</p></div>
+        <div class="shot"><span class="shot-n">03</span><p>Two years later I rang, and someone in Dublin answered.</p></div>
+      </div>
+      <div>
+        <div class="band-lab">Afternoon · Ecoplex talent</div>
+        <div class="shot"><span class="shot-n">04</span><p>Every lad on this roof is on our books.</p></div>
+        <div class="shot"><span class="shot-n">05</span><p>Dinner in a house making its own electricity.</p></div>
+        <div class="shot"><span class="shot-n">06</span><p>We map the whole thing before anyone talks money.</p></div>
+        <div class="shot"><span class="shot-n">07</span><p>Charging the car off the roof. No price on screen.</p></div>
+        <div class="shot"><span class="shot-n">08</span><p>This is the desk. That is the phone. No call centre.</p></div>
+        <div class="shot"><span class="shot-n">09</span><p>It is in. Who do you ring? The same people who put it in.</p></div>
+        <div class="shot"><span class="shot-n">10</span><p>If this needs looking at in ten years, it is still us.</p></div>
+      </div>
+    </div>
+    <p class="from-you"><strong>From you.</strong> One willing customer. The location. Yes or no on the 3D still. Brand font for burned captions. A starting ten. We lock it in the scope.</p>
+  </div>
+  <div class="page-footer">
+    <span>Proposal · Rua Social · Ecoplex Energy</span>
+    <span>6 / 7</span>
+  </div>
+</section>
+
+<section class="page">
+  <div class="page-header">
+    <img class="page-header-logo" src="ecoplex-wordmark-black.png" alt="ecoplex">
+    <span class="page-header-title">How we work</span>
+  </div>
+  <div class="page-content">
+    <h1>That day is Standard.</h1>
+    <div class="price-grid">
+      <article class="tier">
+        <div class="tier-kicker">If you already shot it</div>
+        <div class="tier-name">Edit only</div>
+        <div class="tier-price">€1,200</div>
+        <div class="tier-unit">per month, ex VAT</div>
+        <div class="tier-rule"></div>
+        <p class="tier-blurb">For a bank you already have. No day on site.</p>
+        <ul>
+          <li>Up to 8 edited pieces</li>
+          <li>No shoot day</li>
+        </ul>
+      </article>
+      <article class="tier tier-rec">
+        <div class="tier-kicker">The one</div>
+        <div class="tier-name">Standard</div>
+        <div class="tier-price">€2,500</div>
+        <div class="tier-unit">per month, ex VAT</div>
+        <div class="tier-rule"></div>
+        <p class="tier-blurb">The month you just saw. Ten videos, usually closer to fifteen.</p>
+        <ul>
+          <li>One shoot day</li>
+          <li>10 videos, usually ~15</li>
+          <li>Plan, captions, titles</li>
+          <li>Two amend rounds</li>
+          <li>Ready to post</li>
+        </ul>
+      </article>
+      <article class="tier">
+        <div class="tier-kicker">If a team can feed it</div>
+        <div class="tier-name">Plus</div>
+        <div class="tier-price">€4,000</div>
+        <div class="tier-unit">per month, ex VAT</div>
+        <div class="tier-rule"></div>
+        <p class="tier-blurb">Two days. Only if people on your side are lining up the next house.</p>
+        <ul>
+          <li>Two shoot days</li>
+          <li>20 or more pieces</li>
+        </ul>
+      </article>
+    </div>
+    <p class="note">This is a proposal. One month is enough to see it. Days are indicative. The scope names the videos. Dates are held when the first month is in.</p>
+  </div>
+  <div class="page-footer">
+    <span>Proposal · Rua Social · Ecoplex Energy</span>
+    <span>7 / 7</span>
+  </div>
+</section>
+
+</body>
+</html>
