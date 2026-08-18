@@ -24,12 +24,11 @@ Opened 17 August 2026 from a messy voice note. Enough structure for now.
 ### Moving
 
 - These two lists, so the next blocked thing has a place to land.
-- 18 Aug — Ecoplex reference links parked in `10-clients/ecoplex/links.md` (9 TikTok, 1 IG reel, 1 IG story). Waiting on what they are for.
-- 18 Aug — Fitzpatrick follow-up sent on **Fitzpatrick Castle Tuesday 18th August** (Alicia CC) with Draft 4. Waiting on Alicia back week of 24 Aug: roof map, bubbles yes/no, mid-September date, deposit.
+- 18 Aug — Ecoplex still WIP. Month-1 pack and cover note sit in `10-clients/ecoplex/`. Links from Victoria are in. Not sent.
 
 ### Done
 
-- 18 Aug — Fitzpatrick follow-up sent to Tommy (Alicia CC) with Draft 4.
+- 18 Aug — Fitzpatrick Draft 4 is with them. Follow-up sent to Tommy (Alicia CC) on **Fitzpatrick Castle Tuesday 18th August**. Ball is theirs.
 - 17 Aug — desk-bridge fail-closed on Google. Bot reloaded. Model roster in `desk.md`: live `haiku`, `sonnet`, `opus`, `gemini-3-flash-preview`, `gpt-5.6-luna`. Not `kimi-code`, not `gemini-2.5-flash`, not `gpt-5.6-sol`.
 - 18 Aug — resolved the phone stall: owner lock, streamed first/idle/total deadlines, durable queue/outbox recovery, and asynchronous delivery are installed and live. The 17 Aug 451.8s timeout remains the incident record; no live ask was run during this deploy.
 - 18 Aug — phone Grok `exit 1` / "Desk hit an error": three of six runs (00:23, 00:30, 08:54 voice) hit `--max-turns 10` after xpoz 401s. Launchd did not load `xpoz.env`. `/status` then showed a getUpdates idle timeout. Fix: load xpoz/moonshot secret files, keep last_error, send any text if the turn limit hits.
@@ -57,11 +56,11 @@ Street captures from the phone. Not the walking brief.
 
 ### Planned
 
-- Catch-up with Tommy and Alicia early in the week of 24 Aug, once Alicia is back from London. No new deck.
+- Nothing captured.
 
 ### Waiting on the desk
 
 - Phone still cannot see Gmail, Calendar, or Drive.
 - Phone hung and timed out on 17 Aug. Error report is on Desk → Blocked.
 - 18 Aug CoS slice 2: `/brief` + Google miss now return the pocket card from the lists; `/new` cuts the queue; pairing is explained on `/help`.
-- Fitzpatrick: Alicia back from London, then roof map, bubbles for the coffee hatch, mid-September date, deposit. History is in. Pilates is the in-house instructor.
+- Fitzpatrick is with them. Alicia back from London week of 24 Aug, then roof map, bubbles for the coffee hatch, mid-September date, deposit. History is in. Pilates is the in-house instructor.
