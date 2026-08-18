@@ -3,7 +3,7 @@
 Send the month-1 pack first. Do not lead the email with the rate card. Price is the last page.
 
 1. `10-clients/ecoplex/ecoplex_month1_aug2026.pdf` — the sales walk. It is a proposal, not a confirmed job. If they go, the scope of work takes the deliverables from it (Standard, ten videos, one shoot). Production then builds from the proposed ten and the month shape. Do not treat the PDF as the contract or as the shoot skill starting.
-2. `20-studio/sales/pricing.pdf` — only if she asks, or as a second attachment. Monthly on that card is Standard here. Do not put it first. This proposal includes two amend rounds. The official card still says one. Do not attach the card unless you want that fight.
+2. `20-studio/sales/pricing.pdf` — only if she asks, or as a second attachment. Monthly on that card is Standard here. Do not put it first. This proposal includes three amend rounds; the card now says the same.
 
 Do not name Bence in the pack. On-camera talent is their call. A live install with him can still happen; it is not written in, and it is not a free extra. Do not attach an older card that still says €2,200.
 

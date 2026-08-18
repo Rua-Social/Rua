@@ -210,7 +210,7 @@ function build() {
     items: [
       "Up to 8 edited pieces a month",
       "Captions, titles, platform formats",
-      "One revision round per piece",
+      "Three revision rounds per piece",
       "No shoot day",
     ],
   });
@@ -222,7 +222,7 @@ function build() {
       "One full shoot day",
       "10 or more finished pieces",
       "Planning call, captions, titles",
-      "One revision round",
+      "Three revision rounds",
     ],
   });
 
@@ -233,7 +233,7 @@ function build() {
       "Two shoot days",
       "20 or more finished pieces",
       "Monthly review of what ran",
-      "One revision round",
+      "Three revision rounds",
     ],
   });
 
@@ -355,7 +355,7 @@ function build() {
     const left = [
       "Planning, kit, edit and grade for the committed work",
       "Captions, on-screen titles, platform formats",
-      "One revision round per piece, 48-hour feedback windows",
+      "Three revision rounds per piece, 48-hour feedback windows",
       "Usage on your own site and social channels",
     ];
     const right = [

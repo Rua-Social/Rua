@@ -61,6 +61,6 @@ Assumptions, not a pickup rate card. Same shape as the working-offer one-day ret
 | If 15 land | — | €167 | — |
 | Implied day (vs Edit) | — | €1,300 | €2,000 / day |
 
-Facts used: published Edit and Studio inclusions. Victoria has no footage bank, so Edit cannot feed month 1. Two days only paid here with a team of five on their side, so Plus eats her month. Standard is the one-day seat: plan, shoot, 10 films floor (usually closer to 15), captions, one revision, their time about 16 hours.
+Facts used: published Edit and Studio inclusions. Victoria has no footage bank, so Edit cannot feed month 1. Two days only paid here with a team of five on their side, so Plus eats her month. Standard is the one-day seat: plan, shoot, 10 films floor (usually closer to 15), captions, three amend rounds, their time about 16 hours.
 
 The €300 lift from the old €2,200 is the founder’s preferred anchor, not a new deliverable. Do not put the per-film column on the client page. Do not send the old €2,200 card.
