@@ -20,9 +20,14 @@ bounded engagement Rua legitimately accepts, whatever shape it takes.
 3. **Invoice the required initial payment** under the terms stated in the
    scope of work.
 
-4. **Payment gate.** The engagement is confirmed, and dates are held, only
-   when the required initial payment is received. No payment, no confirmed
-   engagement.
+4. **Payment gate.** Concept work may run ahead of payment to win
+   commitment: proposals, concept decks and catch-ups are deliberate
+   pre-commitment investment, not work to withhold out of fear the
+   client will run the concepts alone. What the gate locks is the
+   engagement itself: dates are held, crew and shoot days are booked,
+   and production spend starts only when the required initial payment
+   is received. If the initial payment goes quiet, chase it on a dated
+   thread. It does not drift while the work continues.
 
 5. **Create or activate the client engagement area** under
    `10-clients/<client>/`. Use the folders the job needs. Do not force a
