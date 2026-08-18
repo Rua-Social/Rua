@@ -35,6 +35,9 @@ dependency, host, service, or chat surface. Changing Telegram's look.
 - Secrets stay in `~/.grok/secrets/`, not Git.
 - Secret and state directories are owner-only (`0700`); secret,
   state, metric, outbox, and log files are owner-only (`0600`).
+- `/park` and `/idea` (and the same words on a voice note) capture
+  without Grok. Park is a list bullet. A long idea also writes
+  `20-studio/ideas/`.
 - `/brief` and a Google fail-closed ask return a pocket brief from
   `20-studio/lists.md` and `10-clients/*/README.md`. They do not open
   Mail.app, Calendar.app, or Drive.

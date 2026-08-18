@@ -17,7 +17,7 @@ import bridge
 
 
 GOOGLE_REPLY = "Google isn't on this phone seat. Parked on the desk list."
-QUEUE_REPLY = "Queued. One ask is already running."
+QUEUE_REPLY = "Hold that. Still on the last one."
 SETUP_REPLY = "Set TELEGRAM_USER_ID before starting the desk."
 
 
@@ -1339,6 +1339,50 @@ class CommandReplyTest(RuntimeCase):
             reply = bridge.handle_prompt("token", 420, 7, "status")
         run_grok.assert_not_called()
         self.assertIn("owner: 42", reply)
+
+    def test_park_appends_ideas_without_grok(self):
+        self.lists.write_text("# Lists\n\n## Founder\n\n### Do\n")
+        with mock.patch.object(bridge, "run_grok") as run_grok:
+            reply = bridge.handle_prompt(
+                "token", 420, 7, "Voice note: park buy more ND filters"
+            )
+        run_grok.assert_not_called()
+        self.assertEqual(reply, "On the list.")
+        self.assertIn("buy more ND filters", self.lists.read_text())
+        self.assertIn("### Ideas", self.lists.read_text())
+
+    def test_park_without_payload_asks(self):
+        with mock.patch.object(bridge, "run_grok") as run_grok:
+            reply = bridge.handle_prompt("token", 420, 7, "/park")
+        run_grok.assert_not_called()
+        self.assertEqual(reply, "Say what to park.")
+
+    def test_brainstorm_is_a_short_grok_ask(self):
+        with mock.patch.object(
+            bridge, "run_grok", return_value="Roof at dusk, one face."
+        ) as run_grok:
+            reply = bridge.handle_prompt(
+                "token", 420, 7, "brainstorm dusk shoot from the roof"
+            )
+        run_grok.assert_called_once()
+        self.assertIn("Brainstorm briefly", run_grok.call_args.args[0])
+        self.assertEqual(reply, "Roof at dusk, one face.")
+
+    def test_parking_is_not_a_park_capture(self):
+        self.assertIsNone(bridge.parse_capture("parking is tight tomorrow")[0])
+
+    def test_long_idea_writes_a_desk_file(self):
+        self.lists.write_text("# Lists\n\n## Founder\n\n")
+        ideas = self.repo / "20-studio" / "ideas"
+        body = "What if month-1 solar is only faces and never a leaflet. " * 8
+        with mock.patch.object(bridge, "run_grok") as run_grok:
+            reply = bridge.capture_idea(body, self.lists, ideas)
+        run_grok.assert_not_called()
+        self.assertTrue(reply.startswith("Sent to the desk. 20-studio/ideas/"))
+        written = list(ideas.glob("*.md"))
+        self.assertEqual(len(written), 1)
+        self.assertIn("faces", written[0].read_text())
+        self.assertIn("brainstorm 20-studio/ideas/", self.lists.read_text())
 
     def test_unknown_slash_command_is_help_not_grok(self):
         with mock.patch.object(bridge, "run_grok") as run_grok:

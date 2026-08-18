@@ -19,10 +19,13 @@ not this seat.
 | New session | `/new` | Drop the Grok session and any queued asks. Next message starts fresh. Cuts the line. |
 | Status | `/status`, `/statua`, or the word status | Owner, session, effort, queue, pending, last run, last error, whether the next ask will keep or reset. Last run is timing, not JSON. |
 | Brief | `/brief` or the word brief | Walking picture from the lists and `10-clients/`. Not live Google. |
+| Park | `/park …`, `park …`, `backlog …`, or a voice note that starts that way | Instant. Lands on Founder → Ideas. No Grok. |
+| Idea | `/idea …` or `idea …` | Instant. Short stays on the list. Longer goes to `20-studio/ideas/`. |
+| Brainstorm | `/brainstorm …` or `brainstorm …` | Eyes + typing. A short think comes back. Not a deck. |
 | Desk ask | Other text from the paired user | One short result from the desk. |
 | Voice ask | A voice note from the paired user | Transcribe, then the same path as text. |
 | Working | After an ask is accepted | Eyes reaction plus typing. |
-| Queue | A second ask while one is running | "Queued. One ask is already running." |
+| Queue | A second ask while one is running | "Hold that. Still on the last one." |
 | Setup | `--check` or `--install` with no owner id | "Set TELEGRAM_USER_ID before starting the desk." |
 | Foreign | Anyone else in a DM | "This desk is paired to another Telegram account." |
 | Wrong type | Photo, video note, sticker, document | "Text or a voice note." |
@@ -40,6 +43,7 @@ not this seat.
 | "The desk timed out. Send it again or try a smaller ask." | A stack trace or a fifteen-minute wait |
 | "Couldn't transcribe that. Try again or type it." | Guess at a garbled note |
 | Name the repo path when work creates a file | Claim the text-only bridge attached it |
+| "On the list." / "Sent to the desk." | "Got it!" "Love this idea!" "I'll brainstorm that for you" |
 | "Google isn't on this phone seat. Parked on the desk list." | Mail.app, Calendar.app, Chrome, "wire it at the Mac" |
 | Filter: escalate what blindsides, handle the ask, park niceties | A studio essay, a second org, "on it" |
 | Client-facing files: written for the person who sits with them, and the person they are for | Internal paths, steal-language, process notes, names that are not in the room |
@@ -58,7 +62,7 @@ this table.
 | Foreign DM | "This desk is paired to another Telegram account." |
 | Group or channel | Nothing. |
 | Working | Eyes + typing every 4s. |
-| Queued behind one ask | "Queued. One ask is already running." |
+| Queued behind one ask | "Hold that. Still on the last one." |
 | No first Grok event (60s) | "Grok is busy. Try again in a minute." |
 | Timeout (5 min) | "The desk timed out. Send it again or try a smaller ask." |
 | Grok missing | "grok is not installed on this Mac." |
@@ -72,12 +76,16 @@ this table.
 | Wrong inbound type | "Text or a voice note." |
 | Long reply | Extra Telegram messages, no "1/2". |
 | Google not on this seat | "Google isn't on this phone seat. Parked on the desk list." Then the pocket brief from the lists, if any. |
+| Park, nothing after the word | "Say what to park." |
+| Parked | "On the list." |
+| Idea, nothing after the word | "Say the idea." |
+| Idea sent | "Sent to the desk." Name the file if one was written. |
 | Reply completed but Telegram is unavailable | The result is held locally and delivered without rerunning Grok when Telegram returns. `/status` shows a pending delivery. |
 
 ## What you can send
 
-Text, voice note, `/help`, `/start`, `/new`, `/status`, `/brief`.
-An unknown `/command` is help, not a Grok ask. The words `status` and `brief` are commands.
+Text, voice note, `/help`, `/start`, `/new`, `/status`, `/brief`, `/park`, `/idea`.
+An unknown `/command` is help, not a Grok ask. The words `status`, `brief`, `park`, and `idea` are commands.
 `/new` and the other commands cut the line. They do not wait behind a Grok ask.
 
 Not this seat: Slack, TTS, images, video notes, the official
@@ -132,6 +140,13 @@ completeness, engagement.
 2. Eyes and typing.
 3. **Worked:** the links are treated as intake. The reply names what landed, where the file is, and what they need. If they asked for a client document, that file can be sat with without the founder talking. References show as the clip itself, not a URL list.
 4. Failure: a photo of a link ("Text or a voice note."); a research dump; a file that still needs a talk-track to make sense.
+
+### Flow 5 — Capture on the street (founder, idea mid-walk)
+
+1. Voice or text: `park …` or `idea …` / `brainstorm …`.
+2. No Grok. No queue wait.
+3. **Worked:** "On the list." or "Sent to the desk." He keeps walking.
+4. Failure: only the word, no payload → "Say what to park." / "Say the idea."
 
 ## Parked
 

@@ -50,6 +50,10 @@ Opened 17 August 2026 from a messy voice note. Enough structure for now.
 
 - Send the Fitzpatrick reply (Gmail, thread **Fitzpatrick Castle Tuesday 18th August**). Review before send. Do not send the unused recap on Social media references.
 
+### Ideas
+
+Street captures from the phone. Not the walking brief.
+
 ### Planned
 
 - Catch-up with Tommy and Alicia early in the week of 24 Aug, once Alicia is back from London. No new deck.

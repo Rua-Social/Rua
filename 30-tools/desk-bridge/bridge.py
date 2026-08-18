@@ -55,7 +55,7 @@ SCRIBE_URL = "https://api.elevenlabs.io/v1/speech-to-text"
 SCRIBE_MODEL = "scribe_v2"
 PHONE_BUSY = "Grok is busy. Try again in a minute."
 PHONE_TIMEOUT = "The desk timed out. Send it again or try a smaller ask."
-PHONE_QUEUE = "Queued. One ask is already running."
+PHONE_QUEUE = "Hold that. Still on the last one."
 PHONE_GOOGLE = "Google isn't on this phone seat. Parked on the desk list."
 OWNER_SETUP = "Set TELEGRAM_USER_ID before starting the desk."
 STATE_LOCK = threading.RLock()
@@ -82,6 +82,7 @@ Named clients: read 10-clients/<slug>/ first. That record is the pocket card. Do
 Hold a craft conversation if he asked for a hold. Do not write the deck or the concept list unless he asked for the file.
 Do not spawn subagents or call another model from this phone seat.
 If a tool fails auth or 401s, try it once, then answer with what you have. Do not burn the turn budget retrying.
+A message that starts with park, backlog, or idea is a capture the bridge already handled. Do not re-park it.
 """
 
 
@@ -220,9 +221,31 @@ def chunk_text(text: str, limit: int = TG_LIMIT) -> list[str]:
 PHONE_FAIL = "Desk hit an error. /status"
 STATUS_COMMANDS = {"/status", "/statua", "/stat", "status", "statua", "stat"}
 BRIEF_COMMANDS = {"/brief", "brief"}
-KNOWN_SLASH = {"/start", "/help", "/new", "/brief"} | {
+CAPTURE_PREFIXES = (
+    ("/park ", "park"),
+    ("park this ", "park"),
+    ("park ", "park"),
+    ("/backlog ", "park"),
+    ("backlog ", "park"),
+    ("/idea ", "idea"),
+    ("idea ", "idea"),
+    ("/brainstorm ", "brainstorm"),
+    ("brainstorm ", "brainstorm"),
+)
+CAPTURE_BARE = {
+    "/park": "park",
+    "park": "park",
+    "/backlog": "park",
+    "backlog": "park",
+    "/idea": "idea",
+    "idea": "idea",
+    "/brainstorm": "brainstorm",
+    "brainstorm": "brainstorm",
+}
+KNOWN_SLASH = {"/start", "/help", "/new", "/brief", "/park", "/idea", "/backlog", "/brainstorm"} | {
     cmd for cmd in STATUS_COMMANDS if cmd.startswith("/")
 }
+IDEA_INLINE_LIMIT = 200
 
 
 def is_status_command(text: str) -> bool:
@@ -233,11 +256,33 @@ def is_brief_command(text: str) -> bool:
     return text.strip().lower() in BRIEF_COMMANDS
 
 
+def spoken_text(text: str) -> str:
+    raw = (text or "").strip()
+    if raw.lower().startswith("voice note:"):
+        raw = raw.split(":", 1)[1].strip()
+    return raw
+
+
+def parse_capture(text: str) -> tuple[str, str] | tuple[None, str]:
+    raw = spoken_text(text)
+    low = raw.lower()
+    bare = CAPTURE_BARE.get(low)
+    if bare:
+        return bare, ""
+    for prefix, kind in CAPTURE_PREFIXES:
+        if low.startswith(prefix):
+            return kind, raw[len(prefix) :].strip()
+    return None, raw
+
+
 def is_instant_command(text: str) -> bool:
-    low = (text or "").strip().lower()
+    low = spoken_text(text).lower()
     if not low:
         return False
     if is_status_command(low) or is_brief_command(low):
+        return True
+    kind, _ = parse_capture(text)
+    if kind in {"park", "idea"}:
         return True
     if low.startswith("/"):
         return True
@@ -820,6 +865,8 @@ def help_text() -> str:
         "/new — drop the chat and the queue. Does not restart the Mac.\n"
         "/status — desk state\n"
         "/brief — walking brief from the lists\n"
+        "/park — drop a line on the list\n"
+        "/idea — send a thought to the desk\n"
         "Text or a voice note goes to the desk.\n"
         "This desk is yours. Another Grok window is not a second owner."
     )
@@ -956,6 +1003,72 @@ def google_reply() -> str:
     if brief:
         return PHONE_GOOGLE + "\n\n" + brief
     return PHONE_GOOGLE
+
+
+def ensure_list_heading(text: str, heading: str) -> str:
+    marker = f"### {heading}\n"
+    if marker in text:
+        return text
+    founder = "## Founder\n"
+    if founder in text:
+        return text.replace(founder, founder + "\n" + marker + "\n", 1)
+    return text.rstrip() + f"\n\n## Founder\n\n{marker}\n"
+
+
+def append_list_bullet(
+    heading: str, bullet: str, path: Path | None = None
+) -> None:
+    target = path or (REPO / "20-studio" / "lists.md")
+    try:
+        text = target.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        text = "# Lists\n\n## Founder\n\n"
+    text = ensure_list_heading(text, heading)
+    stamp = time.strftime("%d %b").lstrip("0")
+    line = f"- {stamp} — {bullet}\n"
+    marker = f"### {heading}\n"
+    text = text.replace(marker, marker + "\n" + line, 1)
+    atomic_write_text(target, text)
+
+
+def idea_filename(when: float | None = None) -> str:
+    stamp = time.strftime("%Y-%m-%d-%H%M", time.localtime(when or time.time()))
+    return f"{stamp}.md"
+
+
+def capture_park(body: str, lists_path: Path | None = None) -> str:
+    if not body:
+        return "Say what to park."
+    append_list_bullet("Ideas", body, lists_path)
+    return "On the list."
+
+
+def capture_idea(
+    body: str,
+    lists_path: Path | None = None,
+    ideas_dir: Path | None = None,
+) -> str:
+    if not body:
+        return "Say the idea."
+    dest = ideas_dir or (REPO / "20-studio" / "ideas")
+    if len(body) <= IDEA_INLINE_LIMIT:
+        append_list_bullet("Ideas", body, lists_path)
+        return "Sent to the desk."
+    dest.mkdir(parents=True, exist_ok=True)
+    name = idea_filename()
+    path = dest / name
+    suffix = 2
+    while path.exists():
+        path = dest / f"{name[:-3]}-{suffix}.md"
+        suffix += 1
+    atomic_write_text(
+        path,
+        f"# Idea\n\n{time.strftime('%d %b %Y %H:%M')}\n\n{body}\n",
+        mode=0o600,
+    )
+    rel = f"20-studio/ideas/{name}"
+    append_list_bullet("Ideas", f"brainstorm {rel}", lists_path)
+    return f"Sent to the desk. {rel}"
 
 
 def park_google_ask(prompt: str, path: Path | None = None) -> bool:
@@ -1604,6 +1717,18 @@ def handle_prompt(
         )
     if is_brief_command(low):
         return pocket_brief() or "No walking brief on the lists yet."
+    kind, body = parse_capture(stripped)
+    if kind == "park":
+        return capture_park(body)
+    if kind == "idea":
+        return capture_idea(body)
+    if kind == "brainstorm":
+        if not body:
+            return "Say the idea."
+        return run_grok(
+            "Brainstorm briefly. One short result. No deck. No table.\n\n" + body,
+            deadline=deadline,
+        )
     if is_google_ask(stripped):
         park_google_ask(stripped)
         return google_reply()

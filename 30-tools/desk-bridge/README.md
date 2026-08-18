@@ -63,6 +63,8 @@ pending replies, and launchd logs at startup.
 | `/new` | Fresh Grok session |
 | `/status` | Owner, effort, queue, pending, last timing, last error, next keep/reset |
 | `/brief` | Walking brief from the lists and client records |
+| `/park` | Instant line on Founder → Ideas |
+| `/idea` | Instant thought. Long ones land in `20-studio/ideas/` |
 
 Anything else, including a voice note, is handed to the desk.
 
