@@ -10,8 +10,10 @@ You already have the pieces. The hub is this repo.
 
 **Model** is the brain. Grok 4.6, Kimi, Gemini, Claude, GPT.
 
-**Harness** is the hands. Grok Build, Claude Code, Gemini CLI, Codex.
-Each harness has its own tools, memory, login, and bill.
+**Harness** is the hands. Grok Build, Claude Code, Gemini CLI, Codex,
+Kimi Code. Each harness has its own tools, memory, login, and bill.
+(Kimi Code was missing from this list while it ran the 18 Aug hostile
+review. Fixed in that sitting.)
 
 VS Code can host a chat panel or a terminal. It does not become the
 coordinator just because four models are installed. The coordinator is
@@ -110,8 +112,8 @@ on. Park the other in Git. Do not keep a room per old client.
 | Talk through one class of work | The matching room | Four chats for the same job |
 | Independent lookup while you keep talking | A subagent under that room | A new top-level session |
 | Cheap extract on Moonshot | `kimi` MCP tool `kimi_run` (or `/model kimi`) | `spawn_subagent` / workflow `model=kimi` — Grok rejects those slugs. Fake `kimi` agent types just run grok-4.6 |
-| Cheap Moonshot write | `/model kimi-code` in the `tools` room (full Grok hands) | `kimi_run` with `kimi-code` (reader cage, 240s). Grok calling Claude Code pointed at Moonshot |
-| Hostile / long-context on Moonshot | `kimi_run` with model `kimi-k3` | Making K3 the default |
+| Coding review or Moonshot write | `/model kimi-code` in `tools` (full Grok hands) | `kimi_run` with `kimi-code` (reader cage, 240s). Grok calling Claude Code pointed at Moonshot |
+| Architecture review, hostile or 1M read | `/model kimi-k3` in a named look room, or `kimi_run` with `kimi-k3` if it must stay a child | Making K3 the default conductor |
 | Same parallel pass every sit-down | `/desk-brief` from a session in `~/Rua` | Launching it from `$HOME` |
 | Second opinion from Claude / Gemini / Codex | `ai-cli` with the slugs that worked, below | Opening a second terminal for a one-line review |
 | Repeated method | A skill | A custom agent file |
@@ -127,12 +129,14 @@ for courtesy, and do not skip them to keep the chat tidy.
 - Long extract or first read of a fat file or folder: `kimi_run`
   with `kimi`. `kimi_run` stays a reader (no write). Do not put
   `kimi-code` through `kimi_run` (240s cage, 17 Aug).
-- Cheap Moonshot builder: `/model kimi-code` in `tools`. Same
-  one-shot as `ai-cli` `sonnet` on 18 Aug (`html-to-pdf --print-chrome`).
-  Kimi-code shipped in 142s, 17 tests green. Sonnet shipped the
-  same job in ~26s. Prefer Sonnet when speed matters. Prefer
-  kimi-code when you want the Moonshot bill instead of Anthropic.
-- Hostile or 1M-context read: `kimi_run` with `kimi-k3`.
+- Coding review and Moonshot builds: `/model kimi-code` in `tools`.
+  Full hands. That is the job K2.7 Code is for. 18 Aug one-shot
+  (`html-to-pdf --print-chrome`) shipped in 142s, 17 tests green.
+  `ai-cli` `sonnet` is still the faster writer if you need speed.
+- Architecture review: `/model kimi-k3` in a look room, not in
+  `desk`. K3 is the long-context / hostile brain. Review first.
+  Writes only after the founder keeps a finding.
+- Hostile or 1M-context read as a child: `kimi_run` with `kimi-k3`.
 - Second opinion on a ship or a judgement call: `ai-cli` with the
   slugs that worked, below. Do not pass `gpt-5.3-codex`.
 - Never: Grok calling Claude Code with a Moonshot env. That nest
@@ -140,7 +144,12 @@ for courtesy, and do not skip them to keep the chat tidy.
   because both writers already work without it.
 
 Claude and Gemini via `ai-cli`, tried 17 Aug on desk-bridge.
-Use the live aliases. There is no current Haiku 4.6 id.
+`ai-cli` is a Grok MCP (`npx ai-cli-mcp@latest`, enabled in
+`~/.grok/config.toml`, checked 18 Aug), not a shell command. It wraps
+the local `claude`, `gemini`, and `codex` CLIs. The slug table below
+was last tried 17 Aug: after any CLI update, re-run one cheap slug
+before relying on a row. Use the live aliases. There is no current
+Haiku 4.6 id.
 
 | Slug | Result |
 | --- | --- |
