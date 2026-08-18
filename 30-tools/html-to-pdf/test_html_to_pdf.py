@@ -173,6 +173,18 @@ class HtmlToPdfSafetyTests(unittest.TestCase):
         self.assertEqual(original, self.source.read_bytes())
         self.assertEqual(original, linked_output.read_bytes())
 
+    def test_rejects_a_symlink_to_the_source(self) -> None:
+        linked_output = self.output_dir / "linked.pdf"
+        try:
+            os.symlink(self.source, linked_output)
+        except OSError as exc:
+            self.skipTest(f"symlinks unavailable: {exc}")
+        original = self.source.read_bytes()
+        with self.assertRaisesRegex(SystemExit, "must be different files"):
+            self.run_main(self.source, linked_output)
+        self.assertEqual(original, self.source.read_bytes())
+        self.assertTrue(linked_output.is_symlink())
+
     def test_missing_chrome_does_not_delete_existing_output(self) -> None:
         previous = b"last valid PDF"
         self.output.write_bytes(previous)
