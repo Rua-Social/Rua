@@ -1,0 +1,40 @@
+#!/bin/sh
+# Rua pre-push hook. Blocks a direct push to main.
+#
+# Install:
+#   git config core.hooksPath .githooks
+#
+# Bypass once, deliberately and visibly:
+#   git push --no-verify
+#
+# This is a local hard stop. It protects you from habit, not from intent, and
+# it does not exist on any other machine. Branch protection on the remote is
+# the layer that actually holds. Use both.
+
+protected="main"
+
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  branch="${remote_ref#refs/heads/}"
+  if [ "$branch" = "$protected" ]; then
+    cat >&2 <<'MSG'
+
+  Push to main blocked.
+
+  Work happens on a branch and lands through a pull request.
+  Doctrine: 00-system/skills/rua-git-flow/
+
+    git switch -c feat/your-change
+    git push -u origin feat/your-change
+    gh pr create --fill
+
+  If this is genuinely a typo or a date, and you accept there will be no
+  diff review, bypass deliberately:
+
+    git push --no-verify
+
+MSG
+    exit 1
+  fi
+done
+
+exit 0
