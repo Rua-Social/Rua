@@ -90,6 +90,17 @@ or orchestration layer, briefly explain: what it is, why it is needed here,
 and why the alternative would be worse. Skip this for routine filesystem
 operations. Only explain when the concept itself is new.
 
+## Git
+
+`main` is always releasable. Work happens on a branch and lands through a pull
+request. Doctrine is `00-system/skills/rua-git-flow/`.
+
+Branch when the change touches more than one file, changes a tool or doctrine,
+or was written mostly by a model. Direct to `main` is for a typo or a date.
+
+The remote enforces this. If the instruction here and the remote disagree, the
+remote is correct.
+
 ## Structure
 
 - `00-system/` — skills, templates, rewrite contract, library index
