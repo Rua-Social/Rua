@@ -6,7 +6,7 @@ lines marked (confirm) are inference, not yet checked with the founder.
 
 **Job-type:** proposal for a bounded ongoing arrangement (month 1 of a
 monthly content shape). Not a sprint. Do not load the sprint skill.
-**Status:** proposal drafted 18 August, not sent. Nothing invoiced.
+**Status:** month-1 pack sent 18 August. Nothing invoiced. Ball is theirs.
 **Decision owner:** Victoria Henman (confirm whether she signs or
 Richard does).
 **Sector:** solar and home energy installs, Leinster (confirm).

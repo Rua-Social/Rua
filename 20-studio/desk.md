@@ -105,6 +105,21 @@ If two paid engagements are live at once, do not add a second
 job room. Rename and reseed this one to the slug you are sitting
 on. Park the other in Git. Do not keep a room per old client.
 
+## Kimi: do not repeat 17 August
+
+`kimi_run` is a 240-second reader cage. The 17 August timeout was
+that cage, not the weights.
+
+- Short extract, first read, or a parallel review: `kimi_run` + `kimi`.
+- Do not put `kimi-code` through `kimi_run`.
+- Do not put `kimi-k3` through `kimi_run` for a short review. K3
+  is `/model kimi-k3` in a look room. A child K3 is only for a
+  1M-context read that can afford the cage.
+
+Repeated 18 August on the Telegram CoS panel: conductor called
+`kimi_run` + `kimi-k3` for a short blind review. It timed out.
+The cheap `kimi` pass finished. Do not do this a third time.
+
 ## Which lever
 
 | Need | Lever | Not |
@@ -113,7 +128,7 @@ on. Park the other in Git. Do not keep a room per old client.
 | Independent lookup while you keep talking | A subagent under that room | A new top-level session |
 | Cheap extract on Moonshot | `kimi` MCP tool `kimi_run` (or `/model kimi`) | `spawn_subagent` / workflow `model=kimi` — Grok rejects those slugs. Fake `kimi` agent types just run grok-4.6 |
 | Coding review or Moonshot write | `/model kimi-code` in `tools` (full Grok hands) | `kimi_run` with `kimi-code` (reader cage, 240s). Grok calling Claude Code pointed at Moonshot |
-| Architecture review, hostile or 1M read | `/model kimi-k3` in a named look room, or `kimi_run` with `kimi-k3` if it must stay a child | Making K3 the default conductor |
+| Architecture review, hostile or 1M read | `/model kimi-k3` in a named look room. Not `kimi_run` + K3 for a short review (17 Aug cage; repeated 18 Aug) | Making K3 the default conductor; `kimi_run` + `kimi-k3` as a courtesy child |
 | Same parallel pass every sit-down | `/desk-brief` from a session in `~/Rua` | Launching it from `$HOME` |
 | Second opinion from Claude / Gemini / Codex | `ai-cli` with the slugs that worked, below | Opening a second terminal for a one-line review |
 | Repeated method | A skill | A custom agent file |
@@ -136,7 +151,9 @@ for courtesy, and do not skip them to keep the chat tidy.
 - Architecture review: `/model kimi-k3` in a look room, not in
   `desk`. K3 is the long-context / hostile brain. Review first.
   Writes only after the founder keeps a finding.
-- Hostile or 1M-context read as a child: `kimi_run` with `kimi-k3`.
+- A short child review is `kimi_run` + `kimi`. `kimi_run` + K3 is
+  only for a 1M-context read that can afford the 240s cage. A
+  parallel CoS / desk review is not that. (17 Aug; repeated 18 Aug.)
 - Second opinion on a ship or a judgement call: `ai-cli` with the
   slugs that worked, below. Do not pass `gpt-5.3-codex`.
 - Never: Grok calling Claude Code with a Moonshot env. That nest
@@ -247,14 +264,18 @@ This chat is a phone, not a studio log.
 - Voice notes are inbound. They are transcribed, then treated as the ask.
 - Phone Grok runs at medium effort. Studio stays on the dashboard setting.
 - Do not install the official Telegram plugin. This seat is desk-bridge.
-- Lists live in `20-studio/lists.md`. Desk list and founder list. If
-  something is blocked, write it there. Do not invent a tracker.
+- Open actions live in `20-studio/todo.md`. Closed lines in
+  `todo-done.md`. Skill: `00-system/skills/rua-todo/`. `/brief` and
+  `/todo` read only that file. If the phone is blocked, write it
+  under Desk → Blocked in `lists.md`. That file is the diary, not
+  the todo.
 - Real mail and calendar live in Google Workspace (Gmail, Google
   Calendar), signed in as `darragh@ruasocial.ie`. Mac Mail.app and
   Calendar.app are unused. Do not open them, or icalBuddy, or a
   local mail CLI. Dashboard Grok reaches Workspace via connectors.
-  This phone seat does not. Say the EXPERIENCE line and park the
-  miss on the desk list.
+  This phone seat does not. Answer from `10-clients/` and
+  `todo.md` first. Say the EXPERIENCE line only when those files
+  are silent. Park that miss on the desk list.
 
 ## Optional: VS Code as the file surface
 

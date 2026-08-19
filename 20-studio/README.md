@@ -9,8 +9,10 @@ What exists today:
   a shoot.
 - `desk.md` — how the founder sits down: one Grok window, four other
   seats if needed. Operating note, not doctrine.
-- `lists.md` — two lists only. Desk (blocked / moving / done) and
-  founder (do / planned / waiting). Not a product.
+- `todo.md` — the only founder open-actions list. Closed lines in
+  `todo-done.md`. Skill: `00-system/skills/rua-todo/`.
+- `lists.md` — desk diary (blocked / moving / done) plus ideas and
+  planned notes. Not the todo.
 - `bmad-audit.md` — research ledger: what we took from BMAD and
   what we refused. Not doctrine. Open on purpose. Do not load it
   for a shoot, a sale, or a ship.

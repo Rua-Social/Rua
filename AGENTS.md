@@ -42,6 +42,8 @@ Name the class before loading doctrine.
 - **Sales:** `20-studio/sales/README.md` and
   `00-system/templates/scope-of-work.md`. No delivery skill.
 - **Founder / direction:** `20-studio/founder-context.md`.
+- **Founder todo:** `20-studio/todo.md` and
+  `00-system/skills/rua-todo/`. Not `lists.md`.
 - **Other:** ask. Do not invent a class.
 
 If the class is unclear, ask. Do not start a sprint document or a
