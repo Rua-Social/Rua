@@ -20,6 +20,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 REPO = Path(os.environ.get("RUA_REPO", Path.home() / "Rua"))
@@ -68,6 +69,14 @@ Read 20-studio/desk.md and AGENTS.md when the class of work needs them.
 Name the class to yourself before loading doctrine. Do not invent work.
 Do the work. Do not narrate loading, searching, or thinking.
 Filter like a chief of staff. Escalate what would blindside the founder. Handle the ask. Park niceties.
+The founder todo is 20-studio/todo.md. Read it when the ask needs the list. Do not write todos to lists.md, desk.md, client READMEs, or chat.
+If the founder commits to a concrete action or reports one done, end with at most two lines:
+LIST+ Do | one short action
+LIST+ Done | what landed
+Allowed headings: Do, Done, Moving, Blocked, Waiting on the desk.
+Do and Done go to todo.md. Moving and Blocked stay on the desk diary.
+Do not invent work. Do not edit those files yourself. The bridge writes them and hides the trailers.
+LIST+ Done only on a typed ask. A voice note cannot close the list: say it landed and that a text closes it.
 Telegram gets one short result: what happened, where it is, what they need.
 No markdown tables. No class label in the chat. No process talk.
 A line starting with Voice note: is a spoken message. Treat it as the ask.
@@ -75,10 +84,12 @@ Instagram and TikTok links in the message are intake, not decoration. Capture th
 A client-facing document is written for the person who will sit with it and the person it is for. No internal paths, no steal-language, no studio process, no names they did not put in the room. References they sent appear as the thing itself: a still they recognise, then a link.
 Do not ask them to sit down at the Mac unless the machine itself is the blocker.
 This bridge sends text only. If work creates a file, name its repo path; do not claim it is attached.
-Mail, calendar, and Drive are Grok Space connectors. This phone seat does not have them.
+Named clients: read 10-clients/<slug>/ first. That record is the pocket card. Todo is 20-studio/todo.md. Answer from those files.
+Do not hunt Drive or Gmail for a fact the instance already has. lists.md is a diary. Do not brief a stale diary line over the instance or the founder.
+If the founder corrects a desk fact, believe them and emit LIST+ Done or Moving.
+Mail, calendar, and Drive live on dashboard Grok, not this phone process.
 Do not use Mail.app, Calendar.app, icalBuddy, Chrome, or local mail CLIs as a stand-in.
-If an ambiguous ask still needs those, stop and reply exactly: Google isn't on this phone seat. Parked on the desk list.
-Named clients: read 10-clients/<slug>/ first. That record is the pocket card. Do not hunt Drive for a fact the instance already has.
+Only if the files do not have the fact, and the ask is live mail, calendar, or Drive, reply with exactly this sentence and nothing else: Google isn't on this phone seat. Parked on the desk list. The bridge appends the pocket card and parks the miss. Do not lead with that sentence when the card or the todo already answers.
 Hold a craft conversation if he asked for a hold. Do not write the deck or the concept list unless he asked for the file.
 Do not spawn subagents or call another model from this phone seat.
 If a tool fails auth or 401s, try it once, then answer with what you have. Do not burn the turn budget retrying.
@@ -221,6 +232,7 @@ def chunk_text(text: str, limit: int = TG_LIMIT) -> list[str]:
 PHONE_FAIL = "Desk hit an error. /status"
 STATUS_COMMANDS = {"/status", "/statua", "/stat", "status", "statua", "stat"}
 BRIEF_COMMANDS = {"/brief", "brief"}
+TODO_COMMANDS = {"/todo", "todo"}
 CAPTURE_PREFIXES = (
     ("/park ", "park"),
     ("park this ", "park"),
@@ -242,9 +254,10 @@ CAPTURE_BARE = {
     "/brainstorm": "brainstorm",
     "brainstorm": "brainstorm",
 }
-KNOWN_SLASH = {"/start", "/help", "/new", "/brief", "/park", "/idea", "/backlog", "/brainstorm"} | {
+KNOWN_SLASH = {"/start", "/help", "/new", "/brief", "/todo", "/park", "/idea", "/backlog", "/brainstorm"} | {
     cmd for cmd in STATUS_COMMANDS if cmd.startswith("/")
 }
+CAPTURE_SLASH = {cmd for cmd in CAPTURE_BARE if cmd.startswith("/")}
 IDEA_INLINE_LIMIT = 200
 
 
@@ -254,6 +267,10 @@ def is_status_command(text: str) -> bool:
 
 def is_brief_command(text: str) -> bool:
     return text.strip().lower() in BRIEF_COMMANDS
+
+
+def is_todo_command(text: str) -> bool:
+    return text.strip().lower() in TODO_COMMANDS
 
 
 def spoken_text(text: str) -> str:
@@ -279,7 +296,7 @@ def is_instant_command(text: str) -> bool:
     low = spoken_text(text).lower()
     if not low:
         return False
-    if is_status_command(low) or is_brief_command(low):
+    if is_status_command(low) or is_brief_command(low) or is_todo_command(low):
         return True
     kind, _ = parse_capture(text)
     if kind in {"park", "idea"}:
@@ -952,7 +969,8 @@ def help_text() -> str:
         "/help — this\n"
         "/new — drop the chat and the queue. Does not restart the Mac.\n"
         "/status — desk state\n"
-        "/brief — walking brief from the lists\n"
+        "/brief — walking brief from the todo\n"
+        "/todo — open actions only\n"
         "/park — drop a line on the list\n"
         "/idea — send a thought to the desk\n"
         "Text or a voice note goes to the desk.\n"
@@ -960,43 +978,60 @@ def help_text() -> str:
     )
 
 
-GOOGLE_ASK_PATTERNS = [
-    re.compile(pattern, re.I)
-    for pattern in (
-        r"\b(?:check|read|open|search|find|show|look\s+in)\b.{0,40}\bgmail\b",
-        r"\b(?:my|the)\s+gmail\b",
-        r"\b(?:check|search|open|read|show)\b.{0,40}\bgoogle\s+workspace\b",
-        r"\b(?:my|the|last|latest|recent|new|unread)\s+(?:mail|email|inbox)\b",
-        r"\b(?:mail|email)\s+(?:from|to|about|thread|message)\b",
-        r"\b(?:send|reply|forward|check|read|find|search)\s+(?:an?\s+)?(?:mail|email)\b",
-        r"\b(?:check|read|open|search|show)\s+(?:my\s+|the\s+)?inbox\b",
-        r"\bwhat(?:'s| is)\s+(?:on\s+)?(?:my\s+)?(?:day|schedule|agenda)\b",
-        r"\bwhat(?:'s| is)\s+on\s+(?:today|tomorrow)\b",
-        r"\bwhat(?:'s| is)\s+happening\s+(?:today|tomorrow|this\s+week)\b",
-        r"\bwhat\s+(?:calls|meetings|appointments)\s+do\s+i\s+have\b",
-        r"\bwhat\s+do\s+i\s+have\s+on\s+(?:today|tomorrow|this\s+week)\b",
-        r"\bdo\s+i\s+have\s+(?:any\s+)?meetings?\b",
-        r"\bdo\s+i\s+have\s+(?:anything|something|a\s+(?:call|meeting|appointment))\b.{0,50}\b(?:today|tomorrow|tom+or+ow|this\s+week|at\s+\d)",
-        r"\bmeetings?\s+tom+or+ow\b",
-        r"\blast\s+(?:document|doc|deck|file)\s+i\s+sent\b",
-        r"\btranscript\b.{0,40}\b(?:drive|google)\b",
-        r"\bam\s+i\s+(?:free|busy|available)\b.{0,50}\b(?:today|tomorrow|this\s+week|at\s+\d)",
-        r"\b(?:when\s+(?:is|are)|what\s+time\s+is)\b.{0,60}\b(?:my\s+|the\s+)?(?:call|meeting|appointment)\b",
-        r"\b(?:what(?:'s| is)|check|show|open|read|view|look\s+at)\b.{0,50}\b(?:my\s+)?(?:google\s+)?calendar\b",
-        r"\b(?:add|put|book|schedule|move|cancel|delete)\b.{0,50}\b(?:my\s+)?(?:google\s+)?calendar\b",
-        r"\b(?:my|today'?s|tomorrow'?s|next)\s+(?:meeting|meetings|appointment|appointments)\b",
-        r"\b(?:meeting|appointment)\s+(?:time|calendar|today|tomorrow)\b",
-        r"\b(?:check|search|find|open|read|show|get|locate)\b.{0,60}\b(?:in|from|on)\s+(?:my\s+)?(?:google\s+)?drive\b",
-        r"\b(?:check|search|find|open|read|show|get|locate)\s+(?:my\s+)?(?:google\s+)?drive\b",
-        r"\b(?:check|search|find|open|read|show|get|locate)\b.{0,60}\b(?:in|from|on)\s+google\s+(?:docs|sheets|slides)\b",
-        r"\bdrive\s+(?:file|folder|doc|document)\b",
-        r"\b(?:my|the|last|latest)\s+(?:drive\s+)?(?:file|folder|doc|document)\s+on\s+drive\b",
-    )
-]
-
-
-def is_google_ask(prompt: str) -> bool:
-    return any(pattern.search(prompt or "") for pattern in GOOGLE_ASK_PATTERNS)
+LIST_WRITE_RE = re.compile(
+    r"^LIST\+\s+(.+?)\s*\|\s*(.+)$",
+    re.I,
+)
+LIST_WRITE_HEADINGS = {
+    "do": "Do",
+    "done": "Done",
+    "moving": "Moving",
+    "blocked": "Blocked",
+    "waiting": "Waiting on the desk",
+    "waiting on": "Waiting on the desk",
+    "waiting on the desk": "Waiting on the desk",
+}
+DESK_LIST_HEADINGS = frozenset({"Blocked", "Moving", "Done"})
+FOUNDER_LIST_HEADINGS = frozenset({"Do", "Ideas", "Planned", "Waiting on the desk"})
+MAX_LIST_WRITES = 2
+GATE_RE = re.compile(
+    r"\b(deposit|send|chase|unpaid|lock|due|today|invoice|pack|follow-?up|reply|dated|gate)\b",
+    re.I,
+)
+NEEDS_HIM_RE = re.compile(
+    r"\b(chase|send|reply|decide|deposit|pack|follow-?up|founder)\b",
+    re.I,
+)
+CLIENT_MOVE_RE = re.compile(
+    r"\b(not sent|unpaid|deposit|send|draft|waiting|with them)\b",
+    re.I,
+)
+TODO_LINE_RE = re.compile(
+    r"^- (\d{4}-\d{2}-\d{2})(?: (STALE))? (.+)$"
+)
+TODO_JUNK_RE = re.compile(
+    r"phone cannot|gmail|calendar|drive|kimi|launchd|desk-bridge|"
+    r"cos slice|getupdates|mail\.app|lists\.md",
+    re.I,
+)
+TODO_OPEN_CAP = 7
+TODO_STALE_DAYS = 7
+TODO_ACK_DUP = "Already on the list."
+TODO_ACK_FULL = "Todo is full. Close one."
+TODO_ACK_JUNK = "Not a todo line."
+TODO_ACK_VOICE_DONE = "Voice can't close the list. Text it if it landed."
+TODO_HEADER = (
+    "# Todo\n\n"
+    "Open actions only. Not a diary. Not ideas. Not desk incidents.\n"
+    "Any seat that needs the list reads this file. Closed lines live in\n"
+    "`20-studio/todo-done.md`. Cap 7. After 7 days a line is marked STALE.\n"
+    "Do not write todos anywhere else. Skill: `00-system/skills/rua-todo/`.\n\n"
+    "## Open\n"
+)
+TODO_DONE_HEADER = (
+    "# Todo done\n\n"
+    "Closed founder actions. Not the open list. Do not brief from here.\n"
+)
 
 
 def section_bullets(text: str, heading: str, limit: int = 2) -> list[str]:
@@ -1068,39 +1103,344 @@ def client_cards(root: Path | None = None, limit: int = 3) -> list[str]:
     return cards
 
 
-def pocket_brief(lists_path: Path | None = None, clients_root: Path | None = None) -> str:
-    target = lists_path or (REPO / "20-studio" / "lists.md")
+def _score_gate(bullet: str) -> int:
+    score = 0
+    if GATE_RE.search(bullet):
+        score += 3
+    if re.search(r"\b\d{1,2}\s+[A-Za-z]{3,}\b", bullet):
+        score += 1
+    return score
+
+
+def _score_needs_him(bullet: str) -> int:
+    if NEEDS_HIM_RE.search(bullet):
+        return _score_gate(bullet) + 2
+    return _score_gate(bullet)
+
+
+def _score_client(card: str) -> int:
+    score = 0
+    if CLIENT_MOVE_RE.search(card):
+        score += 3
+    low = card.lower()
+    if "not sent" in low or "unpaid" in low:
+        score += 2
+    if "delivered" in low:
+        score -= 2
+    return score
+
+
+def _pick_ranked(items: list[str], score_fn) -> str | None:
+    if not items:
+        return None
+    ranked = sorted(
+        ((score_fn(item), index, item) for index, item in enumerate(items)),
+        key=lambda row: (-row[0], row[1]),
+    )
+    return ranked[0][2]
+
+
+def todo_file(path: Path | None = None) -> Path:
+    return path or (REPO / "20-studio" / "todo.md")
+
+
+def todo_done_file(path: Path | None = None) -> Path:
+    return path or (REPO / "20-studio" / "todo-done.md")
+
+
+def parse_todo_items(text: str) -> list[tuple[date, bool, str]]:
+    marker = "## Open\n"
+    start = text.find(marker)
+    body = text[start + len(marker) :] if start >= 0 else text
+    nxt = body.find("\n## ")
+    if nxt >= 0:
+        body = body[:nxt]
+    items: list[tuple[date, bool, str]] = []
+    for line in body.splitlines():
+        match = TODO_LINE_RE.match(line.strip())
+        if not match:
+            continue
+        try:
+            added = datetime.strptime(match.group(1), "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        stale = match.group(2) == "STALE"
+        items.append((added, stale, match.group(3).strip()))
+    return items
+
+
+def format_todo_line(added: date, stale: bool, text: str) -> str:
+    mark = "STALE " if stale else ""
+    return f"- {added.isoformat()} {mark}{text}".rstrip()
+
+
+def write_todo_open(
+    items: list[tuple[date, bool, str]], path: Path | None = None
+) -> None:
+    body = TODO_HEADER
+    if items:
+        body += "\n" + "\n".join(
+            format_todo_line(added, stale, text) for added, stale, text in items
+        ) + "\n"
+    atomic_write_text(todo_file(path), body)
+
+
+def load_todo(path: Path | None = None) -> list[tuple[date, bool, str]]:
+    target = todo_file(path)
     try:
         text = target.read_text(encoding="utf-8")
     except FileNotFoundError:
-        text = ""
+        return []
+    return parse_todo_items(text)
+
+
+def regulate_todo(
+    path: Path | None = None, today: date | None = None
+) -> list[tuple[date, bool, str]]:
+    now = today or date.today()
+    cutoff = now - timedelta(days=TODO_STALE_DAYS)
+    items = []
+    changed = False
+    for added, stale, text in load_todo(path):
+        should_stale = added <= cutoff
+        if should_stale and not stale:
+            changed = True
+        items.append((added, should_stale, text))
+    if changed or not todo_file(path).is_file():
+        write_todo_open(items, path)
+    return items
+
+
+def is_todo_junk(text: str) -> bool:
+    return bool(TODO_JUNK_RE.search(text or ""))
+
+
+def todo_has(items: list[tuple[date, bool, str]], text: str) -> bool:
+    needle = normalize_list_bullet(text)
+    if not needle:
+        return False
+    return any(
+        needle == normalize_list_bullet(existing)
+        or needle in normalize_list_bullet(existing)
+        or normalize_list_bullet(existing) in needle
+        for _, _, existing in items
+    )
+
+
+def add_open_todo(
+    text: str,
+    path: Path | None = None,
+    today: date | None = None,
+) -> str:
+    """Empty string when the line landed, else the refusal reason."""
+    body = (text or "").strip()
+    if not body or is_todo_junk(body):
+        return "junk"
+    items = regulate_todo(path, today=today)
+    if todo_has(items, body):
+        return "dup"
+    if len(items) >= TODO_OPEN_CAP:
+        return "full"
+    items.append((today or date.today(), False, body))
+    write_todo_open(items, path)
+    return ""
+
+
+def close_todo(
+    text: str,
+    path: Path | None = None,
+    done_path: Path | None = None,
+    today: date | None = None,
+) -> bool:
+    body = (text or "").strip()
+    if not body or is_todo_junk(body):
+        return False
+    items = regulate_todo(path, today=today)
+    kept: list[tuple[date, bool, str]] = []
+    closed: tuple[date, bool, str] | None = None
+    for item in items:
+        if closed is None and (
+            todo_has([item], body) or todo_has([(item[0], item[1], body)], item[2])
+        ):
+            closed = item
+            continue
+        kept.append(item)
+    if closed is None:
+        closed = (today or date.today(), False, body)
+    else:
+        write_todo_open(kept, path)
+    dest = todo_done_file(done_path)
+    try:
+        current = dest.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        current = TODO_DONE_HEADER + "\n"
+    if current.strip() == TODO_DONE_HEADER.strip():
+        current = TODO_DONE_HEADER + "\n"
+    stamp = (today or date.today()).isoformat()
+    line = f"- {closed[0].isoformat()} → {stamp} {closed[2]}\n"
+    if normalize_list_bullet(closed[2]) in normalize_list_bullet(current):
+        return True
+    if not current.endswith("\n"):
+        current += "\n"
+    atomic_write_text(dest, current + line)
+    return True
+
+
+def format_open_todo(path: Path | None = None, today: date | None = None) -> str:
+    items = regulate_todo(path, today=today)
     lines: list[str] = []
-    for label, heading in (
-        ("Do", "Do"),
-        ("Next", "Planned"),
-        ("Waiting", "Waiting on the desk"),
-    ):
-        for bullet in section_bullets(text, heading, 1):
-            lines.append(f"{label}: {bullet}")
-    lines.extend(client_cards(clients_root))
-    return "\n".join(lines[:8])
+    if len(items) >= TODO_OPEN_CAP:
+        lines.append("Todo is full. Close one.")
+    if not items:
+        return "Nothing open."
+    for added, stale, text in items:
+        lines.append(format_todo_line(added, stale, text))
+    return "\n".join(lines)
 
 
-def google_reply() -> str:
+def pocket_brief(
+    clients_root: Path | None = None,
+    todo_path: Path | None = None,
+) -> str:
+    items = regulate_todo(todo_path)
+    lines: list[str] = []
+    if len(items) >= TODO_OPEN_CAP:
+        lines.append("Todo is full. Close one.")
+    stale = [item for item in items if item[1]]
+    fresh = [item for item in items if not item[1]]
+    if stale:
+        lines.append(f"STALE: {stale[0][2]}")
+    picked = _pick_ranked([item[2] for item in fresh], _score_gate)
+    if picked:
+        lines.append(f"Do: {picked}")
+    elif fresh:
+        lines.append(f"Do: {fresh[0][2]}")
+    card = _pick_ranked(client_cards(clients_root, limit=8), _score_client)
+    if card:
+        lines.append(card)
+    return "\n".join(lines[:5])
+
+
+def google_miss_finish(text: str) -> str:
+    """A real Google miss comes back from Grok as the EXPERIENCE sentence.
+    The bridge parks it once and appends the pocket brief. The sentence
+    quoted inside a longer reply is not a miss."""
+    if not text.strip().startswith(PHONE_GOOGLE):
+        return text
+    park_google_ask("")
     brief = pocket_brief()
-    if brief:
-        return PHONE_GOOGLE + "\n\n" + brief
-    return PHONE_GOOGLE
+    return f"{text}\n\n{brief}" if brief else text
 
 
 def ensure_list_heading(text: str, heading: str) -> str:
     marker = f"### {heading}\n"
     if marker in text:
         return text
-    founder = "## Founder\n"
-    if founder in text:
-        return text.replace(founder, founder + "\n" + marker + "\n", 1)
-    return text.rstrip() + f"\n\n## Founder\n\n{marker}\n"
+    parent = "## Desk\n" if heading in DESK_LIST_HEADINGS else "## Founder\n"
+    if parent in text:
+        return text.replace(parent, parent + "\n" + marker + "\n", 1)
+    other = "## Founder\n" if parent == "## Desk\n" else "## Desk\n"
+    if other in text and parent == "## Desk\n":
+        return text.replace(other, parent + "\n" + marker + "\n" + other, 1)
+    return text.rstrip() + f"\n\n{parent}\n\n{marker}\n"
+
+
+def normalize_list_bullet(text: str) -> str:
+    cleaned = text.strip().lower()
+    cleaned = re.sub(r"^\d{1,2}\s+[a-z]{3,}\s+[—-]\s+", "", cleaned)
+    return re.sub(r"\s+", " ", cleaned)
+
+
+def heading_has_bullet(text: str, heading: str, bullet: str) -> bool:
+    needle = normalize_list_bullet(bullet)
+    if not needle:
+        return False
+    return any(
+        needle == normalize_list_bullet(existing)
+        or needle in normalize_list_bullet(existing)
+        or normalize_list_bullet(existing) in needle
+        for existing in section_bullets(text, heading, 40)
+    )
+
+
+def extract_list_writes(text: str) -> tuple[str, list[tuple[str, str]]]:
+    kept: list[str] = []
+    writes: list[tuple[str, str]] = []
+    for line in (text or "").splitlines():
+        match = LIST_WRITE_RE.match(line.strip())
+        if not match:
+            kept.append(line)
+            continue
+        heading = LIST_WRITE_HEADINGS.get(match.group(1).strip().lower())
+        body = match.group(2).strip()
+        if heading and body and len(writes) < MAX_LIST_WRITES:
+            writes.append((heading, body))
+    cleaned = "\n".join(kept).strip()
+    return cleaned, writes
+
+
+TODO_ACKS = {
+    "dup": TODO_ACK_DUP,
+    "full": TODO_ACK_FULL,
+    "junk": TODO_ACK_JUNK,
+}
+
+
+def persist_desk_writes(
+    text: str,
+    path: Path | None = None,
+    todo_path: Path | None = None,
+    done_path: Path | None = None,
+    allow_done: bool = True,
+) -> str:
+    cleaned, writes = extract_list_writes(text)
+    if not writes:
+        return cleaned or text
+    target = path or (REPO / "20-studio" / "lists.md")
+    try:
+        current = target.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        current = "# Lists\n\n"
+    applied: list[str] = []
+    acks: list[str] = []
+    for heading, body in writes:
+        if heading == "Do":
+            reason = add_open_todo(body, todo_path)
+            if reason:
+                acks.append(TODO_ACKS[reason])
+            else:
+                applied.append(heading)
+            continue
+        if heading == "Done":
+            if not allow_done:
+                acks.append(TODO_ACK_VOICE_DONE)
+                continue
+            if close_todo(body, todo_path, done_path):
+                applied.append(heading)
+            else:
+                acks.append(TODO_ACK_JUNK)
+            continue
+        if heading_has_bullet(current, heading, body):
+            continue
+        append_list_bullet(heading, body, target)
+        try:
+            current = target.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            current = ""
+        applied.append(heading)
+    if applied:
+        append_metric(
+            {
+                "stage": "list-write",
+                "outcome": "ok",
+                "count": len(applied),
+                "headings": applied,
+            }
+        )
+    reply = cleaned or "(no text)"
+    if acks:
+        reply += "\n\n" + "\n".join(dict.fromkeys(acks))
+    return reply
 
 
 def append_list_bullet(
@@ -1768,6 +2108,7 @@ def handle_prompt(
     message_id: int | None,
     prompt: str,
     deadline: float | None = None,
+    from_voice: bool = False,
 ) -> str:
     del token, chat_id, message_id
     stripped = prompt.strip()
@@ -1775,7 +2116,9 @@ def handle_prompt(
     if low in {"/start", "/help"}:
         return help_text()
     if low.startswith("/") and low not in KNOWN_SLASH:
-        return help_text()
+        # Capture commands keep their payload: "/park buy filters" captures.
+        if low.split()[0] not in CAPTURE_SLASH:
+            return help_text()
     if low == "/new":
         SESSION_FILE.unlink(missing_ok=True)
         SESSION_META_FILE.unlink(missing_ok=True)
@@ -1799,7 +2142,9 @@ def handle_prompt(
             ]
         )
     if is_brief_command(low):
-        return pocket_brief() or "No walking brief on the lists yet."
+        return pocket_brief() or "Nothing open."
+    if is_todo_command(low):
+        return format_open_todo()
     kind, body = parse_capture(stripped)
     if kind == "park":
         return capture_park(body)
@@ -1808,14 +2153,22 @@ def handle_prompt(
     if kind == "brainstorm":
         if not body:
             return "Say the idea."
-        return run_grok(
-            "Brainstorm briefly. One short result. No deck. No table.\n\n" + body,
-            deadline=deadline,
+        return google_miss_finish(
+            persist_desk_writes(
+                run_grok(
+                    "Brainstorm briefly. One short result. No deck. No table.\n\n"
+                    + body,
+                    deadline=deadline,
+                ),
+                allow_done=not from_voice,
+            )
         )
-    if is_google_ask(stripped):
-        park_google_ask(stripped)
-        return google_reply()
-    return run_grok(stripped, deadline=deadline)
+    return google_miss_finish(
+        persist_desk_writes(
+            run_grok(stripped, deadline=deadline),
+            allow_done=not from_voice,
+        )
+    )
 
 
 def handle_voice(
@@ -1867,7 +2220,9 @@ def handle_voice(
     )
     if deadline is not None and time.monotonic() >= deadline:
         return PHONE_TIMEOUT
-    return handle_prompt("", 0, None, f"Voice note: {text}", deadline=deadline)
+    return handle_prompt(
+        "", 0, None, f"Voice note: {text}", deadline=deadline, from_voice=True
+    )
 
 
 def is_private_dm(chat: dict) -> bool:

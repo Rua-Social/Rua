@@ -65,11 +65,14 @@ pending replies, and launchd logs at startup.
 | `/help` | Short usage |
 | `/new` | Fresh Grok session |
 | `/status` | Owner, effort, queue, pending, last timing, last error, next keep/reset |
-| `/brief` | Walking brief from the lists and client records |
+| `/brief` | Ranked walking brief from `20-studio/todo.md` and one client card |
+| `/todo` | Open actions only |
 | `/park` | Instant line on Founder → Ideas |
 | `/idea` | Instant thought. Long ones land in `20-studio/ideas/` |
 
 Anything else, including a voice note, is handed to the desk.
+A real commitment in that reply is appended to `20-studio/todo.md`
+and hidden from Telegram. `lists.md` is the desk diary, not the todo.
 
 The phone run enforces medium effort and drops a fat, stale, or
 wrong-effort session so a pricing job does not ride into the next

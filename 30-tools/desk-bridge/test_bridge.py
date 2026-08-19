@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 import threading
 import unittest
+from datetime import date
 from pathlib import Path
 from unittest import mock
 
@@ -491,38 +492,26 @@ class QueuePersistenceTest(RuntimeCase):
         self.assertEqual(offsets_seen_by_worker, [11])
 
 
-class GoogleFailClosedTest(RuntimeCase):
-    def test_classifier_catches_mail_calendar_and_drive_asks(self):
+class GoogleMissTest(RuntimeCase):
+    def test_card_answerable_asks_reach_grok(self):
+        # No input gate: asks the instance card or todo can answer are desk
+        # asks. The Google sentence is Grok's call, never a regex's.
         asks = [
-            "What was the last email from Aoife?",
+            "what did I send to Tommy today",
+            "what was the last doc I sent Tommy",
+            "last file I sent him",
+            "when is my call with Tommy",
+            "check my gmail",
             "What's on my Google Calendar tomorrow?",
-            "Find the latest deck in Drive",
-            "Search Gmail for the invoice",
-            "When is my call with Aoife tomorrow?",
-            "Do I have anything on at 3 tomorrow?",
-            "Open the budget spreadsheet in Google Docs",
-            "What meetings do I have this week?",
-            "do i have any meetings tomorrow?",
-            "ok do i have any meetings tommroow?",
-            "Can you check my calendar tomorrow and the last document I sent",
         ]
         for ask in asks:
-            with self.subTest(ask=ask):
-                self.assertTrue(bridge.is_google_ask(ask))
-
-    def test_classifier_does_not_block_local_work(self):
-        asks = [
-            "Edit 20-studio/desk.md",
-            "Draft an email I can send tomorrow",
-            "Write copy for a Google Drive explainer",
-            "Review the calendar component in this codebase",
-            "Design an inbox component for the website",
-            "Write a Gmail explainer",
-            "Draft an article about Google Workspace",
-        ]
-        for ask in asks:
-            with self.subTest(ask=ask):
-                self.assertFalse(bridge.is_google_ask(ask))
+            with self.subTest(ask=ask), mock.patch.object(
+                bridge, "run_grok", return_value="Draft 4 on Tommy's thread."
+            ) as run_grok:
+                reply = bridge.handle_prompt("token", 420, 7, ask)
+            run_grok.assert_called_once()
+            self.assertEqual(reply, "Draft 4 on Tommy's thread.")
+            self.assertNotIn(GOOGLE_REPLY, reply)
 
     def test_google_ask_is_parked_idempotently(self):
         ask = "Find the latest client deck in Drive"
@@ -536,10 +525,13 @@ class GoogleFailClosedTest(RuntimeCase):
         )
         self.assertNotIn(ask, twice)
 
-    def test_pocket_brief_reads_lists_and_client_status(self):
+    def test_pocket_brief_reads_todo_and_client_status(self):
+        todo = self.repo / "20-studio" / "todo.md"
+        todo.write_text(
+            "# Todo\n\n## Open\n\n- 2026-08-18 Send the Fitzpatrick reply.\n"
+        )
         self.lists.write_text(
-            "# Lists\n\n## Founder\n\n### Do\n\n- Send the Fitzpatrick reply.\n\n"
-            "### Planned\n\n- Catch-up week of 24 Aug.\n"
+            "# Lists\n\n## Founder\n\n### Do\n\n- Diary leak that must not brief.\n"
         )
         clients = self.repo / "10-clients" / "fitzpatrick-castle"
         clients.mkdir(parents=True)
@@ -547,32 +539,267 @@ class GoogleFailClosedTest(RuntimeCase):
             "# Instance\n\n**Status:** deposit waiting\n\n"
             "Latest client document: `draft4.pdf`\n"
         )
-        brief = bridge.pocket_brief(self.lists, self.repo / "10-clients")
+        brief = bridge.pocket_brief(self.repo / "10-clients")
         self.assertIn("Do: Send the Fitzpatrick reply.", brief)
-        self.assertIn("Next: Catch-up week of 24 Aug.", brief)
+        self.assertNotIn("Diary leak", brief)
+        self.assertNotIn("Next:", brief)
         self.assertIn("fitzpatrick castle: deposit waiting", brief)
         self.assertIn("draft4.pdf", brief)
 
     def test_brief_command_does_not_start_grok(self):
-        self.lists.write_text(
-            "# Lists\n\n## Founder\n\n### Do\n\n- Send the reply.\n"
+        (self.repo / "20-studio" / "todo.md").write_text(
+            "# Todo\n\n## Open\n\n- 2026-08-18 Send the reply.\n"
         )
         with mock.patch.object(bridge, "run_grok") as run_grok:
             reply = bridge.handle_prompt("token", 420, 7, "brief")
         run_grok.assert_not_called()
         self.assertIn("Do: Send the reply.", reply)
 
-    def test_google_ask_never_reaches_grok(self):
-        ask = "Read my latest Gmail message"
+    def test_todo_command_does_not_start_grok(self):
+        (self.repo / "20-studio" / "todo.md").write_text(
+            "# Todo\n\n## Open\n\n- 2026-08-18 Send the reply.\n"
+        )
         with mock.patch.object(bridge, "run_grok") as run_grok:
-            reply = bridge.handle_prompt("token", 420, 7, ask)
+            reply = bridge.handle_prompt("token", 420, 7, "todo")
         run_grok.assert_not_called()
+        self.assertIn("Send the reply.", reply)
+        self.assertNotIn("Do:", reply)
+
+    def test_named_send_ask_reaches_grok(self):
+        ask = "what did I send to Tommy today"
+        with mock.patch.object(
+            bridge, "run_grok", return_value="Draft 4 on Tommy's thread."
+        ) as run_grok:
+            reply = bridge.handle_prompt("token", 420, 7, ask)
+        run_grok.assert_called_once()
+        self.assertEqual(reply, "Draft 4 on Tommy's thread.")
+        self.assertNotIn(GOOGLE_REPLY, reply)
+
+    def test_quoted_google_sentence_is_not_a_miss(self):
+        (self.repo / "20-studio" / "todo.md").write_text(
+            "# Todo\n\n## Open\n\n- 2026-08-18 Chase the Fitzpatrick deposit.\n"
+        )
+        with mock.patch.object(
+            bridge,
+            "run_grok",
+            return_value=(
+                "The rule is: Google isn't on this phone seat. "
+                "Parked on the desk list. So I checked the card first."
+            ),
+        ):
+            reply = bridge.handle_prompt("token", 420, 7, "how do you handle mail")
+        self.assertNotIn(
+            "phone Google request blocked", self.lists.read_text()
+        )
+        self.assertNotIn("Do:", reply)
+
+    def test_voice_brainstorm_never_closes_the_list(self):
+        todo = self.repo / "20-studio" / "todo.md"
+        done = self.repo / "20-studio" / "todo-done.md"
+        todo.write_text(
+            "# Todo\n\n## Open\n\n- 2026-08-18 Chase the Fitzpatrick deposit.\n"
+        )
+        done.write_text("# Todo done\n\n")
+        with mock.patch.object(
+            bridge,
+            "run_grok",
+            return_value="Think it through.\nLIST+ Done | Fitzpatrick deposit",
+        ):
+            reply = bridge.handle_prompt(
+                "token",
+                420,
+                7,
+                "Voice note: brainstorm the deposit angle",
+                from_voice=True,
+            )
+        self.assertEqual(
+            reply,
+            "Think it through.\n\nVoice can't close the list. Text it if it landed.",
+        )
+        self.assertIn("Chase the Fitzpatrick deposit.", todo.read_text())
+        self.assertNotIn("Fitzpatrick", done.read_text())
+
+    def test_google_miss_comes_back_from_grok_with_brief_and_park(self):
+        (self.repo / "20-studio" / "todo.md").write_text(
+            "# Todo\n\n## Open\n\n- 2026-08-18 Chase the Fitzpatrick deposit.\n"
+        )
+        with mock.patch.object(
+            bridge, "run_grok", return_value=GOOGLE_REPLY
+        ) as run_grok:
+            reply = bridge.handle_prompt("token", 420, 7, "Read my latest Gmail")
+            again = bridge.handle_prompt("token", 420, 7, "Read my latest Gmail")
+        run_grok.assert_called()
         self.assertTrue(reply.startswith(GOOGLE_REPLY))
+        self.assertIn("Do: Chase the Fitzpatrick deposit.", reply)
+        self.assertIn("Do: Chase the Fitzpatrick deposit.", again)
         self.assertEqual(
             self.lists.read_text().count(
                 "phone Google request blocked by desk-bridge"
             ),
             1,
+        )
+
+    def test_pocket_brief_ranks_gated_do_over_softer_line(self):
+        (self.repo / "20-studio" / "todo.md").write_text(
+            "# Todo\n\n## Open\n\n"
+            "- 2026-08-18 Think about Papa Rua colours.\n"
+            "- 2026-08-18 Chase the Fitzpatrick deposit on a dated thread.\n"
+        )
+        idle = self.repo / "10-clients" / "aaa-idle"
+        idle.mkdir(parents=True)
+        (idle / "README.md").write_text("# Instance\n\n**Status:** delivered\n")
+        hot = self.repo / "10-clients" / "zzz-hot"
+        hot.mkdir(parents=True)
+        (hot / "README.md").write_text(
+            "# Instance\n\n**Status:** proposal drafted, not sent\n\n"
+            "Latest client document: `pack.pdf`\n"
+        )
+        brief = bridge.pocket_brief(self.repo / "10-clients")
+        self.assertIn("Do: Chase the Fitzpatrick deposit", brief)
+        self.assertNotIn("Papa Rua", brief)
+        self.assertNotIn("cannot see Gmail", brief)
+        self.assertIn("zzz hot: proposal drafted, not sent", brief)
+        self.assertNotIn("aaa idle", brief)
+
+    def test_desk_ask_writes_todo_and_hides_trailers(self):
+        todo = self.repo / "20-studio" / "todo.md"
+        done = self.repo / "20-studio" / "todo-done.md"
+        todo.write_text(
+            "# Todo\n\n## Open\n\n- 2026-08-18 chase the Fitzpatrick deposit\n"
+        )
+        done.write_text("# Todo done\n\n")
+        with mock.patch.object(
+            bridge,
+            "run_grok",
+            return_value=(
+                "Drafted the chase note.\n"
+                "LIST+ Do | send the Ecoplex pack\n"
+                "LIST+ Done | chase the Fitzpatrick deposit"
+            ),
+        ):
+            reply = bridge.handle_prompt(
+                "token", 420, 7, "chase tommy on the deposit"
+            )
+        self.assertEqual(reply, "Drafted the chase note.")
+        self.assertNotIn("LIST+", reply)
+        open_text = todo.read_text()
+        self.assertIn("send the Ecoplex pack", open_text)
+        self.assertNotIn("chase the Fitzpatrick deposit", open_text)
+        self.assertIn("chase the Fitzpatrick deposit", done.read_text())
+        self.assertNotIn("send the Ecoplex pack", self.lists.read_text())
+
+    def test_list_write_does_not_duplicate_the_same_line(self):
+        todo = self.repo / "20-studio" / "todo.md"
+        todo.write_text(
+            "# Todo\n\n## Open\n\n- 2026-08-18 chase the Fitzpatrick deposit\n"
+        )
+        reply = bridge.persist_desk_writes(
+            "Still that.\nLIST+ Do | chase the Fitzpatrick deposit"
+        )
+        self.assertEqual(reply, "Still that.\n\nAlready on the list.")
+        self.assertEqual(
+            todo.read_text().count("chase the Fitzpatrick deposit"), 1
+        )
+
+    def test_todo_rejects_junk_and_caps_open_list(self):
+        todo = self.repo / "20-studio" / "todo.md"
+        todo.write_text("# Todo\n\n## Open\n")
+        self.assertEqual(bridge.add_open_todo("phone cannot see Gmail"), "junk")
+        self.assertNotIn("Gmail", todo.read_text())
+        for index in range(7):
+            self.assertEqual(bridge.add_open_todo(f"Send pack {index}"), "")
+        self.assertEqual(bridge.add_open_todo("Send pack extra"), "full")
+        self.assertEqual(bridge.add_open_todo("Send pack 0"), "dup")
+        self.assertEqual(todo.read_text().count("Send pack"), 7)
+
+    def test_close_todo_refuses_junk_even_when_it_matches(self):
+        todo = self.repo / "20-studio" / "todo.md"
+        done = self.repo / "20-studio" / "todo-done.md"
+        todo.write_text(
+            "# Todo\n\n## Open\n\n- 2026-08-18 Chase the gmail invoice.\n"
+        )
+        done.write_text("# Todo done\n\n")
+        self.assertFalse(bridge.close_todo("gmail"))
+        self.assertIn("Chase the gmail invoice.", todo.read_text())
+        self.assertNotIn("gmail", done.read_text())
+
+    def test_voice_ask_never_closes_the_list(self):
+        todo = self.repo / "20-studio" / "todo.md"
+        done = self.repo / "20-studio" / "todo-done.md"
+        todo.write_text(
+            "# Todo\n\n## Open\n\n- 2026-08-18 Chase the Fitzpatrick deposit.\n"
+        )
+        done.write_text("# Todo done\n\n")
+        with mock.patch.object(
+            bridge,
+            "run_grok",
+            return_value="Sent it.\nLIST+ Done | Fitzpatrick deposit",
+        ):
+            reply = bridge.handle_prompt(
+                "token", 420, 7, "Voice note: the deposit went", from_voice=True
+            )
+        self.assertEqual(
+            reply,
+            "Sent it.\n\nVoice can't close the list. Text it if it landed.",
+        )
+        self.assertIn("Chase the Fitzpatrick deposit.", todo.read_text())
+        self.assertNotIn("Fitzpatrick", done.read_text())
+
+    def test_voice_ask_still_adds_a_do_line(self):
+        todo = self.repo / "20-studio" / "todo.md"
+        todo.write_text("# Todo\n\n## Open\n")
+        with mock.patch.object(
+            bridge,
+            "run_grok",
+            return_value="Noted.\nLIST+ Do | Send the Ecoplex nudge",
+        ):
+            reply = bridge.handle_prompt(
+                "token", 420, 7, "Voice note: nudge ecoplex", from_voice=True
+            )
+        self.assertEqual(reply, "Noted.")
+        self.assertIn("Send the Ecoplex nudge", todo.read_text())
+
+    def test_refused_do_trailers_say_so_on_the_phone(self):
+        todo = self.repo / "20-studio" / "todo.md"
+        todo.write_text(
+            "# Todo\n\n## Open\n\n"
+            + "".join(f"- 2026-08-18 Send pack {index}.\n" for index in range(7))
+        )
+        with mock.patch.object(
+            bridge,
+            "run_grok",
+            return_value=(
+                "Ok.\n"
+                "LIST+ Do | Send pack extra\n"
+                "LIST+ Do | phone cannot see gmail"
+            ),
+        ):
+            reply = bridge.handle_prompt("token", 420, 7, "one more thing")
+        self.assertEqual(
+            reply, "Ok.\n\nTodo is full. Close one.\nNot a todo line."
+        )
+        self.assertNotIn("Send pack extra", todo.read_text())
+        self.assertNotIn("gmail", todo.read_text())
+
+    def test_todo_marks_stale_after_seven_days(self):
+        todo = self.repo / "20-studio" / "todo.md"
+        todo.write_text(
+            "# Todo\n\n## Open\n\n- 2026-08-01 Chase the old deposit.\n"
+        )
+        items = bridge.regulate_todo(today=date(2026, 8, 18))
+        self.assertTrue(items[0][1])
+        self.assertIn("STALE Chase the old deposit", todo.read_text())
+
+    def test_list_write_keeps_only_two_trailers(self):
+        cleaned, writes = bridge.extract_list_writes(
+            "Ok.\n"
+            "LIST+ Do | one\n"
+            "LIST+ Done | two\n"
+            "LIST+ Moving | three\n"
+        )
+        self.assertEqual(cleaned, "Ok.")
+        self.assertEqual(
+            writes, [("Do", "one"), ("Done", "two")]
         )
 
 
@@ -1249,7 +1476,7 @@ class VoiceTest(RuntimeCase):
                 },
             )
         handle_prompt.assert_called_once_with(
-            "", 0, None, "Voice note: book the room", deadline=mock.ANY
+            "", 0, None, "Voice note: book the room", deadline=mock.ANY, from_voice=True
         )
 
     def test_expired_voice_budget_never_starts_grok(self):
@@ -1302,7 +1529,12 @@ class RulesTest(unittest.TestCase):
     def test_phone_rules_filter_intake_and_client_facing(self):
         rules = bridge.DESK_RULES.lower()
         self.assertIn("filter like a chief of staff", rules)
+        self.assertIn("list+ do |", rules)
+        self.assertIn("20-studio/todo.md", rules)
+        self.assertIn("do not write todos to lists.md", rules)
         self.assertIn("10-clients/<slug>/", rules)
+        self.assertIn("do not lead with that sentence when the card or the todo already answers", rules)
+        self.assertIn("a voice note cannot close the list", rules)
         self.assertIn("instagram and tiktok links", rules)
         self.assertIn("client-facing", rules)
         self.assertIn("still they recognise", rules)
@@ -1378,6 +1610,38 @@ class CommandReplyTest(RuntimeCase):
             reply = bridge.handle_prompt("token", 420, 7, "/park")
         run_grok.assert_not_called()
         self.assertEqual(reply, "Say what to park.")
+
+    def test_slash_capture_keeps_its_payload(self):
+        self.lists.write_text("# Lists\n\n## Founder\n\n### Do\n")
+        with mock.patch.object(bridge, "run_grok") as run_grok:
+            reply = bridge.handle_prompt("token", 420, 7, "/park buy ND filters")
+        run_grok.assert_not_called()
+        self.assertEqual(reply, "On the list.")
+        self.assertIn("buy ND filters", self.lists.read_text())
+
+    def test_slash_idea_with_payload_captures(self):
+        self.lists.write_text("# Lists\n\n## Founder\n\n### Do\n")
+        with mock.patch.object(bridge, "run_grok") as run_grok:
+            reply = bridge.handle_prompt(
+                "token", 420, 7, "/idea fix the landing page"
+            )
+        run_grok.assert_not_called()
+        self.assertEqual(reply, "Sent to the desk.")
+        self.assertIn("fix the landing page", self.lists.read_text())
+
+    def test_slash_brainstorm_with_payload_reaches_grok(self):
+        with mock.patch.object(
+            bridge, "run_grok", return_value="Roof at dusk, one face."
+        ) as run_grok:
+            reply = bridge.handle_prompt("token", 420, 7, "/brainstorm dusk idea")
+        run_grok.assert_called_once()
+        self.assertEqual(reply, "Roof at dusk, one face.")
+
+    def test_non_capture_slash_with_payload_is_still_help(self):
+        with mock.patch.object(bridge, "run_grok") as run_grok:
+            reply = bridge.handle_prompt("token", 420, 7, "/todo please")
+        run_grok.assert_not_called()
+        self.assertEqual(reply, bridge.help_text())
 
     def test_brainstorm_is_a_short_grok_ask(self):
         with mock.patch.object(
