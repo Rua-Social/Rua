@@ -98,10 +98,8 @@ request. Doctrine is `00-system/skills/rua-git-flow/`.
 Branch when the change touches more than one file, changes a tool or doctrine,
 or was written mostly by a model. Direct to `main` is for a typo or a date.
 
-The remote does not enforce this until branch protection from
-`00-system/git-setup.md` has been applied. Until then the instruction, and
-the local hook if it is installed, are all there is. After protection is on,
-if this file and the remote disagree, the remote is correct.
+The remote requires a pull request onto `main`. Admins are included. If this
+file and the remote disagree, the remote is correct.
 
 ## Structure
 

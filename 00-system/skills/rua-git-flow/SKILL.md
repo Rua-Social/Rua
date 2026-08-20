@@ -14,10 +14,10 @@ How work reaches `main` in this repository.
 
 Provisional. Overturn this file when the flow itself is wrong.
 
-This is instruction-following, not a hard stop. The local hook and remote
-branch protection are hard stops only when they are installed. Setup is
-`00-system/git-setup.md`. Neither is assumed live. After protection is on,
-if this file and the remote disagree, the remote is correct.
+This is instruction-following on the client. The hard stops are the local
+hook, when installed, and branch protection on the remote, which is on.
+Setup is `00-system/git-setup.md`. If this file and the remote disagree,
+the remote is correct.
 
 Read `00-system/rewrite-contract.md` before adding a rule here.
 

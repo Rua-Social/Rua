@@ -1,5 +1,6 @@
 #!/bin/sh
-# Rua pre-push hook. Blocks a direct push to main.
+# Rua pre-push hook. Blocks a direct push to main. Runs html-to-pdf and
+# desk-bridge tests when those trees are in the push.
 #
 # Install:
 #   git config core.hooksPath .githooks
@@ -7,13 +8,15 @@
 # Bypass once, deliberately and visibly:
 #   git push --no-verify
 #
-# This is a local hard stop. It protects you from habit, not from intent, and
-# it does not exist on any other machine. Branch protection on the remote is
-# the layer that actually holds. Use both.
+# This is a local hard stop. It protects you from habit, not from intent.
+# Branch protection on the remote is the layer that actually holds.
 
 protected="main"
+zero="0000000000000000000000000000000000000000"
+run_tools_check=0
+root=$(git rev-parse --show-toplevel)
 
-while read -r _local_ref _local_sha remote_ref _remote_sha; do
+while read -r _local_ref local_sha remote_ref remote_sha; do
   branch="${remote_ref#refs/heads/}"
   if [ "$branch" = "$protected" ]; then
     cat >&2 <<'MSG'
@@ -35,6 +38,22 @@ while read -r _local_ref _local_sha remote_ref _remote_sha; do
 MSG
     exit 1
   fi
+
+  if [ "$local_sha" = "$zero" ]; then
+    continue
+  fi
+  if [ "$remote_sha" = "$zero" ]; then
+    base=$(git merge-base origin/main "$local_sha" 2>/dev/null || echo "$local_sha")
+  else
+    base=$remote_sha
+  fi
+  if git diff --name-only "$base" "$local_sha" | grep -q '^30-tools/\(html-to-pdf\|desk-bridge\)/'; then
+    run_tools_check=1
+  fi
 done
+
+if [ "$run_tools_check" = 1 ]; then
+  "$root/00-system/check-tools.sh" || exit 1
+fi
 
 exit 0

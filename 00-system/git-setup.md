@@ -1,13 +1,15 @@
 # Git setup
 
-One-time setup for this repository. Run once, per machine for the hook, once
-globally for branch protection.
+One-time setup for this repository. The remote gate is on. The hook is per
+machine.
 
 Doctrine: `00-system/skills/rua-git-flow/`.
 
 ## 1. Local hook (per machine)
 
-Blocks a direct push to `main` from this machine.
+Blocks a direct push to `main` from this machine. When a push includes
+`30-tools/html-to-pdf` or `30-tools/desk-bridge`, it also runs
+`00-system/check-tools.sh`.
 
 ```sh
 git config core.hooksPath .githooks
@@ -24,45 +26,54 @@ git push --no-verify
 A hook lives on one machine and protects you from habit, not from intent. It is
 not enforcement. Step 2 is.
 
-## 2. Branch protection (once, needs admin)
+## 2. Branch protection (on)
 
-Not applied. `GET repos/Rua-Social/Rua/branches/main/protection` still
-returns 404 until you run this. Confirm with that GET after you do.
+Applied. Confirm with `GET repos/Rua-Social/Rua/branches/main/protection`.
+A 404 means it has been removed.
 
-This is the only layer that actually enforces anything, and only after it
-is on. GitHub then refuses a direct push to `main` from a non-admin
-client. `enforce_admins` is false in the recipe below, so admins can still
-push while the flow beds in.
+Admins are included (`enforce_admins` true). Merge commits onto `main` are
+off; squash or rebase. No required status checks: GitHub Actions `tools.yml`
+does not yet run the unittest commands these tools document, and a required
+always-green check is worse than none. Updating that workflow file needs a
+`gh` token with the `workflow` scope.
 
 ```sh
-gh api -X PUT "repos/Rua-Social/Rua/branches/main/protection" \
+gh api -X PUT repos/Rua-Social/Rua/branches/main/protection \
   -H "Accept: application/vnd.github+json" \
-  -F "required_pull_request_reviews[required_approving_review_count]=0" \
-  -F "required_pull_request_reviews[dismiss_stale_reviews]=true" \
-  -F "enforce_admins=false" \
-  -F "required_status_checks[strict]=true" \
-  -F "required_status_checks[contexts][]=" \
-  -F "restrictions=" \
-  -F "allow_force_pushes=false" \
-  -F "allow_deletions=false" \
-  -F "required_linear_history=true"
+  --input - <<'JSON'
+{
+  "required_status_checks": null,
+  "enforce_admins": true,
+  "required_pull_request_reviews": {
+    "dismiss_stale_reviews": true,
+    "required_approving_review_count": 0
+  },
+  "restrictions": null,
+  "allow_force_pushes": false,
+  "allow_deletions": false,
+  "required_linear_history": true
+}
+JSON
 ```
 
 What each choice means, and why:
 
 | Setting | Value | Why |
 |---|---|---|
-| `required_approving_review_count` | `0` | One person. Self-merge stays legal. The PR is still required, and the diff still gets read. That is the point, not a second signature |
-| `enforce_admins` | `false` | A deliberate escape hatch while the flow beds in. Set `true` once it feels natural |
+| `required_approving_review_count` | `0` | Self-merge stays legal. The PR is still required, and the diff still gets read. That is the point, not a second signature |
+| `enforce_admins` | `true` | Both people who can push are admins. False would bind neither of them |
 | `allow_force_pushes` | `false` | `main` history cannot be rewritten |
 | `allow_deletions` | `false` | `main` cannot be deleted |
-| `required_linear_history` | `true` | No merge commits. History stays readable |
+| `required_linear_history` | `true` | No merge commits. Squash or rebase |
+| `required_status_checks` | `null` | Do not require a check that does not test |
+
+Repo merge buttons: squash and rebase on, merge commit off, delete branch on merge.
 
 ## 3. Archive the superseded repo
 
 `Rua-Social/governanca` was created and last pushed on 10 August, sixteen
-minutes apart. It is named "The Governance layer" and that concept now lives in
-`00-system/`. Leaving it live implies a second source of truth.
+minutes apart. It is named "The Governance layer". That method was consulted
+and not installed here. Leaving it live implies a second source of truth.
 
 ```sh
 gh api -X PATCH repos/Rua-Social/governanca -F archived=true
