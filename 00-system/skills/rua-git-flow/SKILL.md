@@ -14,10 +14,10 @@ How work reaches `main` in this repository.
 
 Provisional. Overturn this file when the flow itself is wrong.
 
-This is instruction-following, not a hard stop. The hard stops are the
-`pre-push` hook on the machine and branch protection on the remote. If this
-file and the remote disagree, the remote is correct and this file is stale.
-Setup for both is in `00-system/git-setup.md`.
+This is instruction-following, not a hard stop. The local hook and remote
+branch protection are hard stops only when they are installed. Setup is
+`00-system/git-setup.md`. Neither is assumed live. After protection is on,
+if this file and the remote disagree, the remote is correct.
 
 Read `00-system/rewrite-contract.md` before adding a rule here.
 
@@ -78,11 +78,11 @@ second signature.
 
 ## Issues
 
-Open an issue when the work is not being done now. The todo list is capped at
-seven by `rua-todo` and that cap is correct. Work beyond the cap belongs in
-issues, not in a longer file.
+GitHub issues are for deferred repo work that is not a founder next-action.
+The founder list is `20-studio/todo.md`, capped at seven by `rua-todo`. A
+full list means close one. Do not park overflow as an issue.
 
-Close the issue from the PR body with `Closes #N`.
+If an issue exists for the work, close it from the PR body with `Closes #N`.
 
 ## What never lands
 

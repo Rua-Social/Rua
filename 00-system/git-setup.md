@@ -26,8 +26,13 @@ not enforcement. Step 2 is.
 
 ## 2. Branch protection (once, needs admin)
 
-This is the only layer that actually enforces anything. GitHub refuses the push
-regardless of client, machine, model, or tool-approval setting.
+Not applied. `GET repos/Rua-Social/Rua/branches/main/protection` still
+returns 404 until you run this. Confirm with that GET after you do.
+
+This is the only layer that actually enforces anything, and only after it
+is on. GitHub then refuses a direct push to `main` from a non-admin
+client. `enforce_admins` is false in the recipe below, so admins can still
+push while the flow beds in.
 
 ```sh
 gh api -X PUT "repos/Rua-Social/Rua/branches/main/protection" \
