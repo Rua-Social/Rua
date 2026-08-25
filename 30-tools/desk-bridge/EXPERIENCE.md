@@ -19,7 +19,7 @@ not this seat.
 | New session | `/new` | Drop the Grok session and any queued asks. Next message starts fresh. Cuts the line. |
 | Status | `/status`, `/statua`, or the word status | Owner, engine, session, effort, queue, pending, last run, last error, whether the next ask will keep or reset. Last run is timing, not JSON. |
 | Brief | `/brief` or the word brief | Ranked walking card from `20-studio/todo.md` plus one live client card. Not `lists.md`. Not live Google. |
-| Todo | `/todo` or the word todo | Open actions only. Full and STALE lines if those apply. |
+| Todo | `/todo` or the word todo | Walking open actions. Action text, not the date. Full and STALE if those apply. Last line: Text the action to close it. |
 | Park | `/park …`, `park …`, `backlog …`, or a voice note that starts that way | Instant. Lands on Founder → Ideas. No Grok. |
 | Idea | `/idea …` or `idea …` | Instant. Short stays on the list. Longer goes to `20-studio/ideas/`. |
 | Brainstorm | `/brainstorm …` or `brainstorm …` | Eyes + typing. A short think comes back. Not a deck. |
@@ -88,7 +88,8 @@ this table.
 | Refused todo write | One line after the result: "Todo is full. Close one." or "Not a todo line." |
 | Voice note reported a done | Voice never closes the list. "Voice can't close the list. Text it if it landed." |
 | Todo empty | "Nothing open." |
-| Todo at seven open | "Todo is full. Close one." then the list. |
+| Todo at seven open | "Todo is full. Close one." then the list, then "Text the action to close it." |
+| Open todo | Action text, `STALE` prefix if stale, then "Text the action to close it." |
 | Open line older than seven days | Marked `STALE` on `/todo` and `/brief`. |
 | Reply completed but Telegram is unavailable | The result is held locally and delivered without rerunning Grok when Telegram returns. `/status` shows a pending delivery. |
 
@@ -166,9 +167,9 @@ completeness, engagement.
 
 ### Flow 5 — Capture on the street (founder, idea mid-walk)
 
-1. Voice or text: `park …` or `idea …` / `brainstorm …`.
-2. No Grok. No queue wait.
-3. **Worked:** "On the list." or "Sent to the desk." He keeps walking.
+1. Voice or text: `park …` or `idea …`. `brainstorm …` is a short Grok think, not this path.
+2. Park and idea: No Grok. No queue wait. Brainstorm: eyes + typing. Not a deck.
+3. **Worked:** park/idea: "On the list." or "Sent to the desk." Brainstorm: the short think comes back. He keeps walking.
 4. Failure: only the word, no payload → "Say what to park." / "Say the idea."
 
 ### Flow 6 — Commitment on the street (founder, after a call)

@@ -560,13 +560,56 @@ class GoogleMissTest(RuntimeCase):
 
     def test_todo_command_does_not_start_grok(self):
         (self.repo / "20-studio" / "todo.md").write_text(
-            "# Todo\n\n## Open\n\n- 2026-08-18 Send the reply.\n"
+            f"# Todo\n\n## Open\n\n- {FRESH_TODO} Send the reply.\n"
         )
         with mock.patch.object(bridge, "run_grok") as run_grok:
             reply = bridge.handle_prompt("token", 420, 7, "todo")
         run_grok.assert_not_called()
-        self.assertIn("Send the reply.", reply)
+        self.assertIn("- Send the reply.", reply)
         self.assertNotIn("Do:", reply)
+        self.assertNotIn(FRESH_TODO, reply)
+        self.assertTrue(reply.endswith("Text the action to close it."))
+
+    def test_format_open_todo_prints_action_not_date(self):
+        todo = self.repo / "20-studio" / "todo.md"
+        todo.write_text(
+            f"# Todo\n\n## Open\n\n- {FRESH_TODO} Send the reply.\n"
+        )
+        reply = bridge.format_open_todo(today=date.today())
+        self.assertEqual(
+            reply,
+            "- Send the reply.\nText the action to close it.",
+        )
+        self.assertNotIn(FRESH_TODO, reply)
+
+    def test_format_open_todo_empty_stays_nothing_open(self):
+        todo = self.repo / "20-studio" / "todo.md"
+        todo.write_text("# Todo\n\n## Open\n")
+        self.assertEqual(bridge.format_open_todo(), "Nothing open.")
+
+    def test_format_open_todo_keeps_stale_prefix(self):
+        todo = self.repo / "20-studio" / "todo.md"
+        todo.write_text(
+            "# Todo\n\n## Open\n\n- 2026-08-01 Chase the old deposit.\n"
+        )
+        reply = bridge.format_open_todo(today=date(2026, 8, 18))
+        self.assertEqual(
+            reply,
+            "- STALE Chase the old deposit.\nText the action to close it.",
+        )
+        self.assertNotIn("2026-08-01", reply)
+
+    def test_format_open_todo_full_then_bullets_then_close(self):
+        todo = self.repo / "20-studio" / "todo.md"
+        todo.write_text(
+            "# Todo\n\n## Open\n\n"
+            + "".join(f"- {FRESH_TODO} Send pack {index}.\n" for index in range(7))
+        )
+        reply = bridge.format_open_todo(today=date.today())
+        self.assertTrue(reply.startswith("Todo is full. Close one.\n"))
+        self.assertIn("- Send pack 0.", reply)
+        self.assertTrue(reply.endswith("Text the action to close it."))
+        self.assertNotIn(FRESH_TODO, reply)
 
     def test_named_send_ask_reaches_grok(self):
         ask = "what did I send to Tommy today"

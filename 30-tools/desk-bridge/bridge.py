@@ -1292,13 +1292,15 @@ def close_todo(
 
 def format_open_todo(path: Path | None = None, today: date | None = None) -> str:
     items = regulate_todo(path, today=today)
+    if not items:
+        return "Nothing open."
     lines: list[str] = []
     if len(items) >= TODO_OPEN_CAP:
         lines.append("Todo is full. Close one.")
-    if not items:
-        return "Nothing open."
-    for added, stale, text in items:
-        lines.append(format_todo_line(added, stale, text))
+    for _, stale, text in items:
+        mark = "STALE " if stale else ""
+        lines.append(f"- {mark}{text}".rstrip())
+    lines.append("Text the action to close it.")
     return "\n".join(lines)
 
 

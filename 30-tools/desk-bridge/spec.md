@@ -44,8 +44,9 @@ dependency, host, service, or chat surface. Changing Telegram's look.
   brief is appended to a Google miss reply. They do not read
   `lists.md`. They do not open Mail.app, Calendar.app, or Drive.
 - `/todo` returns the open list from `20-studio/todo.md`. Cap 7.
-  Lines older than 7 days are marked STALE on read. Empty is
-  "Nothing open." Full is "Todo is full. Close one."
+  Prints the action text, not the ISO date. STALE prefix when stale.
+  Empty is "Nothing open." Full is "Todo is full. Close one." then
+  the list, then "Text the action to close it."
 - After a real desk ask (not `/park`, `/idea`, `/brief`, `/todo`,
   or `/status`), at most two `LIST+ Heading | line`
   trailers in the Grok reply are stripped from Telegram. `Do` appends
