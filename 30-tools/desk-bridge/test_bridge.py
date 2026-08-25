@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 import threading
 import unittest
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from unittest import mock
 
@@ -712,6 +712,18 @@ class GoogleMissTest(RuntimeCase):
         self.assertNotIn("cannot see Gmail", brief)
         self.assertIn("zzz hot: proposal drafted, not sent", brief)
         self.assertNotIn("aaa idle", brief)
+
+    def test_pocket_brief_ranks_stale_gated_do_over_fresh_craft(self):
+        old = (date.today() - timedelta(days=8)).isoformat()
+        (self.repo / "20-studio" / "todo.md").write_text(
+            "# Todo\n\n## Open\n\n"
+            f"- {FRESH_TODO} Do Deirdre Duffy's edits\n"
+            f"- {old} Chase the Fitzpatrick deposit on a dated thread.\n"
+        )
+        brief = bridge.pocket_brief(self.repo / "10-clients")
+        self.assertIn("Do: STALE Chase the Fitzpatrick deposit", brief)
+        self.assertNotIn("Deirdre", brief)
+        self.assertNotIn("STALE: Chase the Fitzpatrick deposit", brief)
 
     def test_desk_ask_writes_todo_and_hides_trailers(self):
         todo = self.repo / "20-studio" / "todo.md"

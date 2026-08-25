@@ -41,8 +41,10 @@ dependency, host, service, or chat surface. Changing Telegram's look.
   `20-studio/ideas/`.
 - `/brief` returns a ranked pocket brief from `20-studio/todo.md`
   plus one live client card from `10-clients/*/README.md`; the same
-  brief is appended to a Google miss reply. They do not read
-  `lists.md`. They do not open Mail.app, Calendar.app, or Drive.
+  brief is appended to a Google miss reply. Do is ranked from all
+  open lines. A STALE badge does not demote a gated chase behind a
+  fresh sit-down line. They do not read `lists.md`. They do not open
+  Mail.app, Calendar.app, or Drive.
 - `/todo` returns the open list from `20-studio/todo.md`. Cap 7.
   Prints the action text, not the ISO date. STALE prefix when stale.
   Empty is "Nothing open." Full is "Todo is full. Close one." then
