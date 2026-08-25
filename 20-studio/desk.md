@@ -94,7 +94,7 @@ pin. Reuse them. Do not open a room because a new idea showed up.
 
 | Room | Seed on first boot | Use for |
 | --- | --- | --- |
-| `desk` | Read `20-studio/desk.md`. You are the conductor. Wait for a class. Do not invent work. | Sit-down, founder, systems, `/desk-brief` |
+| `desk` | Read `20-studio/desk.md`. You are the conductor. Wait for a class. Do not invent work. | Sit-down, founder, systems, `/desk-brief`, board |
 | `sales` | Read `20-studio/sales/README.md` and `00-system/templates/scope-of-work.md`. Do not start a delivery skill. | Scope, proposal, invoice, payment gate |
 | `job` | Name the engagement. Read only `10-clients/<slug>/` for that engagement. | The one live client job |
 | `tools` | Read `00-system/skills/rua-ship-gate/SKILL.md`. Software only. Code, session, and look. | Anything under `30-tools/` |
@@ -129,10 +129,39 @@ The cheap `kimi` pass finished. Do not do this a third time.
 | Cheap extract on Moonshot | `kimi` MCP tool `kimi_run` (or `/model kimi`) | `spawn_subagent` / workflow `model=kimi` — Grok rejects those slugs. Fake `kimi` agent types just run grok-4.6 |
 | Coding review or Moonshot write | `/model kimi-code` in `tools` (full Grok hands) | `kimi_run` with `kimi-code` (reader cage, 240s). Grok calling Claude Code pointed at Moonshot |
 | Architecture review, hostile or 1M read | `/model kimi-k3` in a named look room. Not `kimi_run` + K3 for a short review (17 Aug cage; repeated 18 Aug) | Making K3 the default conductor; `kimi_run` + `kimi-k3` as a courtesy child |
+| Should we do this | The board, in this room. Owner, hostile, class. | A `boardroom` room, named advisors, `/desk-brief` |
 | Same parallel pass every sit-down | `/desk-brief` from a session in `~/Rua` | Launching it from `$HOME` |
 | Second opinion from Claude / Gemini / Codex | `ai-cli` with the slugs that worked, below | Opening a second terminal for a one-line review |
 | Repeated method | A skill | A custom agent file |
 | Another model's full harness | Another seat (`rua-desk claude` etc.) | A `/model` stub |
+
+### Board
+
+A founder decision, not a sit-down scan. `/desk-brief` is "what is
+on." The board is "should we do this."
+
+Three seats. Roles, not characters. Do not pin a `boardroom` room.
+
+| Seat | Who | What they must do |
+| --- | --- | --- |
+| Owner | This room, `20-studio/founder-context.md` | Time, economics, craft overlap, small load. What you are actually optimising for. |
+| Hostile | `/model kimi-k3` in a look room, or `ai-cli` `opus` | Attack the plan. One concrete risk. Not cheerleading. |
+| Class | The room that would have to change: `tools`, `sales`, `job`, or `papa` | What the files actually say. What would have to land in Git. |
+
+They must disagree. Unanimous is a failed session. Each seat cites a
+file. Output is the path, what you are not doing, and GO / NO-GO /
+CONDITIONAL. You hold the pen.
+
+In this room:
+
+```
+Convene the board on: [one sentence].
+Owner from founder-context.md. Hostile as K3. Class is [tools / sales / job / papa].
+They must disagree. Cite files. I decide.
+```
+
+If that handoff starts happening every week, add a `/board` workflow
+next to `/desk-brief`. Not before.
 
 A custom agent file is earned when a role needs its own tools or
 prompt, not when you want a job title.
@@ -241,12 +270,13 @@ reason the official CLI is not enough.
 
 No `agents/`, `orchestration/`, `models/`, or `pipelines/` directory
 in this repo. No router service. No third-party method at the
-repository root.
+repository root. No `boardroom` room: the board is three seats in
+`desk`, not a sixth pin.
 
 Grok workflows live under `.grok/workflows/`. That is the harness
 adapter for a repeated parallel pass, not an org chart. The first
 one is `desk-brief`. Add another when the same multi-agent handoff
-is happening every week.
+is happening every week. A `/board` workflow waits for that.
 
 Until then this note is the desk.
 
