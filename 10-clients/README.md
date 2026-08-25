@@ -3,6 +3,9 @@
 Named instance records. One directory per client that is actually being
 worked. Load a record only when that engagement is the job.
 
+Live in this folder now: `ecoplex/`, `fitzpatrick-castle/`, `skehans/`,
+`deirdre-duffy/`.
+
 This is not doctrine. Living names belong here. Proof points and lead-deck
 angles do not. If you want a public case, that is a separate Rua-facing
 artefact with the client's consent.
