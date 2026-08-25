@@ -1,9 +1,11 @@
 # Captions, Dee Design
 
-Paste-ready. Her voice: warm, materials named, not salesy. Irish English.
+Paste-ready. Instagram and TikTok. Same caption on both. LinkedIn is out.
+Her voice: warm, materials named, not salesy. Irish English.
 No em dashes. No "it's not X, it's Y". Light tags, local only.
 On-screen text: readable on mute in two seconds.
 Quotes are lines she or Gareth actually said. Do not add invented ones.
+The LinkedIn blocks below are unused leftover. Use the IG line.
 
 ---
 

@@ -4,8 +4,9 @@ Load only when this engagement is the job. Factual record, not a
 creative template.
 
 **Job-type:** pickup / execution. Photo and video of two completed
-kitchens, plus a LinkedIn portrait. Rua did not run a sprint. Do not
-load the shoot-plan skill.
+kitchens. Rua did not run a sprint. Do not load the shoot-plan skill.
+Delivery channels, 25 August: Instagram and TikTok only. LinkedIn is
+out of this pack.
 **Status:** live in post. Shoot 28 July 2026. Edit guide 25 August 2026.
 Delivery of the proposal was 10 working days after the shoot; this pack
 is late, so volume is the make-good.
@@ -31,9 +32,11 @@ Referral from Bríd / Mosaic. Proposal 30 June 2026. Deposit paid
 Proposal: `/Users/darraghhoare/Downloads/Deirdre Duffy - Rua Social Proposal.pdf`
 
 1. Two locations photographed. Edited stills per space.
-2. A talk-through film per property. Short vertical, captioned, for
-   Instagram and LinkedIn. Two films.
-3. A new LinkedIn profile portrait. A handful of edited headshots.
+2. A talk-through film per property. Short vertical, captioned.
+   Proposal named Instagram and LinkedIn. Delivery is Instagram and
+   TikTok. Two films as the floor, 26 extra 9:16 cuts as upside.
+3. Portraits were sold as LinkedIn headshots. They still go in the
+   stills set. There is no LinkedIn sequence in this pack.
 
 €650 ex VAT. Usage: her marketing, website, and socials. Delivery was
 to be web-ready files within 10 working days of the shoot.
@@ -80,6 +83,7 @@ on the Studio drive when it is copied there.
 
 - Scope, from the proposal: `00-brief/scope.md`
 - Cut list: `04-post/edit-guide.md`
+- Phone PDF: `04-post/edit-guide.pdf`
 - Captions: `04-post/captions.md`
-- LinkedIn sequence: `04-post/linkedin.md`
+- Posting, IG + TikTok: `04-post/posting.md`
 - Cleaned iTT text: `04-post/transcripts/`

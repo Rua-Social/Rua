@@ -3,8 +3,9 @@
 **Source:** T7 originals 28 July 2026, FCP event `First shoot` in `Dee Duffy.fcpbundle`. Transcripts are iTT exports of the four FCP projects, not the raw clip clocks.
 **Purpose:** Cut list for tonight. She was upset after the first takes. This is the first shoot together. The films have to make her look like herself: calm, precise, in the rooms. Not selling.
 **Timecodes:** sequence time from the named FCP project, as in the iTT. Anchors given so a recut survives a re-export.
-**Aspect:** sold films 9:16 for Instagram, plus a 4:5 LinkedIn recut of the same audio. Upside Reels 9:16. FCP project 1080×1920, 25fps, Spatial Conform Fill, crop 9:16 off the 4K 16:9. Pan on the move clips (P1001480, P1001490, P1001498).
-**Target:** 60 to 75 seconds of picture, 45 to 55 seconds of her or Gareth's voice, room for B-roll breath.
+**Aspect:** 9:16 only. Instagram and TikTok. Same file on both. LinkedIn is out. FCP project 1080×1920, 25fps, Spatial Conform Fill, crop 9:16 off the 4K 16:9. Pan on the move clips (P1001480, P1001490, P1001498).
+**Target:** sold films 60 to 75 seconds. Harvest shorts 10 to 25 seconds. Two B-roll spines, then duplicate.
+**Phone PDF:** `edit-guide.pdf` (16 pages).
 
 ---
 
@@ -38,29 +39,38 @@ VO files in `First shoot / Original Media/` (aliases into Downloads):
 
 ## WHAT WAS SOLD, WHAT TO CUT
 
-Proposal floor: two talk-through films, a stills set per kitchen, a handful of LinkedIn headshots.
+Proposal floor: two talk-through films and stills. This pack: 28 vertical masters (2 sold, 26 upside) plus stills carousels.
 
-Cut tonight in this order. Stop at 4 if you run out of hours. The rest is upside for the late delivery.
+Build Spine A (Swords) and Spine B (Calderwood). Duplicate. New audio. New first frame. That is the night.
 
-| # | Piece | Grade | Role |
+| ID | Piece | Grade | Dur |
 |---|---|---|---|
-| 1 | Swords VO talk-through | **CUT FIRST** | Sold film 1 |
-| 2 | Calderwood VO talk-through, take 4 | **CUT FIRST** | Sold film 2 |
-| 3 | Gareth: from the moment I met D | **CUT FIRST** | Upside. Shortest money line. Makes her look like the person you keep. |
-| 4 | Gareth: I thought I needed an extension | **CUT FIRST** | Upside. The story of the job. |
-| 5 | Calderwood vaulted lighting | **CUT IF TIME** | Upside. Her craft, no face required. |
-| 6 | Gareth: 3 options, not 80 / I wish I had called sooner | **CUT IF TIME** | Upside. Advice Reel. |
-| 7 | Calderwood Dekton | **CUT IF TIME** | Upside. Same B-roll as 2, different audio, reads new. |
-| 8 | Two-hander, island consult | **HOLD FOR HER APPROVAL** | Upside. Both on camera. Only if she is happy seeing herself. |
-| 9 | Stills sets + LinkedIn portraits | **CUT FIRST** with 1 and 2 | Sold. |
+| S01 | Swords VO talk-through | **CUT FIRST** sold | 60–70s |
+| C01 | Calderwood VO take 4 | **CUT FIRST** sold | 70–80s |
+| G02 | From the moment I met D | **CUT FIRST** | 25–40s |
+| G01 | I thought I needed an extension | **CUT FIRST** | 60–75s |
+| C03 | Vaulted lighting | **CUT FIRST** | 18–25s |
+| G03 | 3 options, not 80 | **HARVEST** | 12–16s |
+| G04 | I wish I had called sooner | **HARVEST** | 18–24s |
+| G05 | Cooking is actually enjoyable | **HARVEST** | 10–15s |
+| G06 | Use of space | **HARVEST** | 20–28s |
+| G07 | Gareth on Dekton | **HARVEST** | 18–25s |
+| G08 | Shot to nothing | **HARVEST** | 12–18s |
+| G09 | Peace of mind | **HARVEST** | 18–25s |
+| G10 | Favourite spot, pantry | **HARVEST** | 18–25s |
+| G11 | Fraction of the cost | **HARVEST** | 10–14s |
+| G12 | Dining table two-hander | **HOLD** | 40–55s |
+| S02–S05 | VO slices, new first frame | **HARVEST** | 12–22s |
+| C02 C04–C10 C12 | Calderwood slices + visual drawer | **HARVEST** | 8–25s |
+| C11 | Hold your hand | **HOLD** | 15–20s |
 
-Do not open the night by trying to salvage her to-camera first takes. Those lines live under B-roll inside 1, 2, 5 and 7 if you need a second audio version later.
+Do not open the night by salvaging her to-camera first takes. Those gold lines are harvest audio under Spine B. Phone cards and B-roll bins: `edit-guide.pdf`.
 
 ---
 
 ## CLIENT FLAGS, RESOLVE WITH DEIRDRE BEFORE POLISH
 
-1. **Gareth on her channels. NEEDS CLIENT DECISION.** He is the strongest person on camera all day. Confirm he is happy for the testimonial cuts to go on Instagram and LinkedIn before those three ship. The Swords VO film can go without him on camera.
+1. **Gareth on her channels. NEEDS CLIENT DECISION.** He is the strongest person on camera all day. Confirm he is happy for the testimonial cuts to go on Instagram and TikTok before those ship. The Swords VO film can go without him on camera.
 2. **"Over 100 grand." NEEDS CLIENT DECISION.** She says it in the VO she wrote. He says "in excess of 100 grand" on camera. If either of them flinches at the figure on a public Reel, keep it in the VO film (her words, her choice) and drop it from Gareth's cut.
 3. **JDM Woodworks. HOLD the spoken promo.** At Calderwood 00:02:53 she was asked to praise them and said "No, I'm not going to say that." Honour that. The drawer close-up `P1001487` (brand lasered in the oak) is a craft shot, not a credit. Ask her if it can appear without a caption. Do not add a JDM tag unless she asks.
 4. **Pendant brand at Calderwood. NEEDS SPELLING.** Transcript has Yumidge / Yumitch. On-screen they are the large circular discs under the vault. Do not burn a brand name until she spells it.
@@ -380,16 +390,7 @@ Pull extra stills from B-roll frames if the JPG set is thin on the rooms themsel
 3. Picture-lock piece 2, Calderwood take 4. Burn captions from her script.
 4. Piece 3, Gareth 25s. Then piece 4 if the first one feels good.
 5. Rotate and grade the portrait stills. Pick 1504 as profile.
-6. Export 9:16 masters. Recut 1 and 2 to 4:5 for LinkedIn as a second export, same audio.
-7. Stop. Send her 1, 2, 3 and the portraits. Push the rest after she has seen herself looking well.
+6. Harvest. Duplicate the matching spine, new audio, new first frame. Same 9:16 file for Instagram and TikTok.
+7. Stop when S01 and C01 exist. Steal the rest. Telegram the four flags.
 
-**If you have another hour**, these are extra shorts from audio you already cut. New first frame, not a clone of 1 or 2.
-
-| Short | Audio | Dur | First frame must not be |
-|---|---|---|---|
-| Hob facing the garden | Swords VO 00:00:40 to 00:00:46 | 12–18s | Piece 1's island open |
-| Cooking is actually enjoyable | Gareth 00:09:29 to 00:09:36 | 10–15s | Piece 3 or 4's Gareth hold |
-| Twenty years on | Calderwood take 4 open only | 15–20s | Piece 2's vault open |
-| 3 options, not 80 | Gareth 00:14:21 to 00:14:41 alone | 12–16s | Piece 6's open |
-
-Captions and the posting order: `captions.md`, `linkedin.md`.
+Captions and posting: `captions.md`, `posting.md`. Phone pack: `edit-guide.pdf`.
