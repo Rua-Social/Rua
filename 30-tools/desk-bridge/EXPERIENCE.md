@@ -18,7 +18,7 @@ not this seat.
 | Help | `/help` or `/start` | Commands, pairing, and that `/new` does not restart the Mac. |
 | New session | `/new` | Drop the Grok session and any queued asks. Next message starts fresh. Cuts the line. |
 | Status | `/status`, `/statua`, or the word status | Owner, engine, session, effort, queue, pending, last run, last error, whether the next ask will keep or reset. Last run is timing, not JSON. |
-| Brief | `/brief` or the word brief | Ranked walking card from `20-studio/todo.md` plus one live client card. Not `lists.md`. Not live Google. |
+| Brief | `/brief` or the word brief | Ranked walking card from `20-studio/todo.md` plus one live client card. Do can be a STALE gated line. Not `lists.md`. Not live Google. |
 | Todo | `/todo` or the word todo | Walking open actions. Action text, not the date. Full and STALE if those apply. Last line: Text the action to close it. |
 | Park | `/park …`, `park …`, `backlog …`, or a voice note that starts that way | Instant. Lands on Founder → Ideas. No Grok. |
 | Idea | `/idea …` or `idea …` | Instant. Short stays on the list. Longer goes to `20-studio/ideas/`. |

@@ -1307,20 +1307,22 @@ def format_open_todo(path: Path | None = None, today: date | None = None) -> str
 def pocket_brief(
     clients_root: Path | None = None,
     todo_path: Path | None = None,
+    today: date | None = None,
 ) -> str:
-    items = regulate_todo(todo_path)
+    items = regulate_todo(todo_path, today=today)
     lines: list[str] = []
     if len(items) >= TODO_OPEN_CAP:
         lines.append("Todo is full. Close one.")
-    stale = [item for item in items if item[1]]
-    fresh = [item for item in items if not item[1]]
+    picked = _pick_ranked([item[2] for item in items], _score_gate)
+    if picked is None and items:
+        picked = items[0][2]
+    stale = [item for item in items if item[1] and item[2] != picked]
     if stale:
         lines.append(f"STALE: {stale[0][2]}")
-    picked = _pick_ranked([item[2] for item in fresh], _score_gate)
     if picked:
-        lines.append(f"Do: {picked}")
-    elif fresh:
-        lines.append(f"Do: {fresh[0][2]}")
+        picked_stale = any(item[1] and item[2] == picked for item in items)
+        mark = "STALE " if picked_stale else ""
+        lines.append(f"Do: {mark}{picked}")
     card = _pick_ranked(client_cards(clients_root, limit=8), _score_client)
     if card:
         lines.append(card)
