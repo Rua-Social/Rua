@@ -186,8 +186,10 @@ review prompt):
 | `gpt-5.6-luna` | low | Finished ~2 min. Same plus group-chat / no `chat.type` check. Use this for a fast 5.6 pass. |
 | `gpt-5.6-terra` | low | Finished ~2 min. Same core; missed groups; named spec vs session-file tension. |
 | `gpt-5.6-sol` | default | Hung 5+ min after reading. Killed. Do not use Sol for this. |
-- Mail, calendar, Drive: Grok built-in connectors. Sign in once at
-  grok.com/connectors. Do not use the local Google MCP servers.
+- Mail, calendar, Drive: Grok built-in connectors on the dashboard
+  TUI (grok.com/connectors). Phone `grok -p` gets the same tools via
+  managed gateway env. Google's remote MCP servers are not the path:
+  `/mcps` `i` hangs. Not Mail.app. Not a local mail CLI.
 - Multimodal: Gemini CLI, or `ai-cli` Gemini for a one-shot.
 - Phone: never Kimi, never a four-seat fan-out.
 
@@ -272,10 +274,11 @@ This chat is a phone, not a studio log.
 - Real mail and calendar live in Google Workspace (Gmail, Google
   Calendar), signed in as `darragh@ruasocial.ie`. Mac Mail.app and
   Calendar.app are unused. Do not open them, or icalBuddy, or a
-  local mail CLI. Dashboard Grok reaches Workspace via connectors.
-  This phone seat does not. Answer from `10-clients/` and
-  `todo.md` first. Say the EXPERIENCE line only when those files
-  are silent. Park that miss on the desk list.
+  local mail CLI. Dashboard Grok reaches Workspace via grok.com
+  connectors. Phone `grok -p` uses the same connectors (managed
+  gateway env). Answer from `10-clients/` and `todo.md` first. If
+  those are silent, use the Google tools. Never dump the parked-Google
+  sentence. Do not send them to `/mcps`.
 
 ## Optional: VS Code as the file surface
 

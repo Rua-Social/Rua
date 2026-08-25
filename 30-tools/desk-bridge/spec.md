@@ -18,7 +18,8 @@ restate it. If they conflict, fix the one that is wrong, then the other.
 Slack. Cloud hosting. Spoken replies (TTS). Image ingest. Video notes.
 The official Claude/Grok Telegram plugin. A custom agent file.
 Opening the bot to anyone else. Changing studio reasoning effort.
-Giving the phone Grok Space connectors. Claude-for-Google.
+Google remote MCP OAuth (`/mcps` `i`). Re-enabling the disabled
+local `gmail` / `calendar` / `drive` MCP servers. Claude-for-Google.
 Mail.app, Calendar.app, or a browser as a stand-in for Gmail,
 Calendar, or Drive.
 A custom agent or phone plugin profile. A persistent Grok leader.
@@ -86,20 +87,24 @@ dependency, host, service, or chat surface. Changing Telegram's look.
 - Install verifies the replacement launchd job and restores the prior plist
   on failure. A singleton runtime lock prevents concurrent bridges, and
   shutdown terminates the active Grok process group.
-- Phone `grok -p` does not inherit grok.com Space connectors
-  (Gmail, Calendar, Drive). Those stay on the dashboard session.
-  It does load `~/.grok/secrets/xpoz.env` and `moonshot.env` so
+- Phone `grok -p` sets `GROK_MANAGED_MCP_GATEWAY_TOOLS_ENABLED=1`
+  and `GROK_MANAGED_MCPS_ENABLED=1` so it has the same grok.com
+  Gmail, Calendar, and Drive tools as the dashboard TUI. Google's
+  remote MCP servers (`gmailmcp.googleapis.com` and kin) are not
+  this seat's login: `/mcps` `i` does not complete their OAuth. It
+  also loads `~/.grok/secrets/xpoz.env` and `moonshot.env` so
   dashboard MCP keys exist in the launchd child.
 - A Telegram `getUpdates` idle timeout is not written to `last_error`.
   `/status` keeps the last real desk miss. If Grok hits the turn
   limit after producing text, that text is sent.
   An explicit live mail, calendar, or Drive lookup is a desk ask like
   any other: the instance card and `todo.md` answer first. When the
-  files are silent, Grok replies with exactly the `EXPERIENCE.md`
-  sentence and nothing else; the bridge then parks the miss once on
-  the desk list and appends the pocket brief. There is no input gate,
-  so named-send and last-doc asks always reach the desk. It does not
-  open Mail.app or Calendar.app.
+  files are silent, Grok uses the Google tools if this process has
+  them, and replies with the short result. It does not emit
+  "Google isn't on this phone seat." If the tools are missing it
+  replies "Google tools are not on this process." It does not send
+  them to `/mcps`. There is no input gate, so named-send and last-doc
+  asks always reach the desk. It does not open Mail.app or Calendar.app.
 
 Success on the phone: the founder knows the result without opening
 a laptop. Do not optimize session length, turn count, or desktop
@@ -114,8 +119,10 @@ python3 30-tools/desk-bridge/bridge.py --install
 ```
 
 Then DM `@Rua_desk_bot`; send a text, a second text while the first
-is running, an obvious Google ask, and a voice note. `/status` must
-show effort, queue depth, pending, and last timing as plain lines, not JSON.
+is running, an obvious Google ask (calendar or last mail), and a
+voice note. The Google ask must come back as the live result, not
+"Google isn't on this phone seat." `/status` must show effort,
+queue depth, pending, and last timing as plain lines, not JSON.
 `/brief` and `/todo` must not mention a `lists.md` diary line.
 A desk ask that names a commitment must show that line on the next
 `/todo` and must not print `LIST+`. A voice note that reports a done

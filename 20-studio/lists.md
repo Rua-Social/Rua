@@ -17,16 +17,18 @@ Do not design the fix from Telegram.
 ### Blocked
 
 - 17 Aug — asked to open the last Fitzpatrick call transcript on Drive. Phone cannot. Cross-checked the local 16 Jul Gemini export instead (`Social concepts runthrough #1`).
-- 17 Aug — phone `grok -p` still cannot see Gmail, Calendar, or Drive. Dashboard Grok can. Fail-closed is live: one EXPERIENCE sentence, no Mail.app.
 - 17 Aug — founder confirmed Mac Mail.app and Calendar.app are unused. Real mail and calendar are Google Workspace only. Locked in `desk.md`.
 
 ### Moving
+
+- 24 Aug — Ecoplex last contact with Victoria. 18 Aug pack on the card is wrong. Live Gmail, not the card.
 
 - These two lists, so the next blocked thing has a place to land.
 - 18 Aug — Ecoplex month-1 pack sent. Waiting on them.
 
 ### Done
 
+- 24 Aug — Phone Google refuse lifted. `grok -p` sets managed gateway env for grok.com Gmail / Calendar / Drive. `/mcps` `i` on Google's remote MCP hangs; those servers stay off. Not Mail.app. Not the parked sentence.
 - 19 Aug — hostile-review fixes on the write-back slice: a Google miss now counts only when the reply *starts* with the sentence (a quoted sentence is not a miss, no false park). `/park …`, `/idea …`, `/backlog …`, `/brainstorm …` with a payload were returning help — fixed and pinned. `pocket_brief` dropped its dead `lists_path` parameter.
 - 19 Aug — desk-bridge write-back guards, from the 18–19 Aug hostile review: voice notes never close the todo, junk refuses on close too, every refused `LIST+` gets one phone line. Google input gate removed: instance and todo answer first; a real miss comes back as the EXPERIENCE sentence, then the bridge parks it and adds the pocket card.
 - 18 Aug — phone confusion locked: instance and todo first. Google sentence only when those files are silent. Named send is a desk ask. `DESK_RULES` + EXPERIENCE Flow 3b.
@@ -67,7 +69,6 @@ Street captures from the phone. Not the walking brief.
 
 ### Waiting on the desk
 
-- Phone still cannot see Gmail, Calendar, or Drive.
 - Phone hung and timed out on 17 Aug. Error report is on Desk → Blocked.
 - 18 Aug CoS slice 2: `/brief` + Google miss now return the pocket card from the lists; `/new` cuts the queue; pairing is explained on `/help`.
 - Fitzpatrick is with them. Alicia back from London week of 24 Aug, then roof map, bubbles for the coffee hatch, mid-September date, deposit. History is in. Pilates is the in-house instructor.

@@ -18,6 +18,7 @@ import bridge
 
 
 GOOGLE_REPLY = "Google isn't on this phone seat. Parked on the desk list."
+FRESH_TODO = date.today().isoformat()
 QUEUE_REPLY = "Hold that. Still on the last one."
 SETUP_REPLY = "Set TELEGRAM_USER_ID before starting the desk."
 
@@ -257,6 +258,8 @@ class EnvAndOwnerTest(RuntimeCase):
         self.assertEqual(env.get("XPOZ_API_KEY"), "test-xpoz-key")
         self.assertEqual(env.get("MOONSHOT_API_KEY"), "test-moonshot-key")
         self.assertNotEqual(env.get("TELEGRAM_BOT_TOKEN"), "token")
+        self.assertEqual(env.get(bridge.GATEWAY_TOOLS_ENV), "1")
+        self.assertEqual(env.get(bridge.MANAGED_MCPS_ENV), "1")
 
     def test_configured_owner_strips_and_returns_id(self):
         self.assertEqual(bridge.configured_owner({"TELEGRAM_USER_ID": " 42 "}), "42")
@@ -528,7 +531,7 @@ class GoogleMissTest(RuntimeCase):
     def test_pocket_brief_reads_todo_and_client_status(self):
         todo = self.repo / "20-studio" / "todo.md"
         todo.write_text(
-            "# Todo\n\n## Open\n\n- 2026-08-18 Send the Fitzpatrick reply.\n"
+            f"# Todo\n\n## Open\n\n- {FRESH_TODO} Send the Fitzpatrick reply.\n"
         )
         self.lists.write_text(
             "# Lists\n\n## Founder\n\n### Do\n\n- Diary leak that must not brief.\n"
@@ -548,7 +551,7 @@ class GoogleMissTest(RuntimeCase):
 
     def test_brief_command_does_not_start_grok(self):
         (self.repo / "20-studio" / "todo.md").write_text(
-            "# Todo\n\n## Open\n\n- 2026-08-18 Send the reply.\n"
+            f"# Todo\n\n## Open\n\n- {FRESH_TODO} Send the reply.\n"
         )
         with mock.patch.object(bridge, "run_grok") as run_grok:
             reply = bridge.handle_prompt("token", 420, 7, "brief")
@@ -574,6 +577,12 @@ class GoogleMissTest(RuntimeCase):
         run_grok.assert_called_once()
         self.assertEqual(reply, "Draft 4 on Tommy's thread.")
         self.assertNotIn(GOOGLE_REPLY, reply)
+
+    def test_missing_tools_sentence_is_not_a_parked_google_miss(self):
+        with mock.patch.object(bridge, "park_google_ask") as park:
+            reply = bridge.google_miss_finish(bridge.PHONE_GOOGLE_MISSING)
+        park.assert_not_called()
+        self.assertEqual(reply, bridge.PHONE_GOOGLE_MISSING)
 
     def test_quoted_google_sentence_is_not_a_miss(self):
         (self.repo / "20-studio" / "todo.md").write_text(
@@ -621,7 +630,7 @@ class GoogleMissTest(RuntimeCase):
 
     def test_google_miss_comes_back_from_grok_with_brief_and_park(self):
         (self.repo / "20-studio" / "todo.md").write_text(
-            "# Todo\n\n## Open\n\n- 2026-08-18 Chase the Fitzpatrick deposit.\n"
+            f"# Todo\n\n## Open\n\n- {FRESH_TODO} Chase the Fitzpatrick deposit.\n"
         )
         with mock.patch.object(
             bridge, "run_grok", return_value=GOOGLE_REPLY
@@ -642,8 +651,8 @@ class GoogleMissTest(RuntimeCase):
     def test_pocket_brief_ranks_gated_do_over_softer_line(self):
         (self.repo / "20-studio" / "todo.md").write_text(
             "# Todo\n\n## Open\n\n"
-            "- 2026-08-18 Think about Papa Rua colours.\n"
-            "- 2026-08-18 Chase the Fitzpatrick deposit on a dated thread.\n"
+            f"- {FRESH_TODO} Think about Papa Rua colours.\n"
+            f"- {FRESH_TODO} Chase the Fitzpatrick deposit on a dated thread.\n"
         )
         idle = self.repo / "10-clients" / "aaa-idle"
         idle.mkdir(parents=True)
@@ -1268,6 +1277,20 @@ class GrokStreamingTest(RuntimeCase):
         self.assertEqual(reply, "Desk hit an error. /status")
         self.assertEqual(bridge.read_text(bridge.LAST_ERROR_FILE), "boom")
 
+    def test_phone_grok_launch_attaches_gateway_google_tools(self):
+        cmd = bridge.desk_command("hello", "")
+        self.assertEqual(cmd[0], bridge.grok_bin())
+        self.assertIn("-p", cmd)
+        self.assertIn("hello", cmd)
+        self.assertIn("--yolo", cmd)
+        self.assertIn("--output-format", cmd)
+        self.assertIn("streaming-json", cmd)
+        self.assertIn(bridge.DESK_RULES, cmd)
+        self.assertNotIn("--leader", cmd)
+        env = bridge.grok_env()
+        self.assertEqual(env[bridge.GATEWAY_TOOLS_ENV], "1")
+        self.assertEqual(env[bridge.MANAGED_MCPS_ENV], "1")
+
     def test_claude_engine_builds_claude_print_command(self):
         with mock.patch.object(bridge, "desk_engine", return_value="claude"):
             cmd = bridge.desk_command("hello", "")
@@ -1522,9 +1545,25 @@ class MultipartTest(unittest.TestCase):
 class RulesTest(unittest.TestCase):
     def test_phone_rules_are_embedded_without_per_ask_experience_read(self):
         self.assertIn(GOOGLE_REPLY, bridge.DESK_RULES)
+        self.assertIn(bridge.PHONE_GOOGLE_MISSING, bridge.DESK_RULES)
+        self.assertIn("search_tool", bridge.DESK_RULES)
+        self.assertIn("use_tool", bridge.DESK_RULES)
+        self.assertIn("do not send them to /mcps", bridge.DESK_RULES.lower())
         self.assertNotIn(
             "read 30-tools/desk-bridge/experience.md", bridge.DESK_RULES.lower()
         )
+        self.assertNotIn(
+            "reply with exactly this sentence and nothing else: "
+            + GOOGLE_REPLY,
+            bridge.DESK_RULES,
+        )
+        self.assertIn(
+            "reply with exactly this sentence and nothing else: "
+            + bridge.PHONE_GOOGLE_MISSING,
+            bridge.DESK_RULES,
+        )
+        self.assertEqual(bridge.PHONE_GOOGLE_MISSING.count("\n"), 0)
+        self.assertNotIn("/mcps", bridge.PHONE_GOOGLE_MISSING)
 
     def test_phone_rules_filter_intake_and_client_facing(self):
         rules = bridge.DESK_RULES.lower()
@@ -1533,7 +1572,10 @@ class RulesTest(unittest.TestCase):
         self.assertIn("20-studio/todo.md", rules)
         self.assertIn("do not write todos to lists.md", rules)
         self.assertIn("10-clients/<slug>/", rules)
-        self.assertIn("do not lead with that sentence when the card or the todo already answers", rules)
+        self.assertIn("never reply with: google isn't on this phone seat", rules)
+        self.assertIn("use the gmail, calendar, and drive tools", rules)
+        self.assertIn("via search_tool then use_tool", rules)
+        self.assertIn(bridge.PHONE_GOOGLE_MISSING.lower(), rules)
         self.assertIn("a voice note cannot close the list", rules)
         self.assertIn("instagram and tiktok links", rules)
         self.assertIn("client-facing", rules)
