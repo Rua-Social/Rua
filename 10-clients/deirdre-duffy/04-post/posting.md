@@ -1,26 +1,26 @@
 # Posting, Dee Design
 
 Instagram and TikTok only. LinkedIn is out of this pack.
-Every master is 9:16. Same file on both apps the same day.
+Every film is a vertical 9:16 file. Post that same file on both apps the same day.
 
 ## Three weeks
 
-Lead with proof, not her first takes. Gareth’s face waits on his yes.
-If that yes is missing, open with S02 instead of G02.
+Lead with Gareth, not her first takes. His face waits on his yes.
+If that yes is missing, open with “the extension wasn’t the answer”.
 
-| When | Post | Notes |
-|---|---|---|
-| Week 1 Tue | G02 From the moment, or S02 | Proof |
-| Week 1 Fri | S01 sold Swords VO | The job they bought |
-| Week 1 Sun | G03 3 options + Swords stills carousel | Short + stills |
-| Week 2 Tue | C03 vault | Craft arrives first |
-| Week 2 Thu | C01 sold Calderwood VO | Full Calderwood |
-| Week 2 Sat | G01 extension + C04 Dekton | Story + material |
-| Week 3 | G05 G06 C05 C06 C10 S03 | Harvest week |
-| After | G12 C11 and the rest | Her yes, then push the lot |
+| When | Post |
+|---|---|
+| Week 1 Tue | Gareth: from the moment I met D. Or the short Swords voiceover if he is not cleared. |
+| Week 1 Fri | Swords full voiceover. The film we sold. |
+| Week 1 Sun | 3 options, not 80. Plus the Swords stills. |
+| Week 2 Tue | The vault and the lighting. |
+| Week 2 Thu | Calderwood full voiceover. The other film we sold. |
+| Week 2 Sat | I thought I needed an extension. Plus Dekton Umbra. |
+| Week 3 | The short ones. Cooking, pantry, layered lighting, the drawer, hob facing the garden. |
+| After that | Dining table and hold your hand, if she likes them. Then the rest. |
 
-Do not post two films that share a spine inside about ten days without changing the first frame.
+If two films use the same kitchen pictures, leave about ten days and change the opening shot.
 
-TikTok can take the 12 to 25 second harvest as a second beat the next day. Instagram takes the 60 second sold films and the shorts.
+TikTok likes the 12 to 25 second ones. Instagram can take the one-minute voiceovers and the shorts.
 
 Captions: `captions.md`. On-screen text on every film.
