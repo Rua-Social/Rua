@@ -28,7 +28,10 @@ the first person who happens to find the bot.
 
 The launchd job does not inherit a login shell. Phone Grok also
 loads `~/.grok/secrets/xpoz.env` and `moonshot.env` so MCP keys
-match the dashboard.
+match the dashboard, and sets `GROK_MANAGED_MCP_GATEWAY_TOOLS_ENABLED`
+plus `GROK_MANAGED_MCPS_ENABLED` so grok.com Gmail / Calendar /
+Drive connectors are on the phone process too. `/mcps` `i` on
+Google's remote MCP servers does not complete. Not Mail.app.
 
 Set `DESK_ENGINE=claude` in `desk-bridge.env` to run the phone
 on Claude Code instead of Grok. `/status` shows which engine.

@@ -58,6 +58,9 @@ PHONE_BUSY = "Grok is busy. Try again in a minute."
 PHONE_TIMEOUT = "The desk timed out. Send it again or try a smaller ask."
 PHONE_QUEUE = "Hold that. Still on the last one."
 PHONE_GOOGLE = "Google isn't on this phone seat. Parked on the desk list."
+PHONE_GOOGLE_MISSING = "Google tools are not on this process."
+GATEWAY_TOOLS_ENV = "GROK_MANAGED_MCP_GATEWAY_TOOLS_ENABLED"
+MANAGED_MCPS_ENV = "GROK_MANAGED_MCPS_ENABLED"
 OWNER_SETUP = "Set TELEGRAM_USER_ID before starting the desk."
 STATE_LOCK = threading.RLock()
 DELIVERY_LOCK = threading.Lock()
@@ -84,12 +87,13 @@ Instagram and TikTok links in the message are intake, not decoration. Capture th
 A client-facing document is written for the person who will sit with it and the person it is for. No internal paths, no steal-language, no studio process, no names they did not put in the room. References they sent appear as the thing itself: a still they recognise, then a link.
 Do not ask them to sit down at the Mac unless the machine itself is the blocker.
 This bridge sends text only. If work creates a file, name its repo path; do not claim it is attached.
-Named clients: read 10-clients/<slug>/ first. That record is the pocket card. Todo is 20-studio/todo.md. Answer from those files.
+Named clients: read 10-clients/<slug>/ first. That record is the pocket card. Todo is 20-studio/todo.md. Answer from those files when they have the fact.
 Do not hunt Drive or Gmail for a fact the instance already has. lists.md is a diary. Do not brief a stale diary line over the instance or the founder.
-If the founder corrects a desk fact, believe them and emit LIST+ Done or Moving.
-Mail, calendar, and Drive live on dashboard Grok, not this phone process.
+If the founder corrects a desk fact, believe them and emit LIST+ Done or Moving. Do not keep briefing a card they have marked wrong.
+If the files are silent and the ask needs live mail, calendar, or Drive, use the Gmail, Calendar, and Drive tools via search_tool then use_tool. Reply with the short result. Never reply with: Google isn't on this phone seat. Parked on the desk list.
 Do not use Mail.app, Calendar.app, icalBuddy, Chrome, or local mail CLIs as a stand-in.
-Only if the files do not have the fact, and the ask is live mail, calendar, or Drive, reply with exactly this sentence and nothing else: Google isn't on this phone seat. Parked on the desk list. The bridge appends the pocket card and parks the miss. Do not lead with that sentence when the card or the todo already answers.
+Do not send them to /mcps. Google's remote MCP servers are not this seat's login.
+If those tools are not in this process, reply with exactly this sentence and nothing else: Google tools are not on this process. Do not park it. Do not brief a card they have marked wrong.
 Hold a craft conversation if he asked for a hold. Do not write the deck or the concept list unless he asked for the file.
 Do not spawn subagents or call another model from this phone seat.
 If a tool fails auth or 401s, try it once, then answer with what you have. Do not burn the turn budget retrying.
@@ -1322,9 +1326,10 @@ def pocket_brief(
 
 
 def google_miss_finish(text: str) -> str:
-    """A real Google miss comes back from Grok as the EXPERIENCE sentence.
-    The bridge parks it once and appends the pocket brief. The sentence
-    quoted inside a longer reply is not a miss."""
+    """Leftover: an old session may still emit the parked-Google sentence.
+    The bridge parks that once and appends the pocket brief. A quoted
+    sentence inside a longer reply is not a miss. Live Google asks
+    should not hit this path."""
     if not text.strip().startswith(PHONE_GOOGLE):
         return text
     park_google_ask("")
@@ -1531,6 +1536,11 @@ def grok_env() -> dict[str, str]:
     ]
     env["PATH"] = ":".join(path_bits)
     env["GROK_DISABLE_AUTOUPDATER"] = "1"
+    # Same grok.com Gmail / Calendar / Drive connectors as the dashboard TUI.
+    # A standalone leader is unauthorized outside TUI mode; these env flags
+    # are how headless grok -p gets the gateway tools. Not /mcps.
+    env[GATEWAY_TOOLS_ENV] = "1"
+    env[MANAGED_MCPS_ENV] = "1"
     # Launchd does not inherit the interactive shell. Phone grok still
     # needs the same MCP keys the dashboard already uses.
     secrets_dir = SECRETS.parent

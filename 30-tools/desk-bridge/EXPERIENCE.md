@@ -46,8 +46,8 @@ not this seat.
 | Name the repo path when work creates a file | Claim the text-only bridge attached it |
 | "On the list." / "Sent to the desk." | "Got it!" "Love this idea!" "I'll brainstorm that for you" |
 | A commitment becomes one todo line; the reply stays the result | `LIST+` on the phone, a todo in `lists.md`, niceties on the open list |
-| The instance or todo answer first | Lead with the Google sentence when the card already has it |
-| "Google isn't on this phone seat. Parked on the desk list." only if the files are silent | Mail.app, Calendar.app, Chrome, "wire it at the Mac" |
+| The instance or todo answer first | Lead with a Google miss when the card already has it |
+| Live mail, calendar, Drive from the Gmail / Calendar / Drive tools | Mail.app, Calendar.app, Chrome, "Google isn't on this phone seat" |
 | Filter: escalate what blindsides, handle the ask, park niceties | A studio essay, a second org, "on it" |
 | Client-facing files: written for the person who sits with them, and the person they are for | Internal paths, steal-language, process notes, names that are not in the room |
 | Links they send are the thing: a still they recognise, then a click | A table of URLs the founder has to talk through |
@@ -78,7 +78,7 @@ this table.
 | Session restored at the wrong effort | "Session reset. The last one was too big or gone." then the new reply. |
 | Wrong inbound type | "Text or a voice note." |
 | Long reply | Extra Telegram messages, no "1/2". |
-| Google not on this seat | Only when `todo.md` and `10-clients/` do not have the fact. "Google isn't on this phone seat. Parked on the desk list." Then the pocket brief. A named send ("what did I send Tommy") is a desk ask, not this state. |
+| Google tools missing | "Google tools are not on this process." Not the parked-Google sentence. Not `/mcps`. |
 | Park, nothing after the word | "Say what to park." |
 | Parked | "On the list." |
 | Idea, nothing after the word | "Say the idea." |
@@ -140,12 +140,13 @@ completeness, engagement.
 1. Asks what's on the calendar tomorrow, last doc on Drive, last mail.
 2. Eyes and typing.
 3. **Worked:** if the instance or todo already has the fact, that
-   answer only. If the files are silent: "Google isn't on this phone
-   seat. Parked on the desk list." Then the ranked pocket brief from
-   `todo.md` plus one live client card. Not `lists.md`. Not a live
-   calendar lookup.
-4. Failure: leading with the Google sentence when the card already
-   answers. Mail.app, Calendar.app, or a two-minute hunt. Do not.
+   answer only. If the files are silent: live Gmail, Calendar, or
+   Drive via `search_tool` then `use_tool` on the grok.com gateway
+   connectors (same tools as the dashboard TUI), one short result.
+   Not `lists.md`. Not Mail.app.
+4. Failure: "Google isn't on this phone seat." `/mcps`. Mail.app,
+   Calendar.app, or briefing a card they have already marked wrong.
+   Tools missing: "Google tools are not on this process."
 
 ### Flow 3b — What did I send (founder, after a meeting)
 
@@ -184,9 +185,11 @@ completeness, engagement.
 1. Mark chunked replies (1/2).
 2. Split the three voice-fail causes.
 3. Telegram file attachments. This bridge sends text and repo paths.
-4. Space connectors on the phone `grok -p` process.
+4. Google's remote MCP servers (`/mcps` `i`). Phone `grok -p` gets
+   grok.com Gmail / Calendar / Drive via managed gateway env, the
+   same connectors as the dashboard TUI. Not a second Google login.
 5. Claude-for-Google. Drive and Gmail worked on Haiku; Calendar
-   auth failed. A second Google path. Not this seat.
+   auth failed. Not a second Claude path.
 6. Automatic fallback between engines. The phone runs one brain:
    `DESK_ENGINE=grok` or `DESK_ENGINE=claude` in
    `~/.grok/secrets/desk-bridge.env`. Switch is explicit.
