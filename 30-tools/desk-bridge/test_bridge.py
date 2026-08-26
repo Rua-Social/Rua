@@ -1271,6 +1271,8 @@ class StreamSchemaTest(unittest.TestCase):
         prompt = bridge.live_google_prompt("What was my latest Gmail?")
         self.assertIn("LIVE WORKSPACE REQUIREMENT", prompt)
         self.assertIn("must call the connected Gmail, Calendar, or Drive tool", prompt)
+        self.assertIn("Europe/Dublin", prompt)
+        self.assertRegex(prompt, r"Current local time: \d{4}-\d{2}-\d{2}")
 
 
 class GrokStreamingTest(RuntimeCase):
@@ -1983,6 +1985,18 @@ class RulesTest(unittest.TestCase):
         self.assertIn("instagram and tiktok links", rules)
         self.assertIn("client-facing", rules)
         self.assertIn("still they recognise", rules)
+
+    def test_phone_rules_preserve_workspace_language_semantics(self):
+        rules = bridge.DESK_RULES.lower()
+        self.assertIn("preserve human relationship language", rules)
+        self.assertIn('"directly to" means the entity appears in to', rules)
+        self.assertIn("latest means the individual message timestamp", rules)
+        self.assertIn("keep multi-entity asks multi-entity", rules)
+        self.assertIn("relative time in europe/dublin", rules)
+        self.assertIn('"follow up" means draft only', rules)
+        self.assertIn("never mutate workspace as a side effect of a lookup", rules)
+        self.assertIn("evidence that contradicts a connector result", rules)
+        self.assertIn('do not repeat an older card or connector result as "latest"', rules)
 
     def test_reset_prefix(self):
         self.assertEqual(bridge.with_reset(False, "hi"), "hi")

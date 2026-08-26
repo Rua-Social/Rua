@@ -177,12 +177,29 @@ completeness, engagement.
 
 ### Flow 3b — What did I send (founder, after a meeting)
 
-1. Asks what went to a named person today.
-2. Eyes and typing. Grok reads `10-clients/<slug>/`.
-3. **Worked:** the send from the instance card. Thread name and file
-   if the card has them. Founder correction beats a stale diary line.
-4. Failure: the Google sentence. Hunting Gmail. Briefing "not sent"
-   from `lists.md` after they said it went.
+1. Asks what went to one or more named people or organisations today.
+2. Eyes and typing. The live Gmail tool inspects individual messages.
+3. **Worked:** one labelled result per entity, using Europe/Dublin time.
+   "To/for" includes To, CC, replies, aliases, and relevant threads; the
+   reply says the actual recipient role. "Directly to" requires the named
+   entity in To, but a reply still counts. Latest means the individual sent
+   timestamp, not thread order. Founder correction beats stale local context.
+4. Failure: collapsing several entities into one answer; presenting CC as
+   direct To; treating a reply as ineligible; or briefing a local "not sent"
+   line as current evidence.
+5. If the founder says a newer message exists or supplies evidence, the desk
+   does not repeat the older connector result as "latest." It says the
+   connected source did not return the item and briefly names what it searched.
+
+### Flow 3c — Lookup versus action
+
+1. Asks about current Workspace state, or asks to follow up.
+2. A lookup reads only. "Follow up" drafts only.
+3. **Worked:** the lookup returns evidence without mutation. Send, schedule,
+   share, or update runs only when the founder explicitly names that action
+   and its target is unambiguous.
+4. Failure: sending from a lookup, or treating "follow up" as permission to
+   send.
 
 ### Flow 4 — Links from the street (founder, after a meeting)
 

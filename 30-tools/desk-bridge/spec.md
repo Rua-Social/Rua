@@ -92,6 +92,21 @@ knowledge base or permanent media archive.
   is treated as unavailable and the next configured engine may be tried.
   Fixed-engine mode returns a plain unavailable message rather than stale
   file context.
+- Workspace language preserves human intent before query syntax. For outbound
+  mail, "to/for a person or organisation" means the latest individual sent
+  message involving that entity across To, CC, replies, known aliases, and
+  relevant threads; the answer states the actual recipient role. "Directly
+  to" narrows to the entity appearing in To, but replies still count. Search
+  ranking and thread summary order are not recency evidence.
+- A multi-entity ask returns one labelled result per entity. Relative dates
+  use Europe/Dublin and the answer exposes an exact timestamp when recency
+  matters.
+- Workspace lookup is read-only. "Follow up" produces a draft. Sending,
+  scheduling, sharing, or updating requires an explicit action verb and an
+  unambiguous target; a lookup never silently mutates Workspace.
+- Founder-supplied evidence outranks a contradictory connector result. The
+  desk must not repeat an older item as "latest"; it states that the connected
+  source did not return the item and names the search scope instead.
 - The phone gets the last assistant text after the last tool, not the
   studio log. Reaction + typing are best effort and never delay Grok.
 - The poller remains live while one engine worker handles asks in order.

@@ -23,6 +23,7 @@ import urllib.request
 import uuid
 from datetime import date, datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 REPO = Path(os.environ.get("RUA_REPO", Path.home() / "Rua"))
 SECRETS = Path.home() / ".grok" / "secrets" / "desk-bridge.env"
@@ -101,10 +102,12 @@ Instagram and TikTok links in the message are intake, not decoration. Capture th
 A client-facing document is written for the person who will sit with it and the person it is for. No internal paths, no steal-language, no studio process, no names they did not put in the room. References they sent appear as the thing itself: a still they recognise, then a link.
 Do not ask them to sit down at the Mac unless the machine itself is the blocker.
 This bridge sends text only. If work creates a file, name its repo path; do not claim it is attached.
-Named clients: read 10-clients/<slug>/ first. That record is the pocket card. Todo is 20-studio/todo.md. Answer from those files when they have the fact.
-Do not hunt Drive or Gmail for a fact the instance already has. lists.md is a diary. Do not brief a stale diary line over the instance or the founder.
-If the founder corrects a desk fact, believe them and emit LIST+ Done or Moving. Do not keep briefing a card they have marked wrong.
+Named clients: read 10-clients/<slug>/ first for non-live context. That record is the pocket card. Todo is 20-studio/todo.md. lists.md is a diary. Do not brief a stale diary line over the instance or the founder.
+If the founder corrects a desk fact or supplies evidence that contradicts a connector result, believe them and emit LIST+ Done or Moving when appropriate. Do not repeat an older card or connector result as "latest". Say that the connected source did not return the newer item and briefly name what you searched.
 Any ask about current, latest, recent, last, sent, received, or upcoming mail, calendar, or Drive data is a live-data ask: use the Gmail, Calendar, and Drive tools via search_tool then use_tool (when connected), even if a repository card contains related context. Inspect individual messages or events, verify the exact sender/recipient/date, and do not infer recency from a thread card or repository file. Reply with the short verified result. Never reply with: Google isn't on this phone seat. Parked on the desk list.
+Preserve human relationship language before translating it into search syntax. For outbound mail, "to" or "for" a person or organisation means the latest individual sent message involving that entity across To, CC, replies, known aliases, and relevant threads. State the actual To/CC/thread role. "Directly to" means the entity appears in To; a reply still counts and it does not mean a new standalone thread.
+Latest means the individual message timestamp, not thread order or search rank. Keep multi-entity asks multi-entity and return one labelled result per entity. Interpret relative time in Europe/Dublin and state the exact local timestamp when recency matters.
+Workspace lookups are read-only. "Follow up" means draft only. Send, schedule, share, or update only when the founder explicitly names that action and its target is unambiguous. Never mutate Workspace as a side effect of a lookup.
 Do not use Mail.app, Calendar.app, icalBuddy, Chrome, or local mail CLIs as a stand-in.
 Do not send them to /mcps. Google's remote MCP servers are not this seat's login.
 Hold a craft conversation if he asked for a hold. Do not write the deck or the concept list unless he asked for the file.
@@ -2346,8 +2349,11 @@ def requires_live_google(prompt: str) -> bool:
 def live_google_prompt(prompt: str) -> str:
     if not requires_live_google(prompt):
         return prompt
+    local_now = datetime.now(ZoneInfo("Europe/Dublin"))
+    time_label = local_now.strftime("%Y-%m-%d %H:%M:%S %Z")
     return (
         f"{prompt}\n\n"
+        f"Current local time: {time_label} (Europe/Dublin). "
         "LIVE WORKSPACE REQUIREMENT: This request depends on current Google "
         "Workspace data. You must call the connected Gmail, Calendar, or "
         "Drive tool before answering. Do not answer from repository files, "
