@@ -1,14 +1,14 @@
 # desk-bridge
 
-Telegram seat for the Rua desk. Phone in, same repo and same Grok
+Telegram seat for the Rua desk. Phone in, same repo and one configured
 conductor out. Not a new org chart. How the phone behaves:
 `EXPERIENCE.md`.
 
 ## Goal
 
-You DM `@Rua_desk_bot`. A launchd process on this Mac runs `grok` in
-`~/Rua` and texts you back. A voice note is transcribed first, then
-takes the same path.
+You DM `@Rua_desk_bot`. A launchd process on this Mac runs the selected
+engine in `~/Rua` and texts you back. A voice note is transcribed first,
+then takes the same path.
 
 Out of scope: Slack, spoken replies, images, a public webhook,
 anyone else's Telegram, the official Claude Telegram plugin.
@@ -33,8 +33,18 @@ plus `GROK_MANAGED_MCPS_ENABLED` so grok.com Gmail / Calendar /
 Drive connectors are on the phone process too. `/mcps` `i` on
 Google's remote MCP servers does not complete. Not Mail.app.
 
-Set `DESK_ENGINE=claude` in `desk-bridge.env` to run the phone
-on Claude Code instead of Grok. `/status` shows which engine.
+Set the phone engine in `desk-bridge.env`:
+
+```bash
+export DESK_ENGINE=auto
+export DESK_ENGINE_ORDER=claude,codex,grok
+```
+
+Fixed `grok`, `claude`, and `codex` modes remain available. Auto mode
+falls through only when the current engine has done no tool work and is
+missing, logged out, at capacity, rate-limited, or out of usage. A working
+fallback stays active for an hour before the preferred engine is tried
+again. `/status` shows the mode, active engine, and temporary failures.
 
 Voice notes also need `~/.grok/secrets/elevenlabs.env`:
 
@@ -47,6 +57,12 @@ export ELEVENLABS_API_KEY=
 ```bash
 python3 30-tools/desk-bridge/bridge.py --check
 python3 30-tools/desk-bridge/bridge.py --install
+```
+
+Offline boundary suite:
+
+```bash
+python3 -m unittest discover -s 30-tools/desk-bridge -p 'test_*.py'
 ```
 
 `--install` writes `~/Library/LaunchAgents/com.rua.desk-bridge.plist`
@@ -66,7 +82,7 @@ pending replies, and launchd logs at startup.
 | Command | What it does |
 | --- |---|
 | `/help` | Short usage |
-| `/new` | Fresh Grok session |
+| `/new` | Fresh engine session |
 | `/status` | Owner, effort, queue, pending, last timing, last error, next keep/reset |
 | `/brief` | Ranked walking brief from `20-studio/todo.md` and one client card |
 | `/todo` | Open actions only |
@@ -85,7 +101,7 @@ Grok has 60 seconds to produce its first meaningful event. Each accepted
 phone ask, including voice preprocessing, has five minutes total.
 Completed work is written to a local outbox before Telegram delivery,
 so a transient send failure does not rerun the work. A dedicated sender
-retries without blocking message pickup or the sole Grok worker. One Grok
+retries without blocking message pickup or the sole engine worker. One
 ask runs at a time; later messages are acknowledged and queued.
 
 The installed job holds a `caffeinate` idle-sleep assertion, so this

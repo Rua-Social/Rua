@@ -32,6 +32,7 @@ OFFSET_FILE = STATE_DIR / "offset"
 LAST_ERROR_FILE = STATE_DIR / "last_error"
 LAST_RUN_FILE = STATE_DIR / "last_run"
 SESSION_META_FILE = STATE_DIR / "session_meta.json"
+ENGINE_STATE_FILE = STATE_DIR / "engine_state.json"
 INBOX_FILE = STATE_DIR / "inbox.json"
 OUTBOX_FILE = STATE_DIR / "outbox.json"
 METRICS_FILE = STATE_DIR / "metrics.jsonl"
@@ -49,12 +50,14 @@ GROK_TIMEOUT = 5 * 60
 PHONE_REQUEST_TIMEOUT = 5 * 60
 PHONE_EFFORT = "medium"
 PHONE_MAX_TURNS = 10
+ENGINE_COOLDOWN_SECONDS = 60 * 60
 SESSION_BYTES = 300_000
 SESSION_PROMPT_TOKENS = 80_000
 VOICE_MAX_BYTES = 20 * 1024 * 1024
 SCRIBE_URL = "https://api.elevenlabs.io/v1/speech-to-text"
 SCRIBE_MODEL = "scribe_v2"
 PHONE_BUSY = "Grok is busy. Try again in a minute."
+PHONE_ALL_ENGINES = "All desk engines are unavailable. /status"
 PHONE_TIMEOUT = "The desk timed out. Send it again or try a smaller ask."
 PHONE_QUEUE = "Hold that. Still on the last one."
 PHONE_GOOGLE = "Google isn't on this phone seat. Parked on the desk list."
@@ -115,6 +118,15 @@ class GrokTotalTimeout(RuntimeError):
 
 class GrokProviderBusy(RuntimeError):
     """Grok reported provider capacity before doing any work."""
+
+
+class EngineUnavailable(RuntimeError):
+    """An engine could not start useful work, so a safe fallback is allowed."""
+
+    def __init__(self, engine: str, reason: str):
+        super().__init__(f"{engine} {reason}")
+        self.engine = engine
+        self.reason = reason
 
 
 def load_env(path: Path) -> dict[str, str]:
@@ -360,7 +372,37 @@ def phone_text_from_stream(stdout: str) -> tuple[str, str]:
             ev = json.loads(line)
         except json.JSONDecodeError:
             continue
-        kind = ev.get("type")
+        kind = str(ev.get("type") or "").lower().replace(".", "_").replace("-", "_")
+        item = ev.get("item") or {}
+        item_kind = str(item.get("type") or "").lower().replace(".", "_").replace("-", "_")
+        if kind == "thread_started":
+            saw_event = True
+            session_id = ev.get("thread_id") or ev.get("threadId") or session_id
+        elif kind in {"item_started", "item_completed"}:
+            saw_event = True
+            if item_kind == "agent_message":
+                bit = item.get("text") or ""
+                if bit and kind == "item_completed":
+                    last_block.append(bit)
+                    all_text.append(bit)
+            elif item_kind in {
+                "command_execution",
+                "file_change",
+                "mcp_tool_call",
+                "web_search",
+                "tool_call",
+            }:
+                saw_tool = True
+                last_block = []
+        elif kind == "turn_completed":
+            saw_event = True
+            saw_end = True
+        elif kind in {"turn_failed", "error"}:
+            error = ev.get("error") or {}
+            msg = (
+                error.get("message") if isinstance(error, dict) else str(error)
+            ) or ev.get("message") or "engine stream error"
+            raise RuntimeError(msg)
         if kind == "result":
             saw_event = True
             saw_end = True
@@ -392,9 +434,6 @@ def phone_text_from_stream(stdout: str) -> tuple[str, str]:
             saw_event = True
             saw_end = True
             session_id = ev.get("sessionId") or session_id
-        elif kind == "error":
-            msg = ev.get("message") or "grok stream error"
-            raise RuntimeError(msg)
     if not saw_event:
         try:
             data = json.loads(stdout)
@@ -473,13 +512,20 @@ def session_metadata(session_id: str) -> dict:
     return metadata
 
 
-def session_reset_reason(session_id: str, limit: int = SESSION_BYTES) -> str:
+def session_reset_reason(
+    session_id: str, limit: int = SESSION_BYTES, engine: str | None = None
+) -> str:
     if not session_id:
         return ""
+    chosen = engine or desk_engine()
     saved = read_json(SESSION_META_FILE, {})
-    if isinstance(saved, dict) and saved.get("engine") and saved.get("engine") != desk_engine():
+    if (
+        isinstance(saved, dict)
+        and saved.get("engine")
+        and saved.get("engine") != chosen
+    ):
         return "wrong-engine"
-    if desk_engine() == "claude":
+    if chosen in {"claude", "codex"}:
         if isinstance(saved, dict) and saved.get("effort") and saved.get("effort") != PHONE_EFFORT:
             return "wrong-effort"
         return ""
@@ -574,20 +620,143 @@ def claude_bin() -> str:
     return "claude"
 
 
-def desk_engine() -> str:
+def codex_bin() -> str:
+    found = shutil.which("codex")
+    if found:
+        return found
+    fallback = Path.home() / ".local" / "bin" / "codex"
+    if fallback.is_file():
+        return str(fallback)
+    return "codex"
+
+
+def engine_bin(engine: str) -> str:
+    return {"claude": claude_bin, "codex": codex_bin, "grok": grok_bin}[engine]()
+
+
+def configured_engine() -> str:
     raw = (
         os.environ.get("DESK_ENGINE")
         or load_secrets().get("DESK_ENGINE")
         or "grok"
     )
     engine = raw.strip().lower()
+    if engine == "auto":
+        return "auto"
     if engine in {"claude", "claude-code", "anthropic"}:
         return "claude"
+    if engine in {"codex", "openai", "chatgpt"}:
+        return "codex"
     return "grok"
 
 
-def desk_command(prompt: str, session_id: str) -> list[str]:
-    if desk_engine() == "claude":
+def engine_order() -> list[str]:
+    raw = (
+        os.environ.get("DESK_ENGINE_ORDER")
+        or load_secrets().get("DESK_ENGINE_ORDER")
+        or "claude,codex,grok"
+    )
+    aliases = {
+        "anthropic": "claude",
+        "claude-code": "claude",
+        "openai": "codex",
+        "chatgpt": "codex",
+    }
+    order: list[str] = []
+    for bit in raw.split(","):
+        engine = aliases.get(bit.strip().lower(), bit.strip().lower())
+        if engine in {"claude", "codex", "grok"} and engine not in order:
+            order.append(engine)
+    return order or ["claude", "codex", "grok"]
+
+
+def engine_cooldown_seconds() -> int:
+    raw = (
+        os.environ.get("DESK_ENGINE_COOLDOWN_SECONDS")
+        or load_secrets().get("DESK_ENGINE_COOLDOWN_SECONDS")
+        or str(ENGINE_COOLDOWN_SECONDS)
+    )
+    try:
+        return max(60, int(raw))
+    except (TypeError, ValueError):
+        return ENGINE_COOLDOWN_SECONDS
+
+
+def engine_state(now: float | None = None) -> dict:
+    current = time.time() if now is None else now
+    raw = read_json(ENGINE_STATE_FILE, {})
+    if not isinstance(raw, dict):
+        raw = {}
+    unavailable = raw.get("unavailable") or {}
+    if not isinstance(unavailable, dict):
+        unavailable = {}
+    clean: dict[str, dict] = {}
+    for engine, entry in unavailable.items():
+        if engine not in {"claude", "codex", "grok"} or not isinstance(entry, dict):
+            continue
+        try:
+            until = float(entry.get("until") or 0)
+        except (TypeError, ValueError):
+            continue
+        if until > current:
+            clean[engine] = {
+                "until": until,
+                "reason": str(entry.get("reason") or "unavailable"),
+            }
+    active = raw.get("active")
+    return {
+        "active": active if active in {"claude", "codex", "grok"} else "",
+        "unavailable": clean,
+    }
+
+
+def write_engine_state(state: dict) -> None:
+    write_json(ENGINE_STATE_FILE, state)
+
+
+def mark_engine_unavailable(engine: str, reason: str, now: float | None = None) -> None:
+    current = time.time() if now is None else now
+    state = engine_state(current)
+    state["unavailable"][engine] = {
+        "until": current + engine_cooldown_seconds(),
+        "reason": reason,
+    }
+    if state.get("active") == engine:
+        state["active"] = ""
+    write_engine_state(state)
+
+
+def mark_engine_active(engine: str, now: float | None = None) -> None:
+    state = engine_state(now)
+    state["active"] = engine
+    state["unavailable"].pop(engine, None)
+    write_engine_state(state)
+
+
+def engine_candidates(now: float | None = None) -> list[str]:
+    setting = configured_engine()
+    if setting != "auto":
+        return [setting]
+    state = engine_state(now)
+    blocked = set(state["unavailable"])
+    return [engine for engine in engine_order() if engine not in blocked]
+
+
+def desk_engine() -> str:
+    setting = configured_engine()
+    if setting != "auto":
+        return setting
+    state = engine_state()
+    candidates = engine_candidates()
+    active = state.get("active") or ""
+    if active in candidates:
+        return active
+    return candidates[0] if candidates else engine_order()[0]
+
+
+def desk_command(prompt: str, session_id: str, engine: str | None = None) -> list[str]:
+    chosen = engine or desk_engine()
+    if chosen == "claude":
         cmd = [
             claude_bin(),
             "-p",
@@ -604,6 +773,31 @@ def desk_command(prompt: str, session_id: str) -> list[str]:
         if session_id:
             cmd.extend(["--resume", session_id])
         return cmd
+    if chosen == "codex":
+        phone_prompt = f"{DESK_RULES}\n\nPhone ask:\n{prompt}"
+        if session_id:
+            return [
+                codex_bin(),
+                "exec",
+                "--json",
+                "--approve-for-me",
+                "-c",
+                'model_reasoning_effort="medium"',
+                "resume",
+                session_id,
+                phone_prompt,
+            ]
+        return [
+            codex_bin(),
+            "exec",
+            "--json",
+            "--cd",
+            str(REPO),
+            "--approve-for-me",
+            "-c",
+            'model_reasoning_effort="medium"',
+            phone_prompt,
+        ]
     cmd = [
         grok_bin(),
         "-p",
@@ -978,7 +1172,7 @@ def help_text() -> str:
         "/park — drop a line on the list\n"
         "/idea — send a thought to the desk\n"
         "Text or a voice note goes to the desk.\n"
-        "This desk is yours. Another Grok window is not a second owner."
+        "This desk is yours. Another model window is not a second owner."
     )
 
 
@@ -1570,16 +1764,22 @@ def _pipe_reader(pipe, name: str, output: queue.Queue) -> None:
 def _event_kind(event: dict) -> str:
     kind = str(event.get("type") or "")
     if kind:
-        return kind.lower()
+        return kind.lower().replace(".", "_").replace("-", "_")
     update = ((event.get("params") or {}).get("update") or {})
-    return str(update.get("type") or update.get("sessionUpdate") or "").lower()
+    return (
+        str(update.get("type") or update.get("sessionUpdate") or "")
+        .lower()
+        .replace(".", "_")
+        .replace("-", "_")
+    )
 
 
 def _event_text(event: dict) -> str:
+    error = event.get("error") or {}
     values = [
         event.get("message"),
         event.get("reason"),
-        event.get("error"),
+        error.get("message") if isinstance(error, dict) else error,
         ((event.get("params") or {}).get("update") or {}).get("reason"),
     ]
     return " ".join(str(value) for value in values if value).lower()
@@ -1599,9 +1799,22 @@ def _usage_value(data: dict, *names: str) -> int:
 
 def _update_stream_meta(event: dict, meta: dict) -> None:
     kind = _event_kind(event)
+    item = event.get("item") or {}
+    item_kind = str(item.get("type") or "").lower().replace(".", "_").replace("-", "_")
     if (
         kind in {"tool_call", "tool_call_update", "tool_started"}
         or "toolcall" in kind
+        or (
+            kind in {"item_started", "item_completed"}
+            and item_kind
+            in {
+                "command_execution",
+                "file_change",
+                "mcp_tool_call",
+                "web_search",
+                "tool_call",
+            }
+        )
     ):
         meta["tool_events"] += 1
     update = ((event.get("params") or {}).get("update") or {})
@@ -1609,6 +1822,7 @@ def _update_stream_meta(event: dict, meta: dict) -> None:
         event,
         event.get("data") or {},
         event.get("usage") or {},
+        item,
         update,
         update.get("usage") or {} if isinstance(update, dict) else {},
     ):
@@ -1644,7 +1858,11 @@ def _update_stream_meta(event: dict, meta: dict) -> None:
                 meta["prompt_tokens"], effective_prompt
             )
         output = _usage_value(
-            container, "completion_tokens", "output_tokens", "outputTokens", "completionTokens"
+            container,
+            "completion_tokens",
+            "output_tokens",
+            "outputTokens",
+            "completionTokens",
         )
         if output:
             meta["output_tokens"] = max(meta["output_tokens"], output)
@@ -1678,6 +1896,8 @@ def _meaningful_stream_event(event: dict) -> bool:
             or "agent_message" in kind
             or "agent_thought" in kind
             or "turn_completed" in kind
+            or "item_" in kind
+            or "thread_started" in kind
             or "usage" in kind
         )
     )
@@ -1699,20 +1919,82 @@ def _max_turns_event(event: dict) -> bool:
 
 
 def _provider_busy_event(event: dict) -> bool:
-    text = _event_text(event)
-    return any(
-        phrase in text
+    return provider_unavailable_reason(_event_text(event)) is not None
+
+
+def provider_unavailable_reason(text: str) -> str | None:
+    low = (text or "").lower()
+    if any(
+        phrase in low
+        for phrase in (
+            "usage limit",
+            "out of extra usage",
+            "credit balance",
+            "quota exceeded",
+            "rate limit",
+            "rate_limit",
+        )
+    ):
+        return "limit"
+    if any(
+        phrase in low
         for phrase in (
             "currently at capacity",
             "provider capacity",
             "service unavailable",
-            "rate limit",
             "overloaded",
-            "usage limit",
-            "out of extra usage",
-            "credit balance",
+            "temporarily unavailable",
         )
+    ):
+        return "capacity"
+    if any(
+        phrase in low
+        for phrase in (
+            "not logged in",
+            "authentication required",
+            "authentication failed",
+            "unauthorized",
+            "please log in",
+            "invalid api key",
+        )
+    ):
+        return "login"
+    return None
+
+
+def engine_label(engine: str) -> str:
+    return {"claude": "Claude", "codex": "Codex", "grok": "Grok"}.get(
+        engine, engine.title()
     )
+
+
+def fallback_notice(failed: EngineUnavailable, working: str) -> str:
+    if failed.reason == "limit":
+        why = "hit its limit"
+    elif failed.reason == "login":
+        why = "is logged out"
+    else:
+        why = "is unavailable"
+    return f"Using {engine_label(working)} — {engine_label(failed.engine)} {why}."
+
+
+def fixed_engine_busy(engine: str) -> str:
+    return f"{engine_label(engine)} is busy. Try again in a minute."
+
+
+def unavailable_engine_status(now: float | None = None) -> str:
+    state = engine_state(now)
+    if not state["unavailable"]:
+        return "none"
+    current = time.time() if now is None else now
+    bits = []
+    for engine in engine_order():
+        entry = state["unavailable"].get(engine)
+        if not entry:
+            continue
+        minutes = max(1, int((float(entry["until"]) - current + 59) // 60))
+        bits.append(f"{engine} {minutes}m")
+    return ", ".join(bits) or "none"
 
 
 def terminate_process(proc: subprocess.Popen) -> None:
@@ -1844,9 +2126,10 @@ def stream_grok_process(
         _update_stream_meta(event, meta)
         if _max_turns_event(event):
             meta["max_turns"] = True
-        if _provider_busy_event(event) and meta["tool_events"] == 0:
+        unavailable_reason = provider_unavailable_reason(_event_text(event))
+        if unavailable_reason and meta["tool_events"] == 0:
             terminate_process(proc)
-            raise GrokProviderBusy("grok provider capacity")
+            raise GrokProviderBusy(unavailable_reason)
         if _meaningful_stream_event(event):
             last_meaningful = time.monotonic()
             if meta["first_event_seconds"] is None:
@@ -1862,15 +2145,78 @@ def stream_grok_process(
 def run_grok(
     prompt: str, new_session: bool = False, deadline: float | None = None
 ) -> str:
+    setting = configured_engine()
+    failures: list[EngineUnavailable] = []
+    candidates = engine_candidates()
+    saved_session = "" if new_session else read_text(SESSION_FILE)
+    saved_meta = read_json(SESSION_META_FILE, {}) if saved_session else {}
+    saved_engine = (
+        str(saved_meta.get("engine") or "") if isinstance(saved_meta, dict) else ""
+    )
+    if saved_session and not saved_engine and setting != "auto":
+        saved_engine = setting
+    if not candidates:
+        write_text(LAST_ERROR_FILE, "all configured engines cooling down")
+        return PHONE_ALL_ENGINES
+    for engine in candidates:
+        can_resume = bool(saved_session and saved_engine == engine)
+        if can_resume:
+            write_text(SESSION_FILE, saved_session)
+            write_json(SESSION_META_FILE, saved_meta)
+        else:
+            SESSION_FILE.unlink(missing_ok=True)
+            SESSION_META_FILE.unlink(missing_ok=True)
+        try:
+            reply = run_engine_once(
+                prompt,
+                engine,
+                new_session=not can_resume,
+                deadline=deadline,
+            )
+        except EngineUnavailable as exc:
+            failures.append(exc)
+            if setting != "auto":
+                return fixed_engine_busy(engine)
+            mark_engine_unavailable(engine, exc.reason)
+            append_metric(
+                {
+                    "stage": "engine-fallback",
+                    "outcome": "unavailable",
+                    "engine": engine,
+                    "reason": exc.reason,
+                }
+            )
+            SESSION_FILE.unlink(missing_ok=True)
+            SESSION_META_FILE.unlink(missing_ok=True)
+            continue
+        if setting == "auto":
+            mark_engine_active(engine)
+        if failures:
+            return fallback_notice(failures[-1], engine) + "\n\n" + reply
+        return reply
+    summary = ", ".join(f"{item.engine}:{item.reason}" for item in failures)
+    if saved_session:
+        write_text(SESSION_FILE, saved_session)
+        write_json(SESSION_META_FILE, saved_meta)
+    write_text(LAST_ERROR_FILE, summary or "all configured engines unavailable")
+    return PHONE_ALL_ENGINES
+
+
+def run_engine_once(
+    prompt: str,
+    engine: str,
+    new_session: bool = False,
+    deadline: float | None = None,
+) -> str:
     ensure_state()
     session_id = "" if new_session else read_text(SESSION_FILE)
     reset = False
-    reset_reason = session_reset_reason(session_id)
+    reset_reason = session_reset_reason(session_id, engine=engine)
     if session_id and reset_reason:
         session_id = ""
         SESSION_FILE.unlink(missing_ok=True)
         reset = True
-    cmd = desk_command(prompt, session_id)
+    cmd = desk_command(prompt, session_id, engine=engine)
     started = time.monotonic()
     try:
         total_timeout = bounded_timeout(deadline, GROK_TIMEOUT)
@@ -1888,13 +2234,8 @@ def run_grok(
             start_new_session=True,
         )
     except FileNotFoundError:
-        write_text(LAST_ERROR_FILE, f"{desk_engine()} not on PATH")
-        missing = (
-            "claude is not installed on this Mac."
-            if desk_engine() == "claude"
-            else "grok is not installed on this Mac."
-        )
-        return with_reset(reset, missing)
+        write_text(LAST_ERROR_FILE, f"{engine} not on PATH")
+        raise EngineUnavailable(engine, "missing")
 
     set_active_grok_process(proc)
     try:
@@ -1911,11 +2252,18 @@ def run_grok(
             {
                 "stage": "grok",
                 "outcome": "provider-busy",
+                "engine": engine,
                 "seconds": round(time.monotonic() - started, 3),
                 "fresh": not bool(session_id),
             }
         )
-        return with_reset(reset, PHONE_BUSY)
+        raw_reason = str(exc)
+        reason = (
+            raw_reason
+            if raw_reason in {"limit", "capacity", "login"}
+            else provider_unavailable_reason(raw_reason) or "capacity"
+        )
+        raise EngineUnavailable(engine, reason)
     except (GrokIdleTimeout, GrokTotalTimeout) as exc:
         SESSION_FILE.unlink(missing_ok=True)
         write_text(LAST_ERROR_FILE, str(exc))
@@ -1923,6 +2271,7 @@ def run_grok(
             {
                 "stage": "grok",
                 "outcome": "timeout",
+                "engine": engine,
                 "seconds": round(time.monotonic() - started, 3),
                 "fresh": not bool(session_id),
             }
@@ -1945,10 +2294,23 @@ def run_grok(
     if proc.returncode != 0 and not text:
         err = (stderr or stdout or f"exit {proc.returncode}")[-800:]
         write_text(LAST_ERROR_FILE, err)
+        unavailable_reason = provider_unavailable_reason(err)
+        if unavailable_reason and not meta.get("tool_events"):
+            append_metric(
+                {
+                    "stage": "grok",
+                    "outcome": "provider-busy",
+                    "engine": engine,
+                    "seconds": round(time.monotonic() - started, 3),
+                    "fresh": not bool(session_id),
+                }
+            )
+            raise EngineUnavailable(engine, unavailable_reason)
         append_metric(
             {
                 "stage": "grok",
                 "outcome": "error",
+                "engine": engine,
                 "seconds": round(time.monotonic() - started, 3),
                 "exit": proc.returncode,
             }
@@ -1957,7 +2319,7 @@ def run_grok(
 
     keep_error = False
     if proc.returncode != 0 and meta.get("max_turns"):
-        write_text(LAST_ERROR_FILE, "grok max_turns_reached")
+        write_text(LAST_ERROR_FILE, f"{engine} max_turns_reached")
         keep_error = True
 
     effective_effort = meta.get("effort") or PHONE_EFFORT
@@ -1974,7 +2336,7 @@ def run_grok(
             SESSION_META_FILE,
             {
                 "session_id": new_id,
-                "engine": desk_engine(),
+                "engine": engine,
                 "model": effective_model,
                 "effort": effective_effort,
                 "prompt_tokens": meta.get("prompt_tokens") or 0,
@@ -1994,6 +2356,7 @@ def run_grok(
         "tool_events": meta.get("tool_events") or 0,
         "fresh": not bool(session_id),
         "reset_reason": reset_reason,
+        "engine": engine,
     }
     write_text(
         LAST_RUN_FILE,
@@ -2142,6 +2505,13 @@ def handle_prompt(
         session_id = read_text(SESSION_FILE)
         meta = session_metadata(session_id) if session_id else {}
         owner = (env.get("TELEGRAM_USER_ID") or "").strip()
+        setting = configured_engine()
+        active = desk_engine()
+        engine_lines = (
+            [f"engine: {setting}", f"active: {active}", f"unavailable: {unavailable_engine_status()}"]
+            if setting == "auto"
+            else [f"engine: {active}"]
+        )
         return "\n".join(
             [
                 f"owner: {owner or '(missing)'}",
@@ -2149,7 +2519,7 @@ def handle_prompt(
                 f"effort: {meta.get('effort') or PHONE_EFFORT}",
                 f"queue: {current_queue_depth()}",
                 f"pending: {pending_outbox_count()}",
-                f"engine: {desk_engine()}",
+                *engine_lines,
                 f"last run: {format_last_run(read_text(LAST_RUN_FILE))}",
                 f"last error: {read_text(LAST_ERROR_FILE) or 'none'}",
                 f"next: {format_next_session(session_id)}",
@@ -2575,28 +2945,29 @@ def cmd_check() -> int:
     print(f"owner user   {owner}")
     eleven = (env.get("ELEVENLABS_API_KEY") or "").strip()
     print(f"scribe       {'ok' if eleven else 'missing ELEVENLABS_API_KEY'}")
-    grok = grok_bin()
-    if not shutil.which(grok) and not Path(grok).is_file():
-        print("grok missing")
-        return 1
-    try:
-        ver = subprocess.run([grok, "--version"], capture_output=True, text=True, timeout=20)
-    except (subprocess.TimeoutExpired, OSError) as exc:
-        print(f"grok version failed: {exc}")
-        return 1
-    if ver.returncode != 0:
-        print((ver.stderr or ver.stdout or "grok --version failed").strip())
-        return 1
-    line = (ver.stdout or ver.stderr or "").strip().splitlines()
-    print(f"grok ok      {line[0] if line else grok}")
-    engine = desk_engine()
-    print(f"engine      {engine}")
-    if engine == "claude":
-        claude = claude_bin()
-        if not shutil.which(claude) and not Path(claude).is_file():
-            print("claude missing")
+    setting = configured_engine()
+    required = engine_order() if setting == "auto" else [setting]
+    print(f"engine       {setting}")
+    if setting == "auto":
+        print(f"order        {','.join(required)}")
+        print(f"active       {desk_engine()}")
+    for engine in required:
+        binary = engine_bin(engine)
+        if not shutil.which(binary) and not Path(binary).is_file():
+            print(f"{engine} missing")
             return 1
-        print(f"claude ok    {claude}")
+        try:
+            ver = subprocess.run(
+                [binary, "--version"], capture_output=True, text=True, timeout=20
+            )
+        except (subprocess.TimeoutExpired, OSError) as exc:
+            print(f"{engine} version failed: {exc}")
+            return 1
+        if ver.returncode != 0:
+            print((ver.stderr or ver.stdout or f"{engine} --version failed").strip())
+            return 1
+        line = (ver.stdout or ver.stderr or "").strip().splitlines()
+        print(f"{engine} ok    {line[0] if line else binary}")
     print(f"repo         {REPO}")
     if not grok_env().get("XPOZ_API_KEY"):
         print("xpoz         missing XPOZ_API_KEY (phone MCP will 401)")

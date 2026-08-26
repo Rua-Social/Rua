@@ -3,7 +3,7 @@
 ## Goal
 
 A Telegram DM is a seat at the Rua desk. A process on this Mac hands
-each message to Grok in `~/Rua` and sends one short phone reply back.
+each message to the selected engine in `~/Rua` and sends one short phone reply back.
 The seat is owner-locked, preserves completed replies across transient
 Telegram failures, and fails quickly when Grok has not started responding.
 
@@ -23,8 +23,9 @@ local `gmail` / `calendar` / `drive` MCP servers. Claude-for-Google.
 Mail.app, Calendar.app, or a browser as a stand-in for Gmail,
 Calendar, or Drive.
 A custom agent or phone plugin profile. A persistent Grok leader.
-Direct xAI API calls. Automatic model routing or fallback. A new
-dependency, host, service, or chat surface. Changing Telegram's look.
+Direct model API calls. Cost or quality routing. Retrying a request on
+another engine after any tool has run. Cross-engine session history. A
+new dependency, host, service, or chat surface. Changing Telegram's look.
 
 ## Done
 
@@ -66,25 +67,35 @@ dependency, host, service, or chat surface. Changing Telegram's look.
 - A voice note from the paired user is transcribed and answered.
 - The phone gets the last assistant text after the last tool, not the
   studio log. Reaction + typing are best effort and never delay Grok.
-- The poller remains live while one Grok worker handles asks in order.
+- The poller remains live while one engine worker handles asks in order.
   A second ask receives the queue sentence in `EXPERIENCE.md`.
-- Phone runs Grok (`grok -p`) or Claude Code (`claude -p`) from
-  `DESK_ENGINE` in the desk-bridge secrets file. Default is grok.
-  Claude uses `--dangerously-skip-permissions` because the launchd
-  job cannot click allow.
-- Phone Grok runs at effective medium effort. Missing, over the history
+- Phone runs Grok (`grok -p`), Claude Code (`claude -p`), or Codex
+  (`codex exec`) from `DESK_ENGINE` in the desk-bridge secrets file.
+  `DESK_ENGINE=auto` tries the configured `DESK_ENGINE_ORDER`; default
+  order is Claude, Codex, Grok. Claude and Codex use their unattended
+  modes because the launchd job cannot click allow.
+- Auto mode falls through only when an engine is missing, unauthenticated,
+  at capacity, rate-limited, or out of usage before any tool event. It
+  never reruns an ask on another engine after a tool event. A working
+  fallback stays active for an hour before the preferred engine is probed
+  again. Engine state contains no prompt text.
+- The switch reply starts with `Using <engine> — <failed engine> hit its
+  limit.` If every configured engine is unavailable, the reply is `All
+  desk engines are unavailable. /status`. `/status` shows configured mode,
+  active engine, and engines cooling down.
+- The phone engine runs at effective medium effort. Missing, over the history
   byte cap, or wrong-effort sessions start fresh and say so. A large
   prompt-token total from MCP tools does not reset the next ask.
-- Grok output is parsed while it runs. No first meaningful event within 60 seconds
+- Engine output is parsed while it runs. No first meaningful event within 60 seconds
   uses the provider-busy sentence. Idle work and the whole ask have
   separate deadlines; the total phone budget is five minutes and ten turns.
 - Completed replies enter an owner-only outbox before Telegram delivery.
   Delivery retries never rerun Grok or duplicate its side effects.
   Delivery itself is at-least-once: a process death in Telegram's narrow
   send/checkpoint gap can repeat a reply chunk. A dedicated sender keeps
-  Telegram delivery latency off the poller and sole Grok worker.
+  Telegram delivery latency off the poller and sole engine worker.
 - Privacy-safe JSONL metrics cover pickup, acknowledgement, voice,
-  Grok first event and finish, effective model/effort, usage, delivery,
+  engine first event and finish, effective model/effort, usage, delivery,
   and failure stage without storing the prompt.
 - While installed, the job prevents idle system sleep.
 - Install verifies the replacement launchd job and restores the prior plist
