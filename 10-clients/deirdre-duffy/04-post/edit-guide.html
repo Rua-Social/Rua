@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dee Design · How to cut the films</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@page { size: A4; margin: 0; }
+* { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+:root {
+  --night: #1a1a2e; --purple: #7c3aed; --purple-light: #f3f0ff;
+  --stone: #4a4a68; --body: #2d2d3f; --muted: #71717a;
+  --border: #e4e4e7; --bg: #fafafa;
+  --serif: 'Instrument Serif', Georgia, serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+  --green: #065f46; --green-bg: #d1fae5; --green-bd: #6ee7b7;
+  --amber: #92400e; --amber-bg: #fef3c7; --amber-bd: #fcd34d;
+}
+body { font-family: var(--sans); background: var(--bg); color: var(--body); font-size: 15px; line-height: 1.55; }
+.page { width: 210mm; height: 297mm; margin: 0 auto; background: white; position: relative; display: flex; flex-direction: column; overflow: hidden; page-break-after: always; break-after: page; }
+.page:last-child { page-break-after: auto; break-after: auto; }
+@media print { body { margin: 0; } .page { margin: 0; } }
+
+.cover { background: var(--night); color: white; padding: 48px 40px 36px; min-height: 297mm; display: flex; flex-direction: column; }
+.cover-agency { font-size: 12px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.45); }
+.cover-main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 0 20px; }
+.cover-label { font-size: 12px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: #c4b5fd; margin-bottom: 16px; }
+.cover-title { font-family: var(--serif); font-style: italic; font-size: 52px; line-height: 1.05; color: white; margin-bottom: 18px; }
+.cover-bar { width: 72px; height: 4px; background: var(--purple); margin-bottom: 22px; }
+.cover-sub { font-size: 18px; color: rgba(255,255,255,0.72); max-width: 480px; line-height: 1.45; }
+.cover-nums { display: flex; gap: 28px; margin-top: 36px; }
+.cover-num { min-width: 88px; }
+.cover-num b { display: block; font-family: var(--serif); font-style: italic; font-size: 48px; line-height: 1; color: white; }
+.cover-num span { display: block; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-top: 6px; }
+.cover-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 28px; padding-top: 28px; border-top: 1px solid rgba(255,255,255,0.12); }
+.cover-meta label { display: block; font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 4px; }
+.cover-meta span { font-size: 15px; color: rgba(255,255,255,0.88); }
+
+.ph { display: flex; justify-content: space-between; align-items: center; padding: 16px 36px; border-bottom: 1px solid var(--border); }
+.ph span { font-size: 11px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.pc { flex: 1; padding: 22px 36px 16px; }
+.pf { margin-top: auto; padding: 12px 36px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; }
+.pf span { font-size: 10px; color: var(--muted); }
+
+.sl { font-size: 11px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--purple); margin-bottom: 8px; }
+h1 { font-family: var(--serif); font-style: italic; font-size: 30px; line-height: 1.12; color: var(--night); margin-bottom: 14px; }
+h2 { font-family: var(--serif); font-style: italic; font-size: 22px; line-height: 1.2; color: var(--night); margin: 14px 0 8px; }
+p { margin-bottom: 10px; color: var(--body); font-size: 15px; line-height: 1.5; }
+p:last-child { margin-bottom: 0; }
+.lead { font-size: 16px; color: var(--stone); line-height: 1.5; margin-bottom: 14px; }
+
+.badge { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; display: inline-block; }
+.b-first { color: var(--green); background: var(--green-bg); border: 1px solid var(--green-bd); }
+.b-extra { color: #5b21b6; background: var(--purple-light); border: 1px solid #c4b5fd; }
+.b-ask { color: var(--amber); background: var(--amber-bg); border: 1px solid var(--amber-bd); }
+.b-sold { color: white; background: var(--night); }
+
+.box { padding: 12px 14px; margin: 10px 0 12px; border-radius: 0 4px 4px 0; }
+.box .bl { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 4px; display: block; }
+.box p { font-size: 14px; margin: 0; line-height: 1.45; }
+.insight { background: var(--purple-light); border-left: 3px solid var(--purple); }
+.insight .bl { color: var(--purple); }
+.insight p { color: var(--stone); }
+.warn { background: var(--amber-bg); border-left: 3px solid #f59e0b; }
+.warn .bl { color: var(--amber); }
+.warn p { color: #78350f; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+.card { border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; }
+.card .k { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--purple); margin-bottom: 4px; }
+.card .t { font-size: 16px; font-weight: 500; color: var(--night); margin-bottom: 6px; }
+.card p { font-size: 13.5px; color: var(--stone); margin: 0; }
+
+table.cut { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 8px 0 4px; }
+table.cut th { text-align: left; padding: 7px 8px; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: white; background: var(--night); }
+table.cut td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.35; }
+table.cut tr:nth-child(even) td { background: var(--bg); }
+.id { font-weight: 700; color: var(--night); white-space: nowrap; }
+.dur { color: var(--muted); white-space: nowrap; font-size: 12px; }
+
+.film { border-top: 1px solid var(--border); padding: 9px 0; }
+.film:first-of-type { border-top: none; padding-top: 0; }
+.film-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 3px; }
+.film-name { font-size: 16px; font-weight: 500; color: var(--night); }
+.film p { font-size: 14px; margin-bottom: 3px; }
+.film .meta { font-size: 13.5px; color: var(--stone); }
+.q { font-family: var(--serif); font-style: italic; color: var(--night); }
+
+ol.steps { margin: 4px 0 10px 20px; }
+ol.steps li { margin-bottom: 9px; font-size: 15px; line-height: 1.4; }
+ul.plain { list-style: none; margin: 0; }
+ul.plain li { padding: 6px 0 6px 14px; border-bottom: 1px solid var(--border); font-size: 14.5px; line-height: 1.4; position: relative; }
+ul.plain li:last-child { border-bottom: none; }
+ul.plain li::before { content: ''; position: absolute; left: 0; top: 13px; width: 6px; height: 6px; background: var(--purple); border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<section class="page cover">
+  <div class="cover-agency">Rua Social · cut notes for Darragh</div>
+  <div class="cover-main">
+    <div class="cover-label">Dee Design · two kitchens</div>
+    <h1 class="cover-title">How to cut<br>Dee’s films.</h1>
+    <div class="cover-bar"></div>
+    <p class="cover-sub">Instagram and TikTok. Same vertical file on both. Make two B-roll timelines. Copy them. Change the voice. Change the first shot. That is the whole extra pack.</p>
+    <div class="cover-nums">
+      <div class="cover-num"><b>2</b><span>films we sold</span></div>
+      <div class="cover-num"><b>26</b><span>extra films</span></div>
+      <div class="cover-num"><b>28</b><span>vertical exports</span></div>
+    </div>
+  </div>
+  <div class="cover-meta">
+    <div><label>Shoot</label><span>28 July 2026. Swords in the morning, Calderwood after.</span></div>
+    <div><label>Where it goes</label><span>Instagram and TikTok. Not LinkedIn.</span></div>
+    <div><label>FCP</label><span>Dee Duffy.fcpbundle · event First shoot</span></div>
+    <div><label>Date</label><span>25 August 2026</span></div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="ph"><span>Rua Social</span><span>The method</span></div>
+  <div class="pc">
+    <div class="sl">Read this once</div>
+    <h1>Two picture timelines. Then copy them.</h1>
+    <p class="lead">You are not cutting 28 different videos from scratch. You cut the pictures once per kitchen. Every extra film is a copy of that timeline with a different voice on it, and a different shot at the start so it does not look like the same post.</p>
+    <div class="grid2">
+      <div class="card">
+        <div class="k">Timeline 1 · Swords</div>
+        <div class="t">Gareth’s kitchen. Oak and grey.</div>
+        <p>Clips 1475 to 1482, plus Gareth on 1473 and 1474. Covers her voiceover, all of Gareth, and the short slices of her script.</p>
+      </div>
+      <div class="card">
+        <div class="k">Timeline 2 · Calderwood</div>
+        <div class="t">The green kitchen. Vaulted ceiling.</div>
+        <p>Clips 1483 to 1498. Covers her voiceover, the lighting, Dekton, the drawer, the floor, the hall.</p>
+      </div>
+    </div>
+    <div class="box insight">
+      <span class="bl">How she should look</span>
+      <p>She was upset after the first takes. Do not lead with her talking to camera. Use the voiceovers she wrote later, and use Gareth. Show the rooms. If you use her voice from the first takes, put pictures over it.</p>
+    </div>
+    <h2>Export</h2>
+    <p>New FCP project: 1080 by 1920, 25fps. Spatial Conform Fill. Crop vertical off the 4K. Pan on the long moves (1480, 1490, 1498). Burn captions on every film. First line of text must make sense with the sound off. One file per film. Post that file to Instagram and to TikTok.</p>
+  </div>
+  <div class="pf"><span>Dee Design · how to cut</span><span>2</span></div>
+</section>
+
+<section class="page">
+  <div class="ph"><span>Rua Social</span><span>Tonight</span></div>
+  <div class="pc">
+    <div class="sl">Do this in order</div>
+    <h1>Sit down and cut in this order.</h1>
+    <ol class="steps">
+      <li>Open the First shoot event. Make a 1080 by 1920 project. Do not start a new library.</li>
+      <li>Build the Swords B-roll timeline. About 90 seconds of the nice pictures. That is Timeline 1.</li>
+      <li>Build the Calderwood B-roll timeline. About 90 seconds. That is Timeline 2.</li>
+      <li>Duplicate Timeline 1. Put her Swords voiceover on it (the m4a, skip “Kitchen number one”). Burn captions. This is the first film we sold.</li>
+      <li>Duplicate Timeline 2. Put her Calderwood voiceover on it, take 4 only. Skip the slates. Burn captions. This is the second film we sold.</li>
+      <li>For each extra film below: duplicate the right picture timeline, drop in that voice, change the first shot, export.</li>
+      <li>Stills last. Rotate the ones that came in sideways. 1504 is the quiet portrait. Not 1505, her eyes are closed.</li>
+    </ol>
+    <div class="box warn">
+      <span class="bl">Do not start here</span>
+      <p>Do not spend the first hour trying to make her first takes look good as talking-head. The good lines from those takes already have a home: pictures over them, in the extra films.</p>
+    </div>
+    <div class="box insight">
+      <span class="bl">If you only finish four things</span>
+      <p>Swords pictures. Calderwood pictures. Her Swords voiceover film. Her Calderwood voiceover film. Then copy.</p>
+    </div>
+  </div>
+  <div class="pf"><span>Dee Design · how to cut</span><span>3</span></div>
+</section>
+
+<section class="page">
+  <div class="ph"><span>Rua Social</span><span>Ask Dee before these go live</span></div>
+  <div class="pc">
+    <div class="sl">Cut them anyway</div>
+    <h1>Four questions. Text her, or text me.</h1>
+    <ul class="plain">
+      <li><strong>Gareth on her Instagram and TikTok.</strong> He is named, in his own kitchen, saying she is the one. Cut those films now. Do not post his face until she says he is happy with that.</li>
+      <li><strong>“Over 100 grand.”</strong> It is in the voiceover she wrote. Make two versions of the Swords film: one with the number, one without. Do not post either until she picks. Gareth does not need to say the number. “A fraction of the cost” is enough.</li>
+      <li><strong>The JDM drawer close-up.</strong> She refused to say a promo line for them on the day. Honour that. The drawer shot can still go in as a picture. Ask if it can appear with no name on screen.</li>
+      <li><strong>The big round pendants in Calderwood.</strong> The transcript guessed Yumidge or Yumitch. Do not put a brand on screen. Call them pendants until she spells it.</li>
+    </ul>
+    <p style="margin-top:14px">“Four months” is fine. Gareth said it himself. Cut your prompt. Keep his line.</p>
+  </div>
+  <div class="pf"><span>Dee Design · how to cut</span><span>4</span></div>
+</section>
+
+<section class="page">
+  <div class="ph"><span>Rua Social</span><span>What you are making</span></div>
+  <div class="pc">
+    <div class="sl">The list</div>
+    <h1>Two we sold. The rest is extra.</h1>
+    <p class="lead">Green means cut this now. Purple means copy the pictures and drop the voice. Amber means cut it, show Dee before it posts.</p>
+    <table class="cut">
+      <thead><tr><th></th><th>Film</th><th>Length</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge b-sold">Sold</span></td><td>Swords, her voiceover</td><td>about 1 min</td></tr>
+        <tr><td><span class="badge b-sold">Sold</span></td><td>Calderwood, her voiceover take 4</td><td>about 1 min</td></tr>
+        <tr><td><span class="badge b-first">Do first</span></td><td>Gareth: from the moment I met D</td><td>25 to 40s</td></tr>
+        <tr><td><span class="badge b-first">Do first</span></td><td>Gareth: I thought I needed an extension</td><td>about 1 min</td></tr>
+        <tr><td><span class="badge b-first">Do first</span></td><td>Calderwood: the vault and the lighting</td><td>20s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Gareth: 3 options, not 80</td><td>15s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Gareth: I wish I had called sooner</td><td>20s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Gareth: cooking is actually enjoyable</td><td>12s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Gareth: this space was unused</td><td>25s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Gareth: I had never heard of Dekton</td><td>20s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Gareth: a shot to nothing</td><td>15s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Gareth: someone who does this every day</td><td>20s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Gareth: the pantry is my favourite</td><td>20s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Gareth: a fraction of the cost</td><td>12s</td></tr>
+        <tr><td><span class="badge b-ask">Ask Dee</span></td><td>You don’t need a dining table</td><td>45s</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="pf"><span>Dee Design · how to cut</span><span>5</span></div>
+</section>
+
+<section class="page">
+  <div class="ph"><span>Rua Social</span><span>What you are making · continued</span></div>
+  <div class="pc">
+    <div class="sl">Still extra films</div>
+    <h1>Short slices of the same voiceovers.</h1>
+    <p>Same pictures. One paragraph of her script. Different first shot so it is not the full film again.</p>
+    <table class="cut">
+      <thead><tr><th></th><th>Film</th><th>Length</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Swords: the extension wasn’t the answer</td><td>18s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Swords: hob facing the garden</td><td>15s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Swords: he had enough space already</td><td>15s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Swords: oak and Dekton</td><td>15s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Calderwood: twenty years on</td><td>15s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Calderwood: Dekton Umbra</td><td>20s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Calderwood: layered lighting</td><td>20s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Calderwood: it feels like it’s always been here</td><td>10s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Calderwood: folding doors and auto LEDs</td><td>15s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Calderwood: I had worked with them before</td><td>12s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Calderwood: splashback, hob, hood</td><td>15s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Calderwood: the drawer (no speech)</td><td>10s</td></tr>
+        <tr><td><span class="badge b-extra">Extra</span></td><td>Calderwood: the stained glass hall</td><td>10s</td></tr>
+        <tr><td><span class="badge b-ask">Ask Dee</span></td><td>We can hold your hand</td><td>18s</td></tr>
+      </tbody>
+    </table>
+    <div class="box insight">
+      <span class="bl">Wait ten days</span>
+      <p>If two films use the same kitchen pictures, do not post them back to back. Change the opening shot, and leave a gap.</p>
+    </div>
+  </div>
+  <div class="pf"><span>Dee Design · how to cut</span><span>6</span></div>
+</section>
+
+<section class="page">
+  <div class="ph"><span>Rua Social</span><span>Swords pictures</span></div>
+  <div class="pc">
+    <div class="sl">Morning · teal top · Gareth’s house</div>
+    <h1>Oak, island, linear pendant.</h1>
+    <p>Dee in the teal top. Gareth in the sage t-shirt. The long talking clips are 1470, 1472, 1473, 1474, 1479. Do not use 1470 or 1472 as the picture of the film. Gareth’s face is allowed on 1473 and 1474.</p>
+    <table class="cut">
+      <thead><tr><th>Clip</th><th>Time</th><th>What it is</th></tr></thead>
+      <tbody>
+        <tr><td class="id">1475</td><td class="dur">0:12</td><td>Island, hob, pendant. Use this to open the hob film.</td></tr>
+        <tr><td class="id">1476</td><td class="dur">0:47</td><td>Dee at the island, looking at the room. A beat of her, not a presenter hold.</td></tr>
+        <tr><td class="id">1477</td><td class="dur">0:20</td><td>Oak tall units. Storage.</td></tr>
+        <tr><td class="id">1478</td><td class="dur">0:28</td><td>Gareth walking the room. Good open for his films.</td></tr>
+        <tr><td class="id">1480</td><td class="dur">1:48</td><td>The workhorse. Island toward the window. Pan in vertical.</td></tr>
+        <tr><td class="id">1481</td><td class="dur">0:17</td><td>Handles, oak, Dekton shelf.</td></tr>
+        <tr><td class="id">1482</td><td class="dur">0:26</td><td>Her hands on the worktop.</td></tr>
+        <tr><td class="id">1473</td><td class="dur">4:01</td><td>Gareth sat at the island. Use his face here.</td></tr>
+        <tr><td class="id">1474</td><td class="dur">2:48</td><td>Gareth standing by the oak run.</td></tr>
+        <tr><td class="id">1479</td><td class="dur">5:58</td><td>The two of them. Only for “you don’t need a dining table”. Cover her if she looks tight.</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:10px">Mute 1470 and 1472. If a line from those is good, put pictures over it. Never hold on her face from those clips.</p>
+  </div>
+  <div class="pf"><span>Dee Design · how to cut</span><span>7</span></div>
+</section>
+
+<section class="page">
+  <div class="ph"><span>Rua Social</span><span>Swords · the two we need first</span></div>
+  <div class="pc">
+    <div class="sl">Copy Timeline 1</div>
+    <h1>Her voiceover, then Gareth.</h1>
+
+    <div class="film">
+      <div class="film-top"><span class="badge b-sold">Sold</span><span class="badge b-first">Do first</span><span class="film-name">Swords, her voiceover</span><span class="dur">about 1 min</span></div>
+      <p class="q">“The extension wasn’t the answer.”</p>
+      <p class="meta">File: Swords Kitchen .m4a. Skip the first line “Kitchen number one.” Start “Gareth first contacted me.” On the caption card write Swords, Warm, Gareth, Dekton (the transcript heard those wrong). You can move “the extension wasn’t the answer” to the front if it hits harder. Make a second copy with “100 grand” cut out, and park it.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-first">Do first</span><span class="film-name">Gareth: from the moment I met D</span><span class="dur">25 to 40s</span></div>
+      <p class="q">“From the moment I met D, I knew I was going to continue to work with her.”</p>
+      <p class="meta">Swords talking timeline 00:07:54 to 00:08:19. His face. Stay in this kitchen. We did not film the sitting room or the wardrobes he names. Cut your prompt at 00:07:51.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-first">Do first</span><span class="film-name">Gareth: I thought I needed an extension</span><span class="dur">about 1 min</span></div>
+      <p class="q">“I was thinking that I would need to get an extension.”</p>
+      <p class="meta">00:04:45 to 00:07:10. Trim the wandering. Keep “shot to nothing” and “a fraction of the cost.” Do not open on Dee’s coached intro. Picture of the finished island: this is the room he did not knock down.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">Gareth: 3 options, not 80</span><span class="dur">12 to 16s</span></div>
+      <p class="q">“Here’s 3 options rather than 80 options.”</p>
+      <p class="meta">00:14:21 to 00:14:41. Different first shot from the two films above.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">Gareth: I wish I had called sooner</span><span class="dur">18 to 24s</span></div>
+      <p class="q">“I wish I had brought her in sooner because I probably spent the guts of a year thinking about this.”</p>
+      <p class="meta">00:16:21 to 00:16:55. Keep this separate from “3 options” so both can post.</p>
+    </div>
+  </div>
+  <div class="pf"><span>Dee Design · how to cut</span><span>8</span></div>
+</section>
+
+<section class="page">
+  <div class="ph"><span>Rua Social</span><span>Swords · more Gareth</span></div>
+  <div class="pc">
+    <div class="sl">Still Timeline 1</div>
+    <h1>Short ones. Same pictures.</h1>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">Gareth: cooking is actually enjoyable</span><span class="dur">10 to 15s</span></div>
+      <p class="q">“Cooking is actually enjoyable.”</p>
+      <p class="meta">00:09:29 to 00:09:36. Hands, hob, island. Good for TikTok.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">Gareth: this space was unused</span><span class="dur">20 to 28s</span></div>
+      <p class="q">“Before, none of this area was being used. It’s the largest part of the room.”</p>
+      <p class="meta">Second take, 00:09:10 to 00:09:36. Then the cooking line if you want a button.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">Gareth: I had never heard of Dekton</span><span class="dur">18 to 25s</span></div>
+      <p class="q">“A Dekton countertop, which I had never heard of before, until I met Dee.”</p>
+      <p class="meta">00:10:10 to 00:10:27. Write Dekton on screen. Easy to clean.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">Gareth: a shot to nothing</span><span class="dur">12 to 18s</span></div>
+      <p class="q">“I thought it was a shot to nothing.”</p>
+      <p class="meta">Lift from 00:05:46 to 00:06:10. New first shot.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">Gareth: someone who does this every day</span><span class="dur">18 to 25s</span></div>
+      <p class="q">“Someone who does this every day of the week.”</p>
+      <p class="meta">00:07:21 to 00:07:47. Pictures of the room, not her face.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">Gareth: the pantry is my favourite</span><span class="dur">18 to 25s</span></div>
+      <p class="q">“It’s my favourite part.”</p>
+      <p class="meta">00:13:29 to 00:13:59. Hob, fridge, sink, pantry. Use 1477.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">Gareth: a fraction of the cost</span><span class="dur">10 to 14s</span></div>
+      <p class="q">“It would be a fraction of the cost of what an extension build would be.”</p>
+      <p class="meta">00:06:01 to 00:06:10. No number. Safe if she kills “100 grand”.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-ask">Ask Dee</span><span class="film-name">You don’t need a dining table</span><span class="dur">40 to 55s</span></div>
+      <p class="q">“I remember you saying to me, well, you don’t need a dining table.”</p>
+      <p class="meta">00:11:21 to 00:13:08. Clip 1479. Cover Dee. Show her this before it posts.</p>
+    </div>
+  </div>
+  <div class="pf"><span>Dee Design · how to cut</span><span>9</span></div>
+</section>
+
+<section class="page">
+  <div class="ph"><span>Rua Social</span><span>Swords · slices of her script</span></div>
+  <div class="pc">
+    <div class="sl">Same m4a as the sold film</div>
+    <h1>Four shorts from the voiceover she likes.</h1>
+    <p class="lead">Duplicate the sold Swords film. Keep one paragraph. Change the first shot. Post at least ten days later.</p>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">The extension wasn’t the answer</span><span class="dur">15 to 22s</span></div>
+      <p class="q">“It quickly became clear that the extension wasn’t the answer. Gareth had enough space already.”</p>
+      <p class="meta">Voice 00:00:28 to 00:00:35. Open on 1480, not the island from the full film.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">Hob facing the garden</span><span class="dur">12 to 18s</span></div>
+      <p class="q">“A spacious island with the hob facing the garden, and a lovely linear pendant above for task lighting.”</p>
+      <p class="meta">Voice 00:00:40 to 00:00:46. Open on 1475, close on the hob.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">He had enough space already</span><span class="dur">12 to 16s</span></div>
+      <p class="q">“Gareth had enough space already. It just needed to be used to its full potential.”</p>
+      <p class="meta">Voice 00:00:31 to 00:00:35. Open on Gareth walking, 1478.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">Oak and Dekton</span><span class="dur">12 to 16s</span></div>
+      <p class="q">“Warm cabinets in oak, with a hard wearing Dekton countertop.”</p>
+      <p class="meta">Voice 00:00:52 to 00:00:58. Open on 1481. On screen: Warm, not Worm. Dekton, not Decktown.</p>
+    </div>
+  </div>
+  <div class="pf"><span>Dee Design · how to cut</span><span>10</span></div>
+</section>
+
+<section class="page">
+  <div class="ph"><span>Rua Social</span><span>Calderwood pictures</span></div>
+  <div class="pc">
+    <div class="sl">Afternoon · blue shirt</div>
+    <h1>Green, terracotta, vaulted ceiling.</h1>
+    <p>Repeat clients, about twenty years. Dekton Umbra worktop. Dark green wood-grain. Herringbone floor. JDM drawers. Faber hood. The ten-minute walkthrough is 1497. It ends “I want you to relax.” That ending is gone from every film.</p>
+    <table class="cut">
+      <thead><tr><th>Clip</th><th>Time</th><th>What it is</th></tr></thead>
+      <tbody>
+        <tr><td class="id">1483</td><td class="dur">0:16</td><td>Wide of the vault and island. Open the sold film here. Washing on the line: crop if you have a cleaner bit.</td></tr>
+        <tr><td class="id">1486</td><td class="dur">0:48</td><td>Hall to the stained glass. Use this for “twenty years”.</td></tr>
+        <tr><td class="id">1487</td><td class="dur">0:38</td><td>Drawer, dovetails, JDM burned in the oak. Picture only. No spoken credit.</td></tr>
+        <tr><td class="id">1490</td><td class="dur">0:55</td><td>Terracotta sink, black tap, lit shelves. Pan in vertical.</td></tr>
+        <tr><td class="id">1491</td><td class="dur">0:16</td><td>Green shelves, glow off the ceiling. Lighting.</td></tr>
+        <tr><td class="id">1492</td><td class="dur">0:30</td><td>Skim it. Skip the blur.</td></tr>
+        <tr><td class="id">1494</td><td class="dur">0:15</td><td>Gas hob, hood, splash, the niche.</td></tr>
+        <tr><td class="id">1495</td><td class="dur">0:07</td><td>Hob and splash, clean.</td></tr>
+        <tr><td class="id">1496</td><td class="dur">0:46</td><td>Faber lettering. Optional.</td></tr>
+        <tr><td class="id">1498</td><td class="dur">1:09</td><td>Herringbone floor. Pan.</td></tr>
+        <tr><td class="id">1497</td><td class="dur">10:01</td><td>Her walkthrough. Use hands, doors, pantry. Not long holds on her face. This is where the good first-take lines live.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="pf"><span>Dee Design · how to cut</span><span>11</span></div>
+</section>
+
+<section class="page">
+  <div class="ph"><span>Rua Social</span><span>Calderwood · sold film and lighting</span></div>
+  <div class="pc">
+    <div class="sl">Copy Timeline 2</div>
+    <h1>Her voiceover, then the vault.</h1>
+    <div class="film">
+      <div class="film-top"><span class="badge b-sold">Sold</span><span class="badge b-first">Do first</span><span class="film-name">Calderwood, her voiceover, take 4</span><span class="dur">about 1 min</span></div>
+      <p class="q">“This kitchen was special to us since we got to know the homeowners from a renovation that we had completed over 20 years ago.”</p>
+      <p class="meta">File: Calderwood Kitchen 3 (1).m4a. Skip “Kitchen to take four.” Skip “Tecton umbra. Start again.” Use the clean Dekton sentence after the restart. She says “economic” where she means ergonomic. Leave the sound. Do not put that word on screen.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">Twenty years on</span><span class="dur">12 to 18s</span></div>
+      <p class="q">Same opening line. Then stop.</p>
+      <p class="meta">Open on 1486, the stained glass, not the wide vault from the full film.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-first">Do first</span><span class="film-name">The vault and the lighting</span><span class="dur">18 to 25s</span></div>
+      <p class="q">“The vaulted ceiling is a huge feature in this room.”</p>
+      <p class="meta">Use the take 4 vault paragraph, or her second try at 00:04:30 to 00:04:51 on the first-takes timeline. Show the lights. Do not hold her face. Do not use the first try (she said “concealed tape”).</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">Dekton Umbra</span><span class="dur">18 to 25s</span></div>
+      <p class="q">“Dekton Umbra, with its earthy terracotta tones, and a soft matte textured finish.”</p>
+      <p class="meta">Take 4 after the restart, or first takes 00:01:09 to 00:01:33. Clips 1490, 1494, 1495.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">Layered lighting</span><span class="dur">18 to 25s</span></div>
+      <p class="q">“We took a layered lighting approach.”</p>
+      <p class="meta">First takes 00:06:16 to 00:06:49. Ceiling, island LED, pendants over the hob and the sink. If the island plinth LED is in 1483, keep it. No brand name on the pendants.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">It feels like it’s always been here</span><span class="dur">8 to 12s</span></div>
+      <p class="q">“It just feels like it’s always been here.”</p>
+      <p class="meta">00:07:23 to 00:07:27 over wide shots of the room. Drop it if she sounds coached. Let her hear this one.</p>
+    </div>
+  </div>
+  <div class="pf"><span>Dee Design · how to cut</span><span>12</span></div>
+</section>
+
+<section class="page">
+  <div class="ph"><span>Rua Social</span><span>Calderwood · details</span></div>
+  <div class="pc">
+    <div class="sl">Easy pictures</div>
+    <h1>Doors, splash, drawer, hall.</h1>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">Folding doors and auto LEDs</span><span class="dur">12 to 18s</span></div>
+      <p class="q">“What’s really nice about this kitchen is these little double folding doors… LEDs which come on automatically.”</p>
+      <p class="meta">First takes 00:00:24 to 00:00:50. Look in 1497 for the doors. If they are not on camera, skip this film. Do not fake it.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">I had worked with them before</span><span class="dur">10 to 14s</span></div>
+      <p class="q">“This kitchen was so easy to design because I’d worked with these clients before on a previous project.”</p>
+      <p class="meta">00:00:02 to 00:00:12. Pictures over it. Not her face from this bit.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">Splashback, hob, hood</span><span class="dur">12 to 18s</span></div>
+      <p class="q">“You can continue the surface up on the backsplash behind the hob.”</p>
+      <p class="meta">00:01:22 to 00:01:56. Clips 1494, 1495, 1496. On screen: Dekton, 20mm, hob (not hub).</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">The drawer</span><span class="dur">8 to 12s</span></div>
+      <p class="q">No speech. One line of text: Look at the close.</p>
+      <p class="meta">Clip 1487 only. Music or room sound. No JDM name unless she asks. Built for TikTok.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-extra">Extra</span><span class="film-name">The stained glass hall</span><span class="dur">8 to 12s</span></div>
+      <p class="q">The twenty-year line, or mute with text: Same clients. New kitchen.</p>
+      <p class="meta">Clip 1486. Different first shot from “Twenty years on”.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="badge b-ask">Ask Dee</span><span class="film-name">We can hold your hand</span><span class="dur">15 to 20s</span></div>
+      <p class="q">“We can hold your hand, help you design your ideal kitchen, with beautiful finishes, clever lighting, clever storage, and a list of preferred suppliers.”</p>
+      <p class="meta">00:09:20 to 00:09:41. True line. Wrong temperature to lead with. Last post, and only if she likes it.</p>
+    </div>
+  </div>
+  <div class="pf"><span>Dee Design · how to cut</span><span>13</span></div>
+</section>
+
+<section class="page">
+  <div class="ph"><span>Rua Social</span><span>Leave these out</span></div>
+  <div class="pc">
+    <div class="sl">Hard exclude</div>
+    <h1>Do not go looking in here.</h1>
+    <h2>Swords talking timeline</h2>
+    <ul class="plain">
+      <li>00:00:01 to 00:01:30. Restarts. “Jesus Christ.” “I can’t.” The knee coaching.</li>
+      <li>00:03:27 to 00:04:35. She loses it. “You’re not a good salesperson.”</li>
+      <li>00:10:49 to 00:11:20. “Laughing, crying.” She is upset.</li>
+      <li>00:15:30 to 00:15:45. “What do you want me to say” about how long it took.</li>
+      <li>Every question you asked. Trim to his answer.</li>
+    </ul>
+    <h2>Calderwood first takes</h2>
+    <ul class="plain">
+      <li>00:02:07 to 00:02:51. Lighting “not popping.” You interrupting.</li>
+      <li>00:02:53 to 00:03:20. The JDM line she refused. “No, I’m not going to say that.”</li>
+      <li>00:03:52 to 00:04:25. “Concealed tape.” Use the restart at 00:04:30.</li>
+      <li>00:05:17 to 00:06:10. Coaching. “My frustration.” “In the wrong place.”</li>
+      <li>00:07:29 to 00:09:19. The end-to-end restarts.</li>
+      <li>00:09:44 to 00:10:01. “Take a minute. I want you to relax.” Gone.</li>
+    </ul>
+    <h2>Voiceover slates</h2>
+    <p>“Kitchen number one.” “Darren, this is the 2nd kitchen.” “Kitchen to take four.” “Tecton umbra. Start again.”</p>
+    <p>Phones, wallets, radio mics: crop around them. Lived-in is fine. Crew mess is not.</p>
+  </div>
+  <div class="pf"><span>Dee Design · how to cut</span><span>14</span></div>
+</section>
+
+<section class="page">
+  <div class="ph"><span>Rua Social</span><span>Stills and posting</span></div>
+  <div class="pc">
+    <div class="sl">Between the films</div>
+    <h1>Stills, then a simple post order.</h1>
+    <p>There are not many stills of the rooms. Grab frames from the B-roll. Rotate anything that came in sideways.</p>
+    <div class="grid2">
+      <div class="card">
+        <div class="k">Swords stills</div>
+        <div class="t">1460, 1461, 1463, 1468, 1469</div>
+        <p>Teal, in the kitchen. 1463 is the smile. A carousel of island and oak. Gareth in a still only after his first film is up.</p>
+      </div>
+      <div class="card">
+        <div class="k">Calderwood stills</div>
+        <div class="t">1499 to 1505</div>
+        <p>1504 is the quiet one, garden in the window. Not 1505. 1499, hand on the terracotta. Pull the vault, splash and drawer from 1483, 1494, 1487.</p>
+      </div>
+    </div>
+    <h2>Three weeks, both apps</h2>
+    <p>Same vertical file on Instagram and TikTok that day. If Gareth has not said yes, open with “the extension wasn’t the answer” instead of his face.</p>
+    <table class="cut">
+      <thead><tr><th></th><th>Post</th></tr></thead>
+      <tbody>
+        <tr><td class="id">Week 1 Tue</td><td>Gareth: from the moment I met D. Or the short Swords voiceover if he is not cleared.</td></tr>
+        <tr><td class="id">Week 1 Fri</td><td>Swords full voiceover. The film we sold.</td></tr>
+        <tr><td class="id">Week 1 Sun</td><td>3 options, not 80. Plus the Swords stills.</td></tr>
+        <tr><td class="id">Week 2 Tue</td><td>The vault and the lighting.</td></tr>
+        <tr><td class="id">Week 2 Thu</td><td>Calderwood full voiceover. The other film we sold.</td></tr>
+        <tr><td class="id">Week 2 Sat</td><td>I thought I needed an extension. Plus Dekton Umbra.</td></tr>
+        <tr><td class="id">Week 3</td><td>The short ones. Cooking, pantry, layered lighting, the drawer, hob facing the garden.</td></tr>
+        <tr><td class="id">After that</td><td>Dining table and hold your hand, if she likes them. Then the rest.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="pf"><span>Dee Design · how to cut</span><span>15</span></div>
+</section>
+
+<section class="page">
+  <div class="ph"><span>Rua Social</span><span>Captions to paste</span></div>
+  <div class="pc">
+    <div class="sl">First line on screen, then the post</div>
+    <h1>Her words. His words.</h1>
+    <p>Same caption on Instagram and TikTok. Do not invent a quote.</p>
+    <div class="film">
+      <div class="film-top"><span class="film-name">Swords voiceover</span></div>
+      <p>On screen: The extension wasn’t the answer.</p>
+      <p class="meta">Gareth came to me for a kitchen extension. The existing room had enough in it. It needed a proper plan.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="film-name">Calderwood voiceover</span></div>
+      <p>On screen: Back with the same clients, twenty years on.</p>
+      <p class="meta">A kitchen for clients we first worked with twenty years ago. Dekton Umbra, dark green wood-grain, lighting built into the vault.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="film-name">From the moment I met D</span></div>
+      <p>On screen: From the moment I met D.</p>
+      <p class="meta">Gareth, after the kitchen: sitting room, living room, wardrobes upstairs. He did not want to work with anyone else.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="film-name">I thought I needed an extension</span></div>
+      <p>On screen: I thought I needed an extension.</p>
+      <p class="meta">Gareth spent a year on catalogues and showrooms. Then a friend said to call me. We used the room he already had.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="film-name">3 options, not 80</span></div>
+      <p>On screen: 3 options, not 80.</p>
+      <p class="meta">He spent a year looking. What he needed was three options, not eighty.</p>
+    </div>
+    <div class="film">
+      <div class="film-top"><span class="film-name">The vault</span></div>
+      <p>On screen: Lighting for the vault, planned at the start.</p>
+      <p class="meta">Concealed lighting on dimmers, up through the beams, back down into the room. Planned before the plaster went on.</p>
+    </div>
+    <p style="margin-top:12px">More captions in captions.md if you need them.</p>
+  </div>
+  <div class="pf"><span>Dee Design · how to cut</span><span>16</span></div>
+</section>
+
+</body>
+</html>
