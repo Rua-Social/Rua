@@ -1254,6 +1254,19 @@ class StreamSchemaTest(unittest.TestCase):
         self.assertEqual(meta["output_tokens"], 12)
         self.assertEqual(meta["reasoning_tokens"], 4)
 
+    def test_claude_tool_use_event_counts_as_live_capability(self):
+        meta = self.fresh_meta()
+        bridge._update_stream_meta(
+            {
+                "type": "assistant",
+                "message": {
+                    "content": [{"type": "tool_use", "name": "mcp__claude_ai_Gmail__search_threads"}]
+                },
+            },
+            meta,
+        )
+        self.assertEqual(meta["tool_events"], 1)
+
 
 class GrokStreamingTest(RuntimeCase):
     def run_with_process(
@@ -1276,6 +1289,14 @@ class GrokStreamingTest(RuntimeCase):
         ):
             reply = bridge.run_grok("a private prompt")
         return reply, popen
+
+    def test_live_google_answer_without_tool_event_is_rejected(self):
+        process = PipeProcess(success_stream("Stale answer."))
+        self.addCleanup(process.close)
+        with mock.patch.object(bridge.subprocess, "Popen", return_value=process):
+            with self.assertRaises(bridge.EngineUnavailable) as caught:
+                bridge.run_engine_once("What was my latest Gmail?", "claude")
+        self.assertEqual(caught.exception.reason, "google-tools")
 
     def test_streaming_success_uses_medium_ten_turn_phone_command(self):
         process = PipeProcess(success_stream())

@@ -65,6 +65,7 @@ PHONE_TIMEOUT = "The desk timed out. Send it again or try a smaller ask."
 PHONE_QUEUE = "Hold that. Still on the last one."
 PHONE_GOOGLE = "Google isn't on this phone seat. Parked on the desk list."
 PHONE_GOOGLE_MISSING = "Google tools are not on this process."
+PHONE_GOOGLE_UNAVAILABLE = "Live Google data was unavailable on this engine. Try /engine auto or ask again."
 VOICE_SAVED_WORKING = "Voice saved. Working from it."
 VOICE_SAVED_HELD = "Voice saved. No actions added."
 VOICE_SAVED_TIMEOUT = "Voice saved. The desk timed out. Your intake is safe."
@@ -103,7 +104,7 @@ This bridge sends text only. If work creates a file, name its repo path; do not 
 Named clients: read 10-clients/<slug>/ first. That record is the pocket card. Todo is 20-studio/todo.md. Answer from those files when they have the fact.
 Do not hunt Drive or Gmail for a fact the instance already has. lists.md is a diary. Do not brief a stale diary line over the instance or the founder.
 If the founder corrects a desk fact, believe them and emit LIST+ Done or Moving. Do not keep briefing a card they have marked wrong.
-If the files are silent and the ask needs live mail, calendar, or Drive, use the Gmail, Calendar, and Drive tools via search_tool then use_tool. Reply with the short result. Never reply with: Google isn't on this phone seat. Parked on the desk list.
+If the files are silent and the ask needs live mail, calendar, or Drive, use the Gmail, Calendar, and Drive tools via search_tool then use_tool (when connected). For latest/recent/last asks, inspect individual messages or events, verify the exact sender/recipient/date, and do not infer recency from a thread card or repository file. Reply with the short verified result. Never reply with: Google isn't on this phone seat. Parked on the desk list.
 Do not use Mail.app, Calendar.app, icalBuddy, Chrome, or local mail CLIs as a stand-in.
 Do not send them to /mcps. Google's remote MCP servers are not this seat's login.
 If those tools are not in this process, reply with exactly this sentence and nothing else: Google tools are not on this process. Do not park it. Do not brief a card they have marked wrong.
@@ -1916,6 +1917,13 @@ def _update_stream_meta(event: dict, meta: dict) -> None:
     kind = _event_kind(event)
     item = event.get("item") or {}
     item_kind = str(item.get("type") or "").lower().replace(".", "_").replace("-", "_")
+    message = event.get("message") or {}
+    content = message.get("content") if isinstance(message, dict) else None
+    claude_tool = isinstance(content, list) and any(
+        isinstance(block, dict)
+        and str(block.get("type") or "").lower() in {"tool_use", "server_tool_use"}
+        for block in content
+    )
     if (
         kind in {"tool_call", "tool_call_update", "tool_started"}
         or "toolcall" in kind
@@ -1930,6 +1938,7 @@ def _update_stream_meta(event: dict, meta: dict) -> None:
                 "tool_call",
             }
         )
+        or claude_tool
     ):
         meta["tool_events"] += 1
     update = ((event.get("params") or {}).get("update") or {})
@@ -2263,6 +2272,9 @@ def run_grok(
     setting = configured_engine()
     failures: list[EngineUnavailable] = []
     candidates = engine_candidates()
+    # Live-data correctness is capability-based. Every configured engine
+    # remains eligible; run_engine_once rejects a successful answer that made
+    # no tool call, allowing auto mode to fall through safely.
     saved_session = "" if new_session else read_text(SESSION_FILE)
     saved_meta = read_json(SESSION_META_FILE, {}) if saved_session else {}
     saved_engine = (
@@ -2291,6 +2303,8 @@ def run_grok(
         except EngineUnavailable as exc:
             failures.append(exc)
             if setting != "auto":
+                if exc.reason == "google-tools":
+                    return PHONE_GOOGLE_UNAVAILABLE
                 return fixed_engine_busy(engine)
             mark_engine_unavailable(engine, exc.reason)
             append_metric(
@@ -2314,7 +2328,19 @@ def run_grok(
         write_text(SESSION_FILE, saved_session)
         write_json(SESSION_META_FILE, saved_meta)
     write_text(LAST_ERROR_FILE, summary or "all configured engines unavailable")
+    if failures and all(item.reason == "google-tools" for item in failures):
+        return PHONE_GOOGLE_MISSING
     return PHONE_ALL_ENGINES
+
+
+def requires_live_google(prompt: str) -> bool:
+    """Detect asks whose correctness depends on current Google Workspace data."""
+    return bool(
+        re.search(
+            r"\b(gmail|email(?:s)?|inbox|calendar|drive|google|thread)\b",
+            prompt.lower(),
+        )
+    )
 
 
 def run_engine_once(
@@ -2405,6 +2431,22 @@ def run_engine_once(
         if proc.returncode == 0:
             write_text(LAST_ERROR_FILE, str(exc))
             return with_reset(reset, PHONE_FAIL)
+
+    # A live Google answer without a tool event is unsafe: it may be a stale
+    # repository/card answer. In auto mode this becomes a capability fallback;
+    # fixed-engine mode returns an explicit unavailable message.
+    if requires_live_google(prompt) and not meta.get("tool_events"):
+        SESSION_FILE.unlink(missing_ok=True)
+        SESSION_META_FILE.unlink(missing_ok=True)
+        append_metric(
+            {
+                "stage": "google-capability",
+                "outcome": "missing",
+                "engine": engine,
+                "seconds": round(time.monotonic() - started, 3),
+            }
+        )
+        raise EngineUnavailable(engine, "google-tools")
 
     if proc.returncode != 0 and not text:
         err = (stderr or stdout or f"exit {proc.returncode}")[-800:]

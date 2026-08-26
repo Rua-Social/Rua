@@ -29,7 +29,7 @@ local `gmail` / `calendar` / `drive` MCP servers. Claude-for-Google.
 Mail.app, Calendar.app, or a browser as a stand-in for Gmail,
 Calendar, or Drive.
 A custom agent or phone plugin profile. A persistent Grok leader.
-Direct model API calls. Cost or quality routing. Retrying a request on
+Direct model API calls. General cost or quality routing. Retrying a request on
 another engine after any tool has run. Cross-engine session history. A
 new dependency, host, service, or chat surface. Changing Telegram's look.
 Replacing Scribe with Whisper in the always-on bridge. Automatic
@@ -86,6 +86,12 @@ knowledge base or permanent media archive.
   "Save this as intake. No action yet." is held without running the engine
   and returns a receipt. Voice may add a todo only when it explicitly says
   "Add one todo: ..."; it never closes a todo.
+- Asks that require current Gmail, Calendar, or Drive data are
+  capability-gated: the selected engine must make a live Google tool call
+  before its answer is accepted. In `auto` mode, an engine that cannot do so
+  is treated as unavailable and the next configured engine may be tried.
+  Fixed-engine mode returns a plain unavailable message rather than stale
+  file context.
 - The phone gets the last assistant text after the last tool, not the
   studio log. Reaction + typing are best effort and never delay Grok.
 - The poller remains live while one engine worker handles asks in order.
