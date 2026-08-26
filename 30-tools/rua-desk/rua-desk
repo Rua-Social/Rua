@@ -1,0 +1,206 @@
+#!/bin/zsh
+# Open the Rua repo through the AI harness the founder chooses.
+set -euo pipefail
+
+RUA_DESK_REPO="${RUA_REPO:-$HOME/Rua}"
+
+if [[ ! -d "$RUA_DESK_REPO" ]]; then
+  print -u2 -r -- "Rua repo not found at $RUA_DESK_REPO. Set RUA_REPO to the checkout."
+  exit 1
+fi
+
+cd "$RUA_DESK_REPO"
+
+seat_label() {
+  case "$1" in
+    claude) print -r -- "Claude" ;;
+    codex) print -r -- "Codex" ;;
+    grok) print -r -- "Grok" ;;
+    gemini) print -r -- "Gemini" ;;
+    *) print -r -- "$1" ;;
+  esac
+}
+
+seat_version() {
+  local seat="$1"
+  if ! command -v "$seat" >/dev/null 2>&1; then
+    print -r -- "missing"
+    return
+  fi
+
+  local version
+  version="$("$seat" --version 2>/dev/null | head -n 1 || true)"
+  print -r -- "${version:-installed}"
+}
+
+print_status() {
+  print -r -- "Rua desk  $RUA_DESK_REPO"
+  print
+  printf "  %-8s  %s\n" "claude" "$(seat_version claude)"
+  printf "  %-8s  %s\n" "codex" "$(seat_version codex)"
+  printf "  %-8s  %s\n" "grok" "$(seat_version grok)"
+  printf "  %-8s  %s\n" "gemini" "$(seat_version gemini)"
+  print
+  print -r -- "The repo is the desk. Choose the harness that fits this sitting."
+  print -r -- "Operator card: 20-studio/desk.md"
+}
+
+usage() {
+  cat <<'EOF'
+rua-desk              choose a seat interactively
+rua-desk claude       open Claude Code
+rua-desk codex        open Codex CLI
+rua-desk grok         open the Grok dashboard
+rua-desk grok-one     open one Grok session
+rua-desk gemini       open Gemini CLI
+rua-desk status       show installed seats and versions
+rua-desk card         print the operator card
+rua-desk ping         ask each installed seat one line
+rua-desk help         show this help
+EOF
+}
+
+require_seat() {
+  local seat="$1"
+  if command -v "$seat" >/dev/null 2>&1; then
+    return
+  fi
+  print -u2 -r -- "$(seat_label "$seat") is not installed or not on PATH."
+  exit 127
+}
+
+launch_seat() {
+  local seat="$1"
+  require_seat "$seat"
+  print -r -- "Opening $(seat_label "$seat") at $RUA_DESK_REPO"
+
+  case "$seat" in
+    grok) exec grok dashboard ;;
+    claude) exec claude ;;
+    codex) exec codex ;;
+    gemini) exec gemini ;;
+  esac
+}
+
+launch_grok_one() {
+  require_seat grok
+  print -r -- "Opening one Grok session at $RUA_DESK_REPO"
+  exec grok
+}
+
+show_card() {
+  local pager_command="${PAGER:-less}"
+  if command -v "$pager_command" >/dev/null 2>&1; then
+    "$pager_command" "$RUA_DESK_REPO/20-studio/desk.md"
+  else
+    command cat "$RUA_DESK_REPO/20-studio/desk.md"
+  fi
+}
+
+print_menu() {
+  print -r -- "Rua desk  choose a seat"
+  print
+  print -r -- "  1  Claude"
+  print -r -- "  2  Codex"
+  print -r -- "  3  Grok dashboard"
+  print -r -- "  4  Gemini"
+  print
+  print -r -- "  s  Status"
+  print -r -- "  c  Operator card"
+  print -r -- "  q  Quit"
+  print
+}
+
+choose_seat() {
+  local choice=""
+  print_menu
+  while true; do
+    printf "Choose a seat [1-4, s, c, q]: "
+    choice=""
+    if ! IFS= read -r choice; then
+      print
+      print -r -- "Desk closed."
+      return
+    fi
+
+    case "${choice:l}" in
+      1|claude) launch_seat claude ;;
+      2|codex) launch_seat codex ;;
+      3|grok) launch_seat grok ;;
+      4|gemini) launch_seat gemini ;;
+      s|status) print; print_status; print ;;
+      c|card) show_card; print; print_menu ;;
+      q|quit|exit) print -r -- "Desk closed."; return ;;
+      *) print -r -- "Choose 1-4, a seat name, s, c, or q." ;;
+    esac
+  done
+}
+
+# Ask each installed seat one line. This is a deliberate live proof, not a
+# router: every command runs independently and the founder sees each result.
+ping_seats() {
+  local workdir="${TMPDIR:-/tmp}/rua-desk-ping.$$"
+  mkdir -p "$workdir"
+  print -r -- "Rua desk ping  asking each installed seat for one line..."
+  print
+
+  ping_one() {
+    local seat="$1"
+    local outfile="$workdir/$seat.txt"
+    shift
+    if ! command -v "$seat" >/dev/null 2>&1; then
+      print -r -- "$seat: missing" > "$outfile"
+      return
+    fi
+    if perl -e 'alarm 180; exec @ARGV' -- "$@" >"$outfile" 2>"$workdir/$seat.err"; then
+      :
+    else
+      print -r -- "$seat: failed (exit $?)" >> "$outfile"
+    fi
+  }
+
+  ping_one grok grok -p "Reply with exactly one line: GROK_OK then your model name. Do not use tools. Do not explain." --disallowed-tools "run_terminal_command,web_search,web_fetch,search_replace,read_file,list_dir,grep,spawn_subagent" &
+  ping_one claude claude -p "Reply with exactly one line: CLAUDE_OK then your model name. Do not use tools. Do not explain." --output-format text --disable-slash-commands &
+  ping_one gemini gemini -p "Reply with exactly one line: GEMINI_OK then your model name. Do not use tools. Do not explain." -o text --approval-mode plan --skip-trust &
+  ping_one codex codex exec --skip-git-repo-check -C "$workdir" "Reply with exactly one line: CODEX_OK then your model name. Do not use tools. Do not explain." &
+  wait
+
+  local seat
+  for seat in claude codex grok gemini; do
+    printf "%-8s  " "$seat"
+    if [[ -s "$workdir/$seat.txt" ]]; then
+      grep -E -m1 "${seat:u}_OK|GROK_OK|CLAUDE_OK|GEMINI_OK|CODEX_OK|^$seat:" "$workdir/$seat.txt" \
+        || tail -n 3 "$workdir/$seat.txt" | tr '\n' ' '
+      print
+    else
+      print -r -- "no output"
+      if [[ -s "$workdir/$seat.err" ]]; then
+        tail -n 2 "$workdir/$seat.err" | sed 's/^/          /'
+      fi
+    fi
+  done
+  print
+  print -r -- "Each OK line proves that seat answered independently."
+}
+
+command_name="${1:-}"
+case "$command_name" in
+  "")
+    if [[ "${RUA_DESK_INTERACTIVE:-}" == "1" || ( -t 0 && -t 1 ) ]]; then
+      choose_seat
+    else
+      print_status
+    fi
+    ;;
+  claude|codex|grok|gemini) launch_seat "$command_name" ;;
+  grok-one) launch_grok_one ;;
+  status) print_status ;;
+  card) show_card ;;
+  ping|demo) ping_seats ;;
+  -h|--help|help) usage ;;
+  *)
+    print -u2 -r -- "Unknown Rua desk command: $command_name"
+    usage >&2
+    exit 2
+    ;;
+esac

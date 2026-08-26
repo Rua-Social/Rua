@@ -19,28 +19,29 @@ VS Code can host a chat panel or a terminal. It does not become the
 coordinator just because four models are installed. The coordinator is
 the repository: `AGENTS.md`, the right skill, and files on disk.
 
-## One window, four seats
+## One repo, four seats
 
-The personal OS is one Grok window looking at this repo.
+The personal OS is this repo opened through whichever harness fits the
+sitting. Run bare `rua-desk` and choose the seat. No harness owns the desk.
 
-- **Window:** the Grok dashboard. Several named sessions, one screen.
+- **Entry:** `rua-desk`. Claude, Codex, Grok, and Gemini are equal choices.
 - **State:** Git. If it is not a file, it is not the org.
 - **Procedure:** a skill, when the work is a repeated method.
-- **Parallel pass:** a workflow, when several independent readers
-  should run at once and hand back one result.
+- **Hands:** the selected harness and the tools it genuinely has.
 
-That is multi-agent work *inside* Grok. It is not four APIs in one
-chat.
+Each harness keeps its own sessions, tools, memory, login, and bill. A
+sitting does not become a shared four-model chat because it began at the
+same launcher.
 
-Other models stay other seats unless they have a real API
-behind them. No OpenRouter. No routing service.
+No OpenRouter. No routing service. Changing seats means opening another
+harness and handing off through Git and files.
 
 ## What is actually live
 
 Kimi is inside Grok via the Moonshot API. `/model kimi` is
 `kimi-k2.6` (cheap). `/model kimi-code` is `kimi-k2.7-code`.
 `/model kimi-k3` is the flagship ($3 / $15 per 1M, 1M context,
-always thinks). Default stays `grok-4.6`.
+always thinks). Inside the Grok seat, its default stays `grok-4.6`.
 
 Claude, Gemini, and Codex stay on their own logins. From a
 new Grok session they can also be called as tools through
@@ -52,7 +53,7 @@ What works:
 
 | Seat | What it is | Bill / login | Open it |
 | --- | --- | --- | --- |
-| Grok | Default conductor. Dashboard. Rua skills. Brains: `grok-4.6`, `grok-4.5`. Kimi via Moonshot. | grok.com + Moonshot API | `rua-desk grok` |
+| Grok | Dashboard and Grok workflows. Rua skills. Brains: `grok-4.6`, `grok-4.5`. Kimi via Moonshot. | grok.com + Moonshot API | `rua-desk grok` |
 | Claude Code | Claude's own harness. Plugins, Claude memory. | Anthropic | `rua-desk claude` |
 | Gemini CLI | Google's own harness. Multimodal if you use it. | Google | `rua-desk gemini` |
 | Codex | OpenAI harness in ChatGPT.app. Computer use. GPT-5.6. | ChatGPT | `rua-desk codex` |
@@ -62,20 +63,25 @@ single session if you want a quiet thread.
 
 ## Sit down
 
-1. `rua-desk grok`
-2. If the roster is empty, boot the rooms below once. Pin them.
+1. Run `rua-desk`.
+2. Choose Claude, Codex, Grok, or Gemini for this sitting.
 3. Name the class before loading doctrine. See `AGENTS.md`.
-4. Stay in Grok unless you need different hands, or a thread is
-   already in flight on another seat.
+4. Stay in that harness until the work needs different hands or a thread
+   is already in flight elsewhere. Git and files carry the handoff.
 
 ```
-rua-desk           # see what is installed
-rua-desk grok      # one window
-rua-desk grok-one  # one session
-rua-desk ping      # each seat answers one line
+rua-desk           # choose a seat
+rua-desk claude    # open Claude Code directly
+rua-desk codex     # open Codex directly
+rua-desk grok      # open the Grok dashboard directly
+rua-desk gemini    # open Gemini directly
+rua-desk status    # see what is installed
+rua-desk ping      # each installed seat answers one line
 ```
 
-Keys in that window:
+### Grok dashboard controls
+
+These controls exist only when the selected seat is the Grok dashboard:
 
 | Key | What it is |
 | --- | --- |
@@ -86,9 +92,10 @@ Keys in that window:
 | `/desk-brief` | Parallel scan of the four repo rooms, then one brief. Studio and clients on grok-4.5; tools, Papa Rua, and the brief on grok-4.6. Must run from `~/Rua`. Grok children cannot be Kimi. |
 | `/workflows` | Watch a running workflow. |
 
-## Rooms
+## Grok dashboard rooms
 
-These are named dashboard sessions, not an `agents/` directory.
+These are Grok named dashboard sessions, not an `agents/` directory and not
+the structure of the whole desk.
 Create them the first time by dispatching the seed, then rename and
 pin. Reuse them. Do not open a room because a new idea showed up.
 
@@ -166,9 +173,9 @@ next to `/desk-brief`. Not before.
 A custom agent file is earned when a role needs its own tools or
 prompt, not when you want a job title.
 
-The conductor stays Grok. The other seats are unused if you never
-call them. Pull a seat when the job matches. Do not pull all four
-for courtesy, and do not skip them to keep the chat tidy.
+The active harness conducts the current sitting. Other seats stay unused
+unless the work needs their hands. Do not pull all four for courtesy, and
+do not skip a better-fit seat merely to keep the chat tidy.
 
 - Long extract or first read of a fat file or folder: `kimi_run`
   with `kimi`. `kimi_run` stays a reader (no write). Do not put
@@ -231,12 +238,12 @@ Do not put Kimi inside Claude Code for Grok to call.
 
 | Class | Seat | Why |
 | --- | --- | --- |
-| Founder / direction | Grok, `desk` room | Reads `20-studio/founder-context.md`. This note lives here. |
-| Sales / scope | Grok `sales`, or Claude Code | Shared rules. Stay in the harness you opened. |
-| Defined sprint | Grok `job` | `rua-shoot-plan` is wired here. |
-| Pickup / execution | Grok `job`, or Codex | Scope of work only. Do not load the sprint skill. |
-| Tool / software | Grok `tools` | `rua-ship-gate`. Approval before files. Session and look live here too. |
-| Papa Rua | Grok `papa` | Separate from client delivery. |
+| Founder / direction | Any installed seat | Read `20-studio/founder-context.md` before the decision. In Grok, this is the `desk` room. |
+| Sales / scope | Any installed seat | Read the sales README and scope template. In Grok, this is `sales`. |
+| Defined sprint | Any installed seat | Use `rua-shoot-plan`. In Grok, this is `job`. |
+| Pickup / execution | Any installed seat | Scope of work only. Do not load the sprint skill. |
+| Tool / software | Any installed seat | Use `rua-ship-gate`. In Grok, this is `tools`. |
+| Papa Rua | Any installed seat | Read `40-papa-rua/README.md`. In Grok, this is `papa`. |
 | Claude-only memory or Claude plugins | Claude Code | Different hands, not a Grok `/model` switch. |
 | Gemini-only account, multimodal CLI | Gemini CLI | Different hands. |
 | Computer use / a Codex thread already in flight | Codex | Finish it there. Resume with the resume-codex skill. |
@@ -273,10 +280,10 @@ in this repo. No router service. No third-party method at the
 repository root. No `boardroom` room: the board is three seats in
 `desk`, not a sixth pin.
 
-Grok workflows live under `.grok/workflows/`. That is the harness
-adapter for a repeated parallel pass, not an org chart. The first
-one is `desk-brief`. Add another when the same multi-agent handoff
-is happening every week. A `/board` workflow waits for that.
+Grok workflows live under `.grok/workflows/`. They are Grok harness
+adapters for repeated parallel passes, not desk-wide requirements or an org
+chart. The first one is `desk-brief`. Add another when the same multi-agent
+handoff is happening every week. A `/board` workflow waits for that.
 
 Until then this note is the desk.
 

@@ -7,8 +7,8 @@ What exists today:
 - `founder-context.md` — what Rua is optimising for. Read it when founder
   or business intent materially affects a decision. Do not read it to plan
   a shoot.
-- `desk.md` — how the founder sits down: one Grok window, four other
-  seats if needed. Operating note, not doctrine.
+- `desk.md` — how the founder sits down: one repo and four selectable
+  harness seats. Operating note, not doctrine.
 - `todo.md` — the only founder open-actions list. Closed lines in
   `todo-done.md`. Skill: `00-system/skills/rua-todo/`.
 - `lists.md` — desk diary (blocked / moving / done) plus ideas and
