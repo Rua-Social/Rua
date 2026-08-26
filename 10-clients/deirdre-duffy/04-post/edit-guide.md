@@ -5,7 +5,7 @@
 **Timecodes:** sequence time from the named FCP project, as in the iTT. Anchors given so a recut survives a re-export.
 **Aspect:** 9:16 only. Instagram and TikTok. Same file on both. LinkedIn is out. FCP project 1080×1920, 25fps, Spatial Conform Fill, crop 9:16 off the 4K 16:9. Pan on the move clips (P1001480, P1001490, P1001498).
 **Target:** sold films 60 to 75 seconds. Harvest shorts 10 to 25 seconds. Two B-roll spines, then duplicate.
-**Phone PDF:** `edit-guide.pdf` (16 pages).
+**Phone PDF:** `Deeedit-guide.pdf` (16 pages).
 
 ---
 
@@ -64,7 +64,7 @@ Build Spine A (Swords) and Spine B (Calderwood). Duplicate. New audio. New first
 | C02 C04–C10 C12 | Calderwood slices + visual drawer | **HARVEST** | 8–25s |
 | C11 | Hold your hand | **HOLD** | 15–20s |
 
-Do not open the night by salvaging her to-camera first takes. Those gold lines are harvest audio under Spine B. Phone cards and B-roll bins: `edit-guide.pdf`.
+Do not open the night by salvaging her to-camera first takes. Those gold lines are harvest audio under Spine B. Phone cards and B-roll bins: `Deeedit-guide.pdf`.
 
 ---
 
@@ -393,4 +393,4 @@ Pull extra stills from B-roll frames if the JPG set is thin on the rooms themsel
 6. Harvest. Duplicate the matching spine, new audio, new first frame. Same 9:16 file for Instagram and TikTok.
 7. Stop when S01 and C01 exist. Steal the rest. Telegram the four flags.
 
-Captions and posting: `captions.md`, `posting.md`. Phone pack: `edit-guide.pdf`.
+Captions and posting: `captions.md`, `posting.md`. Phone pack: `Deeedit-guide.pdf`.

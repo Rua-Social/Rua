@@ -83,7 +83,7 @@ on the Studio drive when it is copied there.
 
 - Scope, from the proposal: `00-brief/scope.md`
 - Cut list: `04-post/edit-guide.md`
-- Phone PDF: `04-post/edit-guide.pdf`
+- Phone PDF: `04-post/Deeedit-guide.pdf`
 - Captions: `04-post/captions.md`
 - Posting, IG + TikTok: `04-post/posting.md`
 - Cleaned iTT text: `04-post/transcripts/`
