@@ -86,7 +86,7 @@ this table.
 | Session restored at the wrong effort | "Session reset. The last one was too big or gone." then the new reply. |
 | Wrong inbound type | "Text or a voice note." |
 | Long reply | Extra Telegram messages, no "1/2". |
-| Google tools missing | "Google tools are not on this process." Not the parked-Google sentence. Not `/mcps`. |
+| Google tools missing | "Google tools are not on this process." The bridge, not the desk prompt, detects this after a live lookup is attempted. Not the parked-Google sentence. Not `/mcps`. |
 | Park, nothing after the word | "Say what to park." |
 | Parked | "On the list." |
 | Idea, nothing after the word | "Say the idea." |
@@ -167,10 +167,9 @@ completeness, engagement.
 
 1. Asks what's on the calendar tomorrow, last doc on Drive, last mail.
 2. Eyes and typing.
-3. **Worked:** if the instance or todo already has the fact, that
-   answer only. If the files are silent: live Gmail, Calendar, or
-   Drive via `search_tool` then `use_tool` on the grok.com gateway
-   connectors (same tools as the dashboard TUI), one short result.
+3. **Worked:** current/recent mail, calendar, or Drive asks use live
+   Gmail, Calendar, or Drive via `search_tool` then `use_tool`, even
+   when the instance has related context. One short verified result.
    Not `lists.md`. Not Mail.app.
 4. Failure: "Google isn't on this phone seat." `/mcps`. Mail.app,
    Calendar.app, or briefing a card they have already marked wrong.

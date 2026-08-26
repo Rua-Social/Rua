@@ -139,13 +139,13 @@ knowledge base or permanent media archive.
   `/status` keeps the last real desk miss. If Grok hits the turn
   limit after producing text, that text is sent.
   An explicit live mail, calendar, or Drive lookup is a desk ask like
-  any other: the instance card and `todo.md` answer first. When the
-  files are silent, Grok uses the Google tools if this process has
-  them, and replies with the short result. It does not emit
-  "Google isn't on this phone seat." If the tools are missing it
-  replies "Google tools are not on this process." It does not send
-  them to `/mcps`. There is no input gate, so named-send and last-doc
-  asks always reach the desk. It does not open Mail.app or Calendar.app.
+  any other: a current/recent lookup always uses the connected Google
+  tool, regardless of related instance context, and replies with the
+  short verified result. It does not emit "Google isn't on this phone
+  seat." If no live tool event occurs, the bridge (not the desk prompt)
+  replies "Google tools are not on this process." It does not send them
+  to `/mcps`. There is no input gate, so named-send and last-doc asks
+  always reach the desk. It does not open Mail.app or Calendar.app.
 
 Success on the phone: the founder knows the result without opening
 a laptop. Do not optimize session length, turn count, or desktop

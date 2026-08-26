@@ -1953,7 +1953,6 @@ class MultipartTest(unittest.TestCase):
 class RulesTest(unittest.TestCase):
     def test_phone_rules_are_embedded_without_per_ask_experience_read(self):
         self.assertIn(GOOGLE_REPLY, bridge.DESK_RULES)
-        self.assertIn(bridge.PHONE_GOOGLE_MISSING, bridge.DESK_RULES)
         self.assertIn("search_tool", bridge.DESK_RULES)
         self.assertIn("use_tool", bridge.DESK_RULES)
         self.assertIn("do not send them to /mcps", bridge.DESK_RULES.lower())
@@ -1965,11 +1964,7 @@ class RulesTest(unittest.TestCase):
             + GOOGLE_REPLY,
             bridge.DESK_RULES,
         )
-        self.assertIn(
-            "reply with exactly this sentence and nothing else: "
-            + bridge.PHONE_GOOGLE_MISSING,
-            bridge.DESK_RULES,
-        )
+        self.assertNotIn(bridge.PHONE_GOOGLE_MISSING, bridge.DESK_RULES)
         self.assertEqual(bridge.PHONE_GOOGLE_MISSING.count("\n"), 0)
         self.assertNotIn("/mcps", bridge.PHONE_GOOGLE_MISSING)
 
@@ -1983,7 +1978,7 @@ class RulesTest(unittest.TestCase):
         self.assertIn("never reply with: google isn't on this phone seat", rules)
         self.assertIn("use the gmail, calendar, and drive tools", rules)
         self.assertIn("via search_tool then use_tool", rules)
-        self.assertIn(bridge.PHONE_GOOGLE_MISSING.lower(), rules)
+        self.assertNotIn(bridge.PHONE_GOOGLE_MISSING.lower(), rules)
         self.assertIn("a voice note cannot close the list", rules)
         self.assertIn("instagram and tiktok links", rules)
         self.assertIn("client-facing", rules)
