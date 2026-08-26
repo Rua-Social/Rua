@@ -70,6 +70,8 @@ class RuntimeCase(unittest.TestCase):
             "STATE_DIR": self.state,
             "SESSION_FILE": self.state / "session_id",
             "SESSION_META_FILE": self.state / "session.json",
+            "ENGINE_STATE_FILE": self.state / "engine_state.json",
+            "ENGINE_OVERRIDE_FILE": self.state / "engine_override",
             "OFFSET_FILE": self.state / "offset",
             "INBOX_FILE": self.state / "inbox.json",
             "LAST_ERROR_FILE": self.state / "last_error",
@@ -260,6 +262,16 @@ class EnvAndOwnerTest(RuntimeCase):
         self.assertNotEqual(env.get("TELEGRAM_BOT_TOKEN"), "token")
         self.assertEqual(env.get(bridge.GATEWAY_TOOLS_ENV), "1")
         self.assertEqual(env.get(bridge.MANAGED_MCPS_ENV), "1")
+
+    def test_auto_engine_order_normalizes_aliases_and_duplicates(self):
+        self.write_owner_secrets("42")
+        with self.secrets.open("a") as handle:
+            handle.write(
+                "export DESK_ENGINE=auto\n"
+                "export DESK_ENGINE_ORDER=anthropic,openai,grok,claude\n"
+            )
+        self.assertEqual(bridge.configured_engine(), "auto")
+        self.assertEqual(bridge.engine_order(), ["claude", "codex", "grok"])
 
     def test_configured_owner_strips_and_returns_id(self):
         self.assertEqual(bridge.configured_owner({"TELEGRAM_USER_ID": " 42 "}), "42")
@@ -1013,6 +1025,17 @@ class PhoneTextTest(unittest.TestCase):
             bridge.phone_text_from_stream(stream), ("OK", "live-shape")
         )
 
+    def test_codex_stream_fixture(self):
+        stream = "\n".join([
+            '{"type":"thread.started","thread_id":"codex-thread"}',
+            '{"type":"turn.started"}',
+            '{"type":"item.completed","item":{"type":"agent_message","text":"Done."}}',
+            '{"type":"turn.completed","usage":{"input_tokens":20,"output_tokens":2}}',
+        ])
+        self.assertEqual(
+            bridge.phone_text_from_stream(stream), ("Done.", "codex-thread")
+        )
+
     def test_drops_process_talk_before_last_tool(self):
         stream = "\n".join([
             '{"type":"text","data":"Sales. Loading founder context...\\n"}',
@@ -1103,6 +1126,10 @@ class SessionResetTest(RuntimeCase):
     def test_claude_engine_does_not_drop_for_missing_grok_history(self):
         with mock.patch.object(bridge, "desk_engine", return_value="claude"):
             self.assertEqual(bridge.session_reset_reason("claude-sid"), "")
+
+    def test_codex_engine_does_not_drop_for_missing_grok_history(self):
+        with mock.patch.object(bridge, "desk_engine", return_value="codex"):
+            self.assertEqual(bridge.session_reset_reason("codex-sid"), "")
 
     def test_prompt_token_total_does_not_drop_a_live_session(self):
         history = self.make_history()
@@ -1272,6 +1299,42 @@ class GrokStreamingTest(RuntimeCase):
         self.assertEqual(reply, "Grok is busy. Try again in a minute.")
         self.assertTrue(process.terminated or process.killed)
 
+    def test_usage_limit_after_tool_returns_error_without_safe_fallback(self):
+        process = PipeProcess(
+            [
+                (0.0, '{"type":"tool_call","toolCallId":"write-one"}\n'),
+                (0.0, '{"type":"error","message":"usage limit reached"}\n'),
+            ],
+            returncode=1,
+        )
+        self.addCleanup(process.close)
+        with mock.patch.object(
+            bridge.subprocess, "Popen", return_value=process
+        ), mock.patch.object(
+            bridge, "GROK_FIRST_EVENT_TIMEOUT", 0.05
+        ), mock.patch.object(
+            bridge, "GROK_IDLE_TIMEOUT", 0.05
+        ), mock.patch.object(bridge, "GROK_TIMEOUT", 0.2):
+            reply = bridge.run_engine_once("do it", "grok")
+        self.assertEqual(reply, bridge.PHONE_FAIL)
+
+    def test_usage_limit_before_tool_allows_safe_fallback(self):
+        process = PipeProcess(
+            [(0.0, '{"type":"error","message":"usage limit reached"}\n')],
+            returncode=1,
+        )
+        self.addCleanup(process.close)
+        with mock.patch.object(
+            bridge.subprocess, "Popen", return_value=process
+        ), mock.patch.object(
+            bridge, "GROK_FIRST_EVENT_TIMEOUT", 0.05
+        ), mock.patch.object(
+            bridge, "GROK_IDLE_TIMEOUT", 0.05
+        ), mock.patch.object(bridge, "GROK_TIMEOUT", 0.2):
+            with self.assertRaises(bridge.EngineUnavailable) as caught:
+                bridge.run_engine_once("do it", "grok")
+        self.assertEqual(caught.exception.reason, "limit")
+
     def test_idle_timeout_after_first_event_returns_desk_timeout(self):
         process = PipeProcess(
             [(0.0, '{"type":"text","data":"partial"}\n')], keep_open=0.5
@@ -1354,6 +1417,33 @@ class GrokStreamingTest(RuntimeCase):
         self.assertIn("--append-system-prompt", cmd)
         self.assertNotIn(bridge.grok_bin(), cmd)
 
+    def test_codex_engine_builds_unattended_json_command(self):
+        cmd = bridge.desk_command("hello", "", engine="codex")
+        self.assertEqual(cmd[:2], [bridge.codex_bin(), "exec"])
+        self.assertIn("--json", cmd)
+        self.assertIn("--approve-for-me", cmd)
+        self.assertIn('model_reasoning_effort="medium"', cmd)
+        self.assertIn(bridge.DESK_RULES, cmd[-1])
+
+    def test_codex_tool_event_is_counted_before_provider_error(self):
+        meta = {
+            "first_event_seconds": None,
+            "tool_events": 0,
+            "model": "",
+            "effort": "",
+            "prompt_tokens": 0,
+            "output_tokens": 0,
+            "reasoning_tokens": 0,
+        }
+        bridge._update_stream_meta(
+            {
+                "type": "item.completed",
+                "item": {"type": "file_change", "changes": []},
+            },
+            meta,
+        )
+        self.assertEqual(meta["tool_events"], 1)
+
     def test_claude_result_event_is_the_phone_text(self):
         stream = "\n".join([
             '{"type":"assistant","message":{"content":[{"type":"text","text":"Hi."}]}}',
@@ -1383,6 +1473,90 @@ class GrokStreamingTest(RuntimeCase):
         self.assertEqual(len(completed), 1)
         self.assertIn("first_event_seconds", completed[0])
         self.assertEqual(completed[0]["prompt_tokens"], 1200)
+
+
+class AutoFallbackTest(RuntimeCase):
+    def setUp(self):
+        super().setUp()
+        self.write_owner_secrets("42")
+        with self.secrets.open("a") as handle:
+            handle.write(
+                "export DESK_ENGINE=auto\n"
+                "export DESK_ENGINE_ORDER=claude,codex,grok\n"
+            )
+
+    def test_usage_limit_falls_through_and_sticks_to_working_engine(self):
+        with mock.patch.object(
+            bridge,
+            "run_engine_once",
+            side_effect=[bridge.EngineUnavailable("claude", "limit"), "Done."],
+        ) as run:
+            reply = bridge.run_grok("private ask")
+        self.assertEqual(
+            reply, "Using Codex — Claude hit its limit.\n\nDone."
+        )
+        self.assertEqual([call.args[1] for call in run.call_args_list], ["claude", "codex"])
+        self.assertTrue(run.call_args_list[0].kwargs["new_session"])
+        self.assertTrue(run.call_args_list[1].kwargs["new_session"])
+        state = bridge.engine_state()
+        self.assertEqual(state["active"], "codex")
+        self.assertIn("claude", state["unavailable"])
+        self.assertNotIn("private ask", bridge.ENGINE_STATE_FILE.read_text())
+
+    def test_cooling_engine_is_skipped_then_rejoins_after_expiry(self):
+        bridge.mark_engine_unavailable("claude", "limit", now=1000)
+        bridge.mark_engine_active("codex", now=1000)
+        self.assertEqual(bridge.engine_candidates(now=1001), ["codex", "grok"])
+        self.assertEqual(
+            bridge.engine_candidates(now=1000 + bridge.ENGINE_COOLDOWN_SECONDS + 1),
+            ["claude", "codex", "grok"],
+        )
+
+    def test_failed_preferred_probe_restores_fallback_session(self):
+        bridge.write_text(bridge.SESSION_FILE, "codex-session")
+        bridge.write_json(
+            bridge.SESSION_META_FILE,
+            {"session_id": "codex-session", "engine": "codex", "effort": "medium"},
+        )
+        bridge.mark_engine_active("codex")
+        with mock.patch.object(
+            bridge,
+            "run_engine_once",
+            side_effect=[bridge.EngineUnavailable("claude", "limit"), "Continued."],
+        ) as run:
+            reply = bridge.run_grok("follow-up")
+        self.assertTrue(run.call_args_list[0].kwargs["new_session"])
+        self.assertFalse(run.call_args_list[1].kwargs["new_session"])
+        self.assertEqual(bridge.read_text(bridge.SESSION_FILE), "codex-session")
+        self.assertTrue(reply.endswith("Continued."))
+
+    def test_all_unavailable_has_one_plain_sentence(self):
+        failures = [
+            bridge.EngineUnavailable("claude", "limit"),
+            bridge.EngineUnavailable("codex", "limit"),
+            bridge.EngineUnavailable("grok", "limit"),
+        ]
+        with mock.patch.object(
+            bridge, "run_engine_once", side_effect=failures
+        ) as run:
+            self.assertEqual(bridge.run_grok("ask"), bridge.PHONE_ALL_ENGINES)
+        self.assertEqual(run.call_count, 3)
+
+    def test_failure_after_tool_does_not_try_another_engine(self):
+        with mock.patch.object(
+            bridge, "run_engine_once", return_value=bridge.PHONE_FAIL
+        ) as run:
+            self.assertEqual(bridge.run_grok("do it"), bridge.PHONE_FAIL)
+        run.assert_called_once()
+        self.assertEqual(bridge.engine_state()["active"], "claude")
+
+    def test_status_shows_mode_active_and_cooldown(self):
+        bridge.mark_engine_unavailable("claude", "limit")
+        bridge.mark_engine_active("codex")
+        reply = bridge.handle_prompt("token", 420, 1, "/status")
+        self.assertIn("engine: auto", reply)
+        self.assertIn("active: codex", reply)
+        self.assertRegex(reply, r"unavailable: claude \d+m")
 
 
 class OutboxTest(RuntimeCase):
@@ -1783,6 +1957,102 @@ class CommandReplyTest(RuntimeCase):
         self.assertFalse(bridge.SESSION_META_FILE.exists())
         run_grok.assert_not_called()
 
+    def test_engine_switches_persist_and_start_a_fresh_session_without_grok(self):
+        for engine in ("auto", "claude", "codex", "grok"):
+            with self.subTest(engine=engine):
+                bridge.write_text(bridge.SESSION_FILE, "sid")
+                bridge.write_json(
+                    bridge.SESSION_META_FILE,
+                    {"session_id": "sid", "engine": "grok"},
+                )
+                with mock.patch.object(bridge, "run_grok") as run_grok:
+                    reply = bridge.handle_prompt(
+                        "token", 420, 7, f"/engine {engine}"
+                    )
+                self.assertEqual(
+                    reply,
+                    f"Engine set to {engine}. Next message starts fresh.",
+                )
+                self.assertEqual(
+                    bridge.read_text(bridge.ENGINE_OVERRIDE_FILE), engine
+                )
+                self.assertEqual(bridge.configured_engine(), engine)
+                self.assertFalse(bridge.SESSION_FILE.exists())
+                self.assertFalse(bridge.SESSION_META_FILE.exists())
+                run_grok.assert_not_called()
+
+    def test_bare_or_invalid_engine_command_is_usage_only(self):
+        for command in ("/engine", "/engine llama", "/engine claude extra"):
+            with self.subTest(command=command):
+                bridge.write_text(bridge.ENGINE_OVERRIDE_FILE, "codex")
+                bridge.write_text(bridge.SESSION_FILE, "sid")
+                bridge.write_json(
+                    bridge.SESSION_META_FILE,
+                    {"session_id": "sid", "engine": "codex"},
+                )
+                bridge.write_json(
+                    bridge.ENGINE_STATE_FILE,
+                    {
+                        "active": "codex",
+                        "unavailable": {
+                            "claude": {"until": 9999999999, "reason": "limit"}
+                        },
+                    },
+                )
+                before = {
+                    path: path.read_bytes()
+                    for path in (
+                        bridge.ENGINE_OVERRIDE_FILE,
+                        bridge.SESSION_FILE,
+                        bridge.SESSION_META_FILE,
+                        bridge.ENGINE_STATE_FILE,
+                    )
+                }
+                with mock.patch.object(bridge, "run_grok") as run_grok:
+                    reply = bridge.handle_prompt("token", 420, 7, command)
+                self.assertEqual(reply, "Use /engine auto|claude|codex|grok")
+                self.assertEqual(
+                    {path: path.read_bytes() for path in before}, before
+                )
+                run_grok.assert_not_called()
+
+    def test_new_leaves_engine_override_unchanged(self):
+        bridge.write_text(bridge.ENGINE_OVERRIDE_FILE, "claude")
+        bridge.write_text(bridge.SESSION_FILE, "sid")
+        bridge.write_json(bridge.SESSION_META_FILE, {"session_id": "sid"})
+        bridge.handle_prompt("token", 420, 7, "/new")
+        self.assertEqual(bridge.read_text(bridge.ENGINE_OVERRIDE_FILE), "claude")
+
+    def test_status_reflects_runtime_engine_override(self):
+        bridge.write_text(bridge.ENGINE_OVERRIDE_FILE, "codex")
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"TELEGRAM_USER_ID": "42"}
+        ), mock.patch.object(bridge, "run_grok") as run_grok:
+            reply = bridge.handle_prompt("token", 420, 7, "/status")
+        self.assertIn("engine: codex", reply)
+        run_grok.assert_not_called()
+
+    def test_engine_override_is_owner_only_state(self):
+        bridge.handle_prompt("token", 420, 7, "/engine claude")
+        self.assertEqual(file_mode(bridge.ENGINE_OVERRIDE_FILE), 0o600)
+        self.assertEqual(file_mode(bridge.ENGINE_OVERRIDE_FILE.parent), 0o700)
+
+    def test_switching_to_auto_clears_fallback_cooldowns(self):
+        bridge.write_json(
+            bridge.ENGINE_STATE_FILE,
+            {
+                "active": "codex",
+                "unavailable": {
+                    "claude": {"until": 9999999999, "reason": "limit"},
+                    "grok": {"until": 9999999999, "reason": "capacity"},
+                },
+            },
+        )
+        bridge.handle_prompt("token", 420, 7, "/engine auto")
+        state = bridge.engine_state(now=1)
+        self.assertEqual(state["unavailable"], {})
+        self.assertFalse(state["active"])
+
     def test_status_command_is_not_enqueued(self):
         enqueue = mock.Mock()
         with mock.patch.object(
@@ -1794,6 +2064,42 @@ class CommandReplyTest(RuntimeCase):
         enqueue.assert_not_called()
         send.assert_called_once()
         self.assertIn("effort:", send.call_args.args[2])
+
+    def test_engine_switch_is_instant_and_cancels_queued_asks(self):
+        coordinator = bridge.WorkCoordinator("token")
+        coordinator.enqueue(
+            {
+                "id": 10,
+                "chat_id": 420,
+                "message_id": 110,
+                "text": "queued ask",
+                "voice": None,
+                "enqueued_at": 1.0,
+            }
+        )
+        enqueue = mock.Mock()
+        self.assertTrue(bridge.is_instant_command("/engine claude"))
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"TELEGRAM_USER_ID": "42"}
+        ), mock.patch.object(
+            bridge, "WORK_COORDINATOR", coordinator, create=True
+        ), mock.patch.object(bridge, "send") as send, mock.patch.object(
+            bridge, "run_grok"
+        ) as run_grok:
+            next_offset = bridge.handle_update(
+                "token", update(text="/engine claude"), enqueue
+            )
+        self.assertEqual(next_offset, 11)
+        enqueue.assert_not_called()
+        self.assertEqual(coordinator.depth(), 0)
+        self.assertEqual(bridge.inbox_items(), [])
+        send.assert_called_once_with(
+            "token",
+            420,
+            "Engine set to claude. Next message starts fresh.",
+            timeout=5,
+        )
+        run_grok.assert_not_called()
 
     def test_new_cancels_queued_asks(self):
         coordinator = bridge.WorkCoordinator("token")

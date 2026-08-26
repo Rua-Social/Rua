@@ -294,7 +294,9 @@ This chat is a phone, not a studio log.
 - Short paragraphs. No markdown tables. No file trees. No "Loading…".
 - If you send a file, say it is in the chat. Do not recap the job.
 - Voice notes are inbound. They are transcribed, then treated as the ask.
-- Phone Grok runs at medium effort. Studio stays on the dashboard setting.
+- Phone runs at medium effort. `DESK_ENGINE=auto` uses Claude, Codex, then
+  Grok and only falls through before any tool work. Studio seats stay on
+  their own settings.
 - Do not install the official Telegram plugin. This seat is desk-bridge.
 - Open actions live in `20-studio/todo.md`. Closed lines in
   `todo-done.md`. Skill: `00-system/skills/rua-todo/`. `/brief` and

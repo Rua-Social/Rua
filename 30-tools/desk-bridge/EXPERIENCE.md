@@ -6,7 +6,7 @@ This is for the founder, on the phone. Telegram owns the pixels.
 ## Foundation
 
 Telegram DM with `@Rua_desk_bot`. One preconfigured human.
-Groups are ignored. The Mac runs Grok in `~/Rua` and texts back.
+Groups are ignored. The Mac runs the selected engine in `~/Rua` and texts back.
 
 If a need cannot land as a short Telegram message, it is
 not this seat.
@@ -16,8 +16,9 @@ not this seat.
 | Surface | Reached from | Purpose |
 | --- | --- | --- |
 | Help | `/help` or `/start` | Commands, pairing, and that `/new` does not restart the Mac. |
-| New session | `/new` | Drop the Grok session and any queued asks. Next message starts fresh. Cuts the line. |
-| Status | `/status`, `/statua`, or the word status | Owner, engine, session, effort, queue, pending, last run, last error, whether the next ask will keep or reset. Last run is timing, not JSON. |
+| New session | `/new` | Drop the engine session and any queued asks. Next message starts fresh. Cuts the line. |
+| Engine | `/engine auto`, `/engine claude`, `/engine codex`, or `/engine grok` | Persist the selected engine mode locally, clear the engine session and queued asks, clear engine cooldowns, and start the next message fresh. `/engine` alone or an invalid value returns the usage line. |
+| Status | `/status`, `/statua`, or the word status | Owner, engine mode, active engine, unavailable engines, session, effort, queue, pending, last run, last error, whether the next ask will keep or reset. Last run is timing, not JSON. |
 | Brief | `/brief` or the word brief | Ranked walking card from `20-studio/todo.md` plus one live client card. Do can be a STALE gated line. Not `lists.md`. Not live Google. |
 | Todo | `/todo` or the word todo | Walking open actions. Action text, not the date. Full and STALE if those apply. Last line: Text the action to close it. |
 | Park | `/park …`, `park …`, `backlog …`, or a voice note that starts that way | Instant. Lands on Founder → Ideas. No Grok. |
@@ -39,8 +40,9 @@ not this seat.
 | Eyes plus typing | "On it." "Loading…" "Thinking…" |
 | One short result: what happened, where it is, what they need | Tables, file trees, class labels, studio log |
 | "New session. Next message starts fresh." | "How can I help today?" |
+| "Engine set to claude. Next message starts fresh." | Rewrite the secrets file or keep the old engine session. |
 | "Session reset. The last one was too big or gone." | Pretend the old chat is still there |
-| "Grok is busy. Try again in a minute." | Wait silently for an upstream first response |
+| "Claude is busy. Try again in a minute." | Wait silently for an upstream first response. The engine name follows fixed mode. |
 | "The desk timed out. Send it again or try a smaller ask." | A stack trace or a fifteen-minute wait |
 | "Couldn't transcribe that. Try again or type it." | Guess at a garbled note |
 | Name the repo path when work creates a file | Claim the text-only bridge attached it |
@@ -66,9 +68,9 @@ this table.
 | Group or channel | Nothing. |
 | Working | Eyes + typing every 4s. |
 | Queued behind one ask | "Hold that. Still on the last one." |
-| No first Grok event (60s) | "Grok is busy. Try again in a minute." |
+| No first engine event (60s), fixed mode | "Claude is busy. Try again in a minute." The engine name follows the configured engine. |
 | Timeout (5 min) | "The desk timed out. Send it again or try a smaller ask." |
-| Grok missing | "grok is not installed on this Mac." |
+| Fixed engine missing | "Claude is busy. Try again in a minute." The engine name follows the configured engine. |
 | Other desk fail | "Desk hit an error. /status" |
 | Empty Grok text | "(no text)" |
 | Voice, no key | "Voice is wired. ElevenLabs key is missing." |
@@ -92,17 +94,22 @@ this table.
 | Open todo | Action text, `STALE` prefix if stale, then "Text the action to close it." |
 | Open line older than seven days | Marked `STALE` on `/todo` and `/brief`. |
 | Reply completed but Telegram is unavailable | The result is held locally and delivered without rerunning Grok when Telegram returns. `/status` shows a pending delivery. |
+| Preferred engine is out of usage before any tool runs | `Using Codex — Claude hit its limit.` then the result. The named engines follow the configured order. |
+| Every configured engine is unavailable | `All desk engines are unavailable. /status` |
+| Engine fails after a tool runs | `Desk hit an error. /status` No second engine runs the ask. |
+| Valid engine switch | `Engine set to <engine>. Next message starts fresh.` The selection is `auto`, `claude`, `codex`, or `grok`; the current session, queued asks, and cooldowns are cleared. |
+| Bare or invalid engine switch | `Use /engine auto|claude|codex|grok` Nothing changes. |
 
 ## What you can send
 
-Text, voice note, `/help`, `/start`, `/new`, `/status`, `/brief`, `/todo`, `/park`, `/idea`.
-An unknown `/command` is help, not a Grok ask. The words `status`, `brief`, `todo`, `park`, and `idea` are commands.
-`/new` and the other commands cut the line. They do not wait behind a Grok ask.
+Text, voice note, `/help`, `/start`, `/new`, `/engine`, `/status`, `/brief`, `/todo`, `/park`, `/idea`.
+An unknown `/command` is help, not an engine ask. The words `status`, `brief`, `todo`, `park`, and `idea` are commands.
+`/new`, a valid `/engine` switch, and the other commands cut the line. They do not wait behind an engine ask. `/new` does not change the selected engine.
 
 Not this seat: Slack, TTS, images, video notes, the official
 Telegram plugin, anyone else's Telegram, a fifth Grok room.
 
-One Grok ask at a time. The poller stays awake. A second DM is
+One engine ask at a time. The poller stays awake. A second DM is
 acknowledged as queued; its own five-minute budget keeps running while it
 waits behind the first ask.
 
@@ -127,7 +134,7 @@ completeness, engagement.
 1. Sends a short voice note.
 2. Eyes and typing throughout transcription and desk work. Phone stays in a pocket.
 3. **Worked:** the notification is the punchline.
-4. Failure: no first Grok event → "Grok is busy…"; five-minute total timeout → "The desk timed out…"
+4. Failure: no first engine event in fixed mode → the named engine is busy; five-minute total timeout → "The desk timed out…"
 
 ### Flow 2 — The desk forgot (founder, same footpath)
 
@@ -175,7 +182,7 @@ completeness, engagement.
 ### Flow 6 — Commitment on the street (founder, after a call)
 
 1. Texts a desk ask that names a real next action, or that one landed.
-2. Eyes and typing. Same one Grok turn.
+2. Eyes and typing. Same one engine turn.
 3. **Worked:** the notification is the punchline. `/todo` now shows
    that line. No `LIST+`. No second ask to "put it on the list."
 4. Failure: niceties on `todo.md`; the same line twice; the line
@@ -191,7 +198,6 @@ completeness, engagement.
    same connectors as the dashboard TUI. Not a second Google login.
 5. Claude-for-Google. Drive and Gmail worked on Haiku; Calendar
    auth failed. Not a second Claude path.
-6. Automatic fallback between engines. The phone runs one brain:
-   `DESK_ENGINE=grok` or `DESK_ENGINE=claude` in
-   `~/.grok/secrets/desk-bridge.env`. Switch is explicit.
+6. Cross-engine session history. Auto fallback starts fresh on the next
+   engine. It does not translate or replay the previous engine's chat.
 7. Morning push of `/brief`. Only after the ranked card is trusted.
