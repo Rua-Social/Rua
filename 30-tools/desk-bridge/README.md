@@ -45,6 +45,10 @@ falls through only when the current engine has done no tool work and is
 missing, logged out, at capacity, rate-limited, or out of usage. A working
 fallback stays active for an hour before the preferred engine is tried
 again. `/status` shows the mode, active engine, and temporary failures.
+From the paired Telegram DM, `/engine auto|claude|codex|grok` persists a
+local override without rewriting the secrets file. Switching clears the
+current engine session, queued asks, and cooldowns; `/new` clears the session
+and queue without changing the selected engine.
 
 Voice notes also need `~/.grok/secrets/elevenlabs.env`:
 
@@ -83,6 +87,7 @@ pending replies, and launchd logs at startup.
 | --- |---|
 | `/help` | Short usage |
 | `/new` | Fresh engine session |
+| `/engine auto\|claude\|codex\|grok` | Select engine mode; next message starts fresh |
 | `/status` | Owner, effort, queue, pending, last timing, last error, next keep/reset |
 | `/brief` | Ranked walking brief from `20-studio/todo.md` and one client card |
 | `/todo` | Open actions only |

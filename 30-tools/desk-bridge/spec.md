@@ -63,6 +63,14 @@ new dependency, host, service, or chat surface. Changing Telegram's look.
   landed." Grok does not edit those files. No second model call.
 - `/new` drops the session and any queued asks. Control commands do
   not wait behind Grok.
+- `/engine auto|claude|codex|grok` is owner-only through the existing DM
+  pairing, runs locally without a model, and persists the selected mode in
+  owner-only state rather than rewriting secrets. A valid switch drops the
+  session and queued asks with the same cut-line behavior as `/new`, clears
+  engine cooldown state, and replies `Engine set to <engine>. Next message
+  starts fresh.` Bare or invalid input returns `Use /engine
+  auto|claude|codex|grok` without changing state. `/new` does not change the
+  selected mode, and `/status` reports the persisted override.
 - A live text from the phone gets a real desk reply.
 - A voice note from the paired user is transcribed and answered.
 - The phone gets the last assistant text after the last tool, not the

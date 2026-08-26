@@ -71,6 +71,7 @@ class RuntimeCase(unittest.TestCase):
             "SESSION_FILE": self.state / "session_id",
             "SESSION_META_FILE": self.state / "session.json",
             "ENGINE_STATE_FILE": self.state / "engine_state.json",
+            "ENGINE_OVERRIDE_FILE": self.state / "engine_override",
             "OFFSET_FILE": self.state / "offset",
             "INBOX_FILE": self.state / "inbox.json",
             "LAST_ERROR_FILE": self.state / "last_error",
@@ -1956,6 +1957,102 @@ class CommandReplyTest(RuntimeCase):
         self.assertFalse(bridge.SESSION_META_FILE.exists())
         run_grok.assert_not_called()
 
+    def test_engine_switches_persist_and_start_a_fresh_session_without_grok(self):
+        for engine in ("auto", "claude", "codex", "grok"):
+            with self.subTest(engine=engine):
+                bridge.write_text(bridge.SESSION_FILE, "sid")
+                bridge.write_json(
+                    bridge.SESSION_META_FILE,
+                    {"session_id": "sid", "engine": "grok"},
+                )
+                with mock.patch.object(bridge, "run_grok") as run_grok:
+                    reply = bridge.handle_prompt(
+                        "token", 420, 7, f"/engine {engine}"
+                    )
+                self.assertEqual(
+                    reply,
+                    f"Engine set to {engine}. Next message starts fresh.",
+                )
+                self.assertEqual(
+                    bridge.read_text(bridge.ENGINE_OVERRIDE_FILE), engine
+                )
+                self.assertEqual(bridge.configured_engine(), engine)
+                self.assertFalse(bridge.SESSION_FILE.exists())
+                self.assertFalse(bridge.SESSION_META_FILE.exists())
+                run_grok.assert_not_called()
+
+    def test_bare_or_invalid_engine_command_is_usage_only(self):
+        for command in ("/engine", "/engine llama", "/engine claude extra"):
+            with self.subTest(command=command):
+                bridge.write_text(bridge.ENGINE_OVERRIDE_FILE, "codex")
+                bridge.write_text(bridge.SESSION_FILE, "sid")
+                bridge.write_json(
+                    bridge.SESSION_META_FILE,
+                    {"session_id": "sid", "engine": "codex"},
+                )
+                bridge.write_json(
+                    bridge.ENGINE_STATE_FILE,
+                    {
+                        "active": "codex",
+                        "unavailable": {
+                            "claude": {"until": 9999999999, "reason": "limit"}
+                        },
+                    },
+                )
+                before = {
+                    path: path.read_bytes()
+                    for path in (
+                        bridge.ENGINE_OVERRIDE_FILE,
+                        bridge.SESSION_FILE,
+                        bridge.SESSION_META_FILE,
+                        bridge.ENGINE_STATE_FILE,
+                    )
+                }
+                with mock.patch.object(bridge, "run_grok") as run_grok:
+                    reply = bridge.handle_prompt("token", 420, 7, command)
+                self.assertEqual(reply, "Use /engine auto|claude|codex|grok")
+                self.assertEqual(
+                    {path: path.read_bytes() for path in before}, before
+                )
+                run_grok.assert_not_called()
+
+    def test_new_leaves_engine_override_unchanged(self):
+        bridge.write_text(bridge.ENGINE_OVERRIDE_FILE, "claude")
+        bridge.write_text(bridge.SESSION_FILE, "sid")
+        bridge.write_json(bridge.SESSION_META_FILE, {"session_id": "sid"})
+        bridge.handle_prompt("token", 420, 7, "/new")
+        self.assertEqual(bridge.read_text(bridge.ENGINE_OVERRIDE_FILE), "claude")
+
+    def test_status_reflects_runtime_engine_override(self):
+        bridge.write_text(bridge.ENGINE_OVERRIDE_FILE, "codex")
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"TELEGRAM_USER_ID": "42"}
+        ), mock.patch.object(bridge, "run_grok") as run_grok:
+            reply = bridge.handle_prompt("token", 420, 7, "/status")
+        self.assertIn("engine: codex", reply)
+        run_grok.assert_not_called()
+
+    def test_engine_override_is_owner_only_state(self):
+        bridge.handle_prompt("token", 420, 7, "/engine claude")
+        self.assertEqual(file_mode(bridge.ENGINE_OVERRIDE_FILE), 0o600)
+        self.assertEqual(file_mode(bridge.ENGINE_OVERRIDE_FILE.parent), 0o700)
+
+    def test_switching_to_auto_clears_fallback_cooldowns(self):
+        bridge.write_json(
+            bridge.ENGINE_STATE_FILE,
+            {
+                "active": "codex",
+                "unavailable": {
+                    "claude": {"until": 9999999999, "reason": "limit"},
+                    "grok": {"until": 9999999999, "reason": "capacity"},
+                },
+            },
+        )
+        bridge.handle_prompt("token", 420, 7, "/engine auto")
+        state = bridge.engine_state(now=1)
+        self.assertEqual(state["unavailable"], {})
+        self.assertFalse(state["active"])
+
     def test_status_command_is_not_enqueued(self):
         enqueue = mock.Mock()
         with mock.patch.object(
@@ -1967,6 +2064,42 @@ class CommandReplyTest(RuntimeCase):
         enqueue.assert_not_called()
         send.assert_called_once()
         self.assertIn("effort:", send.call_args.args[2])
+
+    def test_engine_switch_is_instant_and_cancels_queued_asks(self):
+        coordinator = bridge.WorkCoordinator("token")
+        coordinator.enqueue(
+            {
+                "id": 10,
+                "chat_id": 420,
+                "message_id": 110,
+                "text": "queued ask",
+                "voice": None,
+                "enqueued_at": 1.0,
+            }
+        )
+        enqueue = mock.Mock()
+        self.assertTrue(bridge.is_instant_command("/engine claude"))
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"TELEGRAM_USER_ID": "42"}
+        ), mock.patch.object(
+            bridge, "WORK_COORDINATOR", coordinator, create=True
+        ), mock.patch.object(bridge, "send") as send, mock.patch.object(
+            bridge, "run_grok"
+        ) as run_grok:
+            next_offset = bridge.handle_update(
+                "token", update(text="/engine claude"), enqueue
+            )
+        self.assertEqual(next_offset, 11)
+        enqueue.assert_not_called()
+        self.assertEqual(coordinator.depth(), 0)
+        self.assertEqual(bridge.inbox_items(), [])
+        send.assert_called_once_with(
+            "token",
+            420,
+            "Engine set to claude. Next message starts fresh.",
+            timeout=5,
+        )
+        run_grok.assert_not_called()
 
     def test_new_cancels_queued_asks(self):
         coordinator = bridge.WorkCoordinator("token")

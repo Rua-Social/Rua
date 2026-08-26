@@ -33,6 +33,7 @@ LAST_ERROR_FILE = STATE_DIR / "last_error"
 LAST_RUN_FILE = STATE_DIR / "last_run"
 SESSION_META_FILE = STATE_DIR / "session_meta.json"
 ENGINE_STATE_FILE = STATE_DIR / "engine_state.json"
+ENGINE_OVERRIDE_FILE = STATE_DIR / "engine_override"
 INBOX_FILE = STATE_DIR / "inbox.json"
 OUTBOX_FILE = STATE_DIR / "outbox.json"
 METRICS_FILE = STATE_DIR / "metrics.jsonl"
@@ -246,6 +247,8 @@ def chunk_text(text: str, limit: int = TG_LIMIT) -> list[str]:
 
 
 PHONE_FAIL = "Desk hit an error. /status"
+ENGINE_USAGE = "Use /engine auto|claude|codex|grok"
+ENGINE_CHOICES = {"auto", "claude", "codex", "grok"}
 STATUS_COMMANDS = {"/status", "/statua", "/stat", "status", "statua", "stat"}
 BRIEF_COMMANDS = {"/brief", "brief"}
 TODO_COMMANDS = {"/todo", "todo"}
@@ -270,7 +273,7 @@ CAPTURE_BARE = {
     "/brainstorm": "brainstorm",
     "brainstorm": "brainstorm",
 }
-KNOWN_SLASH = {"/start", "/help", "/new", "/brief", "/todo", "/park", "/idea", "/backlog", "/brainstorm"} | {
+KNOWN_SLASH = {"/start", "/help", "/new", "/engine", "/brief", "/todo", "/park", "/idea", "/backlog", "/brainstorm"} | {
     cmd for cmd in STATUS_COMMANDS if cmd.startswith("/")
 }
 CAPTURE_SLASH = {cmd for cmd in CAPTURE_BARE if cmd.startswith("/")}
@@ -287,6 +290,18 @@ def is_brief_command(text: str) -> bool:
 
 def is_todo_command(text: str) -> bool:
     return text.strip().lower() in TODO_COMMANDS
+
+
+def requested_engine(text: str) -> str | None:
+    bits = text.strip().lower().split()
+    if len(bits) == 2 and bits[0] == "/engine" and bits[1] in ENGINE_CHOICES:
+        return bits[1]
+    return None
+
+
+def is_engine_command(text: str) -> bool:
+    bits = text.strip().lower().split()
+    return bool(bits and bits[0] == "/engine")
 
 
 def spoken_text(text: str) -> str:
@@ -635,6 +650,9 @@ def engine_bin(engine: str) -> str:
 
 
 def configured_engine() -> str:
+    override = read_text(ENGINE_OVERRIDE_FILE).lower()
+    if override in ENGINE_CHOICES:
+        return override
     raw = (
         os.environ.get("DESK_ENGINE")
         or load_secrets().get("DESK_ENGINE")
@@ -712,6 +730,15 @@ def engine_state(now: float | None = None) -> dict:
 
 def write_engine_state(state: dict) -> None:
     write_json(ENGINE_STATE_FILE, state)
+
+
+def set_engine_override(engine: str) -> None:
+    if engine not in ENGINE_CHOICES:
+        raise ValueError(f"invalid engine override: {engine}")
+    write_text(ENGINE_OVERRIDE_FILE, engine)
+    write_engine_state({"active": "", "unavailable": {}})
+    SESSION_FILE.unlink(missing_ok=True)
+    SESSION_META_FILE.unlink(missing_ok=True)
 
 
 def mark_engine_unavailable(engine: str, reason: str, now: float | None = None) -> None:
@@ -1166,6 +1193,7 @@ def help_text() -> str:
         "Rua desk on Telegram.\n"
         "/help — this\n"
         "/new — drop the chat and the queue. Does not restart the Mac.\n"
+        "/engine auto|claude|codex|grok — switch engine\n"
         "/status — desk state\n"
         "/brief — walking brief from the todo\n"
         "/todo — open actions only\n"
@@ -2494,12 +2522,18 @@ def handle_prompt(
         return help_text()
     if low.startswith("/") and low not in KNOWN_SLASH:
         # Capture commands keep their payload: "/park buy filters" captures.
-        if low.split()[0] not in CAPTURE_SLASH:
+        if low.split()[0] not in CAPTURE_SLASH and not is_engine_command(low):
             return help_text()
     if low == "/new":
         SESSION_FILE.unlink(missing_ok=True)
         SESSION_META_FILE.unlink(missing_ok=True)
         return "New session. Next message starts fresh."
+    if is_engine_command(low):
+        engine = requested_engine(low)
+        if engine is None:
+            return ENGINE_USAGE
+        set_engine_override(engine)
+        return f"Engine set to {engine}. Next message starts fresh."
     if is_status_command(low):
         env = load_secrets()
         session_id = read_text(SESSION_FILE)
@@ -2837,7 +2871,7 @@ def handle_update(token: str, update: dict, enqueue) -> int:
         safe_send(token, int(chat_id), "Text or a voice note.")
         return next_offset
     if text and is_instant_command(text):
-        if text.strip().lower() == "/new":
+        if text.strip().lower() == "/new" or requested_engine(text) is not None:
             coordinator = globals().get("WORK_COORDINATOR")
             if coordinator is not None:
                 coordinator.cancel_pending()

@@ -17,6 +17,7 @@ not this seat.
 | --- | --- | --- |
 | Help | `/help` or `/start` | Commands, pairing, and that `/new` does not restart the Mac. |
 | New session | `/new` | Drop the engine session and any queued asks. Next message starts fresh. Cuts the line. |
+| Engine | `/engine auto`, `/engine claude`, `/engine codex`, or `/engine grok` | Persist the selected engine mode locally, clear the engine session and queued asks, clear engine cooldowns, and start the next message fresh. `/engine` alone or an invalid value returns the usage line. |
 | Status | `/status`, `/statua`, or the word status | Owner, engine mode, active engine, unavailable engines, session, effort, queue, pending, last run, last error, whether the next ask will keep or reset. Last run is timing, not JSON. |
 | Brief | `/brief` or the word brief | Ranked walking card from `20-studio/todo.md` plus one live client card. Do can be a STALE gated line. Not `lists.md`. Not live Google. |
 | Todo | `/todo` or the word todo | Walking open actions. Action text, not the date. Full and STALE if those apply. Last line: Text the action to close it. |
@@ -39,6 +40,7 @@ not this seat.
 | Eyes plus typing | "On it." "Loading…" "Thinking…" |
 | One short result: what happened, where it is, what they need | Tables, file trees, class labels, studio log |
 | "New session. Next message starts fresh." | "How can I help today?" |
+| "Engine set to claude. Next message starts fresh." | Rewrite the secrets file or keep the old engine session. |
 | "Session reset. The last one was too big or gone." | Pretend the old chat is still there |
 | "Claude is busy. Try again in a minute." | Wait silently for an upstream first response. The engine name follows fixed mode. |
 | "The desk timed out. Send it again or try a smaller ask." | A stack trace or a fifteen-minute wait |
@@ -95,12 +97,14 @@ this table.
 | Preferred engine is out of usage before any tool runs | `Using Codex — Claude hit its limit.` then the result. The named engines follow the configured order. |
 | Every configured engine is unavailable | `All desk engines are unavailable. /status` |
 | Engine fails after a tool runs | `Desk hit an error. /status` No second engine runs the ask. |
+| Valid engine switch | `Engine set to <engine>. Next message starts fresh.` The selection is `auto`, `claude`, `codex`, or `grok`; the current session, queued asks, and cooldowns are cleared. |
+| Bare or invalid engine switch | `Use /engine auto|claude|codex|grok` Nothing changes. |
 
 ## What you can send
 
-Text, voice note, `/help`, `/start`, `/new`, `/status`, `/brief`, `/todo`, `/park`, `/idea`.
+Text, voice note, `/help`, `/start`, `/new`, `/engine`, `/status`, `/brief`, `/todo`, `/park`, `/idea`.
 An unknown `/command` is help, not an engine ask. The words `status`, `brief`, `todo`, `park`, and `idea` are commands.
-`/new` and the other commands cut the line. They do not wait behind an engine ask.
+`/new`, a valid `/engine` switch, and the other commands cut the line. They do not wait behind an engine ask. `/new` does not change the selected engine.
 
 Not this seat: Slack, TTS, images, video notes, the official
 Telegram plugin, anyone else's Telegram, a fifth Grok room.
