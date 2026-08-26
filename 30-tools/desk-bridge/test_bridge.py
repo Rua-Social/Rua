@@ -1267,6 +1267,11 @@ class StreamSchemaTest(unittest.TestCase):
         )
         self.assertEqual(meta["tool_events"], 1)
 
+    def test_live_google_prompt_forces_workspace_lookup(self):
+        prompt = bridge.live_google_prompt("What was my latest Gmail?")
+        self.assertIn("LIVE WORKSPACE REQUIREMENT", prompt)
+        self.assertIn("must call the connected Gmail, Calendar, or Drive tool", prompt)
+
 
 class GrokStreamingTest(RuntimeCase):
     def run_with_process(

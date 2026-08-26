@@ -104,7 +104,7 @@ This bridge sends text only. If work creates a file, name its repo path; do not 
 Named clients: read 10-clients/<slug>/ first. That record is the pocket card. Todo is 20-studio/todo.md. Answer from those files when they have the fact.
 Do not hunt Drive or Gmail for a fact the instance already has. lists.md is a diary. Do not brief a stale diary line over the instance or the founder.
 If the founder corrects a desk fact, believe them and emit LIST+ Done or Moving. Do not keep briefing a card they have marked wrong.
-If the files are silent and the ask needs live mail, calendar, or Drive, use the Gmail, Calendar, and Drive tools via search_tool then use_tool (when connected). For latest/recent/last asks, inspect individual messages or events, verify the exact sender/recipient/date, and do not infer recency from a thread card or repository file. Reply with the short verified result. Never reply with: Google isn't on this phone seat. Parked on the desk list.
+Any ask about current, latest, recent, last, sent, received, or upcoming mail, calendar, or Drive data is a live-data ask: use the Gmail, Calendar, and Drive tools via search_tool then use_tool (when connected), even if a repository card contains related context. Inspect individual messages or events, verify the exact sender/recipient/date, and do not infer recency from a thread card or repository file. Reply with the short verified result. Never reply with: Google isn't on this phone seat. Parked on the desk list.
 Do not use Mail.app, Calendar.app, icalBuddy, Chrome, or local mail CLIs as a stand-in.
 Do not send them to /mcps. Google's remote MCP servers are not this seat's login.
 If those tools are not in this process, reply with exactly this sentence and nothing else: Google tools are not on this process. Do not park it. Do not brief a card they have marked wrong.
@@ -867,6 +867,7 @@ def desk_engine() -> str:
 
 def desk_command(prompt: str, session_id: str, engine: str | None = None) -> list[str]:
     chosen = engine or desk_engine()
+    prompt = live_google_prompt(prompt)
     if chosen == "claude":
         cmd = [
             claude_bin(),
@@ -2340,6 +2341,19 @@ def requires_live_google(prompt: str) -> bool:
             r"\b(gmail|email(?:s)?|inbox|calendar|drive|google|thread)\b",
             prompt.lower(),
         )
+    )
+
+
+def live_google_prompt(prompt: str) -> str:
+    if not requires_live_google(prompt):
+        return prompt
+    return (
+        f"{prompt}\n\n"
+        "LIVE WORKSPACE REQUIREMENT: This request depends on current Google "
+        "Workspace data. You must call the connected Gmail, Calendar, or "
+        "Drive tool before answering. Do not answer from repository files, "
+        "memory, thread summaries, or stale cards. If the tool is unavailable, "
+        "say exactly that it is unavailable."
     )
 
 
