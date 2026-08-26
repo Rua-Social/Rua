@@ -10,6 +10,12 @@ Telegram failures, and fails quickly when Grok has not started responding.
 Voice notes are inbound only: download the Telegram file, transcribe
 with ElevenLabs Scribe v2, then run the same desk path as text.
 
+Voice capture is durable before desk work begins. Owner-only records live
+under `~/.grok/desk-bridge/voice/`, outside Git. Each record keeps a receipt,
+safe metadata, transcript, and lifecycle state. The source audio is retained
+during the pilot so failed transcription and model comparison do not discard
+the input.
+
 How the phone session behaves is `EXPERIENCE.md`. This file does not
 restate it. If they conflict, fix the one that is wrong, then the other.
 
@@ -26,6 +32,9 @@ A custom agent or phone plugin profile. A persistent Grok leader.
 Direct model API calls. Cost or quality routing. Retrying a request on
 another engine after any tool has run. Cross-engine session history. A
 new dependency, host, service, or chat surface. Changing Telegram's look.
+Replacing Scribe with Whisper in the always-on bridge. Automatic
+classification of long notes. Runtime subagents or model fan-out. A
+knowledge base or permanent media archive.
 
 ## Done
 
@@ -73,6 +82,10 @@ new dependency, host, service, or chat surface. Changing Telegram's look.
   selected mode, and `/status` reports the persisted override.
 - A live text from the phone gets a real desk reply.
 - A voice note from the paired user is transcribed and answered.
+- A voice note is persisted before the engine is invoked. A note beginning
+  "Save this as intake. No action yet." is held without running the engine
+  and returns a receipt. Voice may add a todo only when it explicitly says
+  "Add one todo: ..."; it never closes a todo.
 - The phone gets the last assistant text after the last tool, not the
   studio log. Reaction + typing are best effort and never delay Grok.
 - The poller remains live while one engine worker handles asks in order.
@@ -132,6 +145,13 @@ Success on the phone: the founder knows the result without opening
 a laptop. Do not optimize session length, turn count, or desktop
 completeness. See `EXPERIENCE.md`.
 
+Voice records move through `queued`, `downloaded`, `transcribing`,
+`transcribed`, `engine-running`, and `completed`. A restart may retry capture,
+but never replays a voice job after engine work has begun; the saved transcript
+remains available for a deliberate later review. Queue wait cannot discard a
+voice note before capture. Voice metrics
+record duration, bytes, and transcript length, never transcript text.
+
 ## Observe
 
 ```
@@ -151,5 +171,5 @@ A desk ask that names a commitment must show that line on the next
 must not close the list; the reply ends with the voice-refusal line.
 
 `EXPERIENCE.md` is the session contract. A later change that
-touches pairing, waiting, voice-fail, or session-drop must
+touches pairing, waiting, voice-fail, voice capture, or session-drop must
 update that file in the same change.

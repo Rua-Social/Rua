@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import fcntl
 import queue
@@ -55,6 +56,7 @@ ENGINE_COOLDOWN_SECONDS = 60 * 60
 SESSION_BYTES = 300_000
 SESSION_PROMPT_TOKENS = 80_000
 VOICE_MAX_BYTES = 20 * 1024 * 1024
+VOICE_STATE_DIR_NAME = "voice"
 SCRIBE_URL = "https://api.elevenlabs.io/v1/speech-to-text"
 SCRIBE_MODEL = "scribe_v2"
 PHONE_BUSY = "Grok is busy. Try again in a minute."
@@ -63,11 +65,17 @@ PHONE_TIMEOUT = "The desk timed out. Send it again or try a smaller ask."
 PHONE_QUEUE = "Hold that. Still on the last one."
 PHONE_GOOGLE = "Google isn't on this phone seat. Parked on the desk list."
 PHONE_GOOGLE_MISSING = "Google tools are not on this process."
+VOICE_SAVED_WORKING = "Voice saved. Working from it."
+VOICE_SAVED_HELD = "Voice saved. No actions added."
+VOICE_SAVED_TIMEOUT = "Voice saved. The desk timed out. Your intake is safe."
+VOICE_TODO_ACK = 'Voice did not add a todo. Say "Add one todo: ..." if you want that.'
+VOICE_INTERRUPTED_SAVED = "Voice saved. Desk stopped after work began. Check before retrying."
 GATEWAY_TOOLS_ENV = "GROK_MANAGED_MCP_GATEWAY_TOOLS_ENABLED"
 MANAGED_MCPS_ENV = "GROK_MANAGED_MCPS_ENABLED"
 OWNER_SETUP = "Set TELEGRAM_USER_ID before starting the desk."
 STATE_LOCK = threading.RLock()
 DELIVERY_LOCK = threading.Lock()
+VOICE_CAPTURE_LOCK = threading.Lock()
 ACTIVE_PROCESS_LOCK = threading.RLock()
 ACTIVE_GROK_PROCESS: subprocess.Popen | None = None
 RUN_LOCK_FD: int | None = None
@@ -84,6 +92,7 @@ Allowed headings: Do, Done, Moving, Blocked, Waiting on the desk.
 Do and Done go to todo.md. Moving and Blocked stay on the desk diary.
 Do not invent work. Do not edit those files yourself. The bridge writes them and hides the trailers.
 LIST+ Done only on a typed ask. A voice note cannot close the list: say it landed and that a text closes it.
+Voice does not add a Do unless the note explicitly starts with "Add one todo:". A note beginning "Save this as intake. No action yet." is held as intake; do not run the desk or write a todo.
 Telegram gets one short result: what happened, where it is, what they need.
 No markdown tables. No class label in the chat. No process talk.
 A line starting with Voice note: is a spoken message. Treat it as the ask.
@@ -128,6 +137,14 @@ class EngineUnavailable(RuntimeError):
         super().__init__(f"{engine} {reason}")
         self.engine = engine
         self.reason = reason
+
+
+class VoiceTooLarge(RuntimeError):
+    """The Telegram voice payload exceeds the supported capture size."""
+
+
+class VoiceCaptureError(RuntimeError):
+    """The voice payload could not be safely captured locally."""
 
 
 def load_env(path: Path) -> dict[str, str]:
@@ -209,6 +226,10 @@ def ensure_runtime_permissions() -> None:
     for path in STATE_DIR.iterdir():
         if path.is_file():
             os.chmod(path, 0o600)
+        elif path.is_dir():
+            os.chmod(path, 0o700)
+            for child in path.rglob("*"):
+                os.chmod(child, 0o700 if child.is_dir() else 0o600)
 
 
 def append_metric(event: dict) -> None:
@@ -564,6 +585,68 @@ def should_drop_session(session_id: str, limit: int = SESSION_BYTES) -> bool:
 
 def ensure_state() -> None:
     ensure_private_dir(STATE_DIR)
+
+
+def voice_state_dir() -> Path:
+    """Owner-only durable voice records; deliberately lives outside the repo."""
+    path = STATE_DIR / VOICE_STATE_DIR_NAME
+    ensure_private_dir(path)
+    return path
+
+
+def voice_receipt_id(source_id: int | str) -> str:
+    return f"voice-{source_id}"
+
+
+def voice_record_path(receipt_id: str) -> Path:
+    # Receipt IDs are generated locally, but keep this safe if state is edited.
+    safe = re.sub(r"[^A-Za-z0-9_.-]", "_", str(receipt_id))[:120]
+    return voice_state_dir() / f"{safe}.json"
+
+
+def voice_audio_path(receipt_id: str, filename: str) -> Path:
+    suffix = Path(filename).suffix.lower()
+    if not re.fullmatch(r"\.[a-z0-9]{1,8}", suffix):
+        suffix = ".bin"
+    return voice_state_dir() / f"{re.sub(r'[^A-Za-z0-9_.-]', '_', str(receipt_id))[:120]}{suffix}"
+
+
+def atomic_write_bytes(path: Path, value: bytes, mode: int = 0o600) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    fd, raw_tmp = tempfile.mkstemp(prefix=f".{path.name}.", dir=str(path.parent))
+    tmp = Path(raw_tmp)
+    try:
+        os.fchmod(fd, mode)
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(value)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp, path)
+        os.chmod(path, mode)
+        parent_fd = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(parent_fd)
+        finally:
+            os.close(parent_fd)
+    except Exception:
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+        tmp.unlink(missing_ok=True)
+        raise
+
+
+def update_voice_record(receipt_id: str, **fields) -> dict:
+    path = voice_record_path(receipt_id)
+    with STATE_LOCK:
+        record = read_json(path, {})
+        if not isinstance(record, dict):
+            record = {}
+        record.update(fields)
+        write_json(path, record)
+        os.chmod(path, 0o600)
+        return record
 
 
 def read_text(path: Path) -> str:
@@ -1623,6 +1706,7 @@ def persist_desk_writes(
     todo_path: Path | None = None,
     done_path: Path | None = None,
     allow_done: bool = True,
+    allow_do: bool = True,
 ) -> str:
     cleaned, writes = extract_list_writes(text)
     if not writes:
@@ -1636,6 +1720,9 @@ def persist_desk_writes(
     acks: list[str] = []
     for heading, body in writes:
         if heading == "Do":
+            if not allow_do:
+                acks.append(VOICE_TODO_ACK)
+                continue
             reason = add_open_todo(body, todo_path)
             if reason:
                 acks.append(TODO_ACKS[reason])
@@ -2482,10 +2569,17 @@ def telegram_file(
         timeout=bounded_timeout(deadline, 70),
         deadline=deadline,
     )
+    if not isinstance(meta, dict):
+        raise VoiceCaptureError("telegram getFile returned an invalid response")
     result = meta.get("result") or {}
-    size = int(result.get("file_size") or 0)
+    if not isinstance(result, dict):
+        raise VoiceCaptureError("telegram getFile returned an invalid file")
+    try:
+        size = int(result.get("file_size") or 0)
+    except (TypeError, ValueError) as exc:
+        raise VoiceCaptureError("telegram getFile had invalid size") from exc
     if size > VOICE_MAX_BYTES:
-        raise RuntimeError("voice note is too large")
+        raise VoiceTooLarge("voice note is too large")
     path = result.get("file_path") or ""
     if not path:
         raise RuntimeError("telegram getFile had no path")
@@ -2497,7 +2591,7 @@ def telegram_file(
         max_bytes=VOICE_MAX_BYTES,
     )
     if len(blob) > VOICE_MAX_BYTES:
-        raise RuntimeError("voice note is too large")
+        raise VoiceTooLarge("voice note is too large")
     name = Path(path).name or "voice.ogg"
     return blob, name
 
@@ -2505,6 +2599,29 @@ def telegram_file(
 def current_queue_depth() -> int:
     coordinator = globals().get("WORK_COORDINATOR")
     return coordinator.depth() if coordinator is not None else 0
+
+
+def prefetch_voice(token: str, receipt_id: str, voice: dict) -> None:
+    """Capture Telegram audio before a long desk job can delay the worker."""
+    if not isinstance(voice, dict) or not voice.get("file_id"):
+        return
+    with VOICE_CAPTURE_LOCK:
+        existing = read_json(voice_record_path(receipt_id), {})
+        if isinstance(existing, dict) and existing.get("audio_file"):
+            return
+        try:
+            blob, name = telegram_file(token, str(voice["file_id"]))
+            audio_path = voice_audio_path(receipt_id, name)
+            atomic_write_bytes(audio_path, blob)
+            update_voice_record(
+                receipt_id,
+                status="downloaded",
+                captured_at=round(time.time(), 3),
+                bytes=len(blob),
+                audio_file=audio_path.name,
+            )
+        except Exception as exc:
+            update_voice_record(receipt_id, status="capture-failed", error=str(exc)[:240])
 
 
 def handle_prompt(
@@ -2579,13 +2696,28 @@ def handle_prompt(
                     deadline=deadline,
                 ),
                 allow_done=not from_voice,
+                allow_do=(not from_voice or voice_explicit_todo(stripped)),
             )
         )
     return google_miss_finish(
         persist_desk_writes(
             run_grok(stripped, deadline=deadline),
             allow_done=not from_voice,
+            allow_do=(not from_voice or voice_explicit_todo(stripped)),
         )
+    )
+
+
+def voice_explicit_todo(prompt: str) -> bool:
+    """Only an explicit spoken instruction may add a todo."""
+    body = re.sub(r"^voice note:\s*", "", prompt.strip(), flags=re.I)
+    return body.lower().startswith("add one todo:")
+
+
+def voice_intake_only(text: str) -> bool:
+    """Recognise the deliberate no-action voice capture phrase."""
+    return bool(
+        re.match(r"^save this as intake[,.]?\s*no action yet(?:[.!]|\s|$)", text.strip(), re.I)
     )
 
 
@@ -2595,18 +2727,61 @@ def handle_voice(
     message_id: int | None,
     voice: dict,
     deadline: float | None = None,
+    receipt_id: str | None = None,
+    saved_notify=None,
+    can_start=None,
 ) -> str:
+    if not isinstance(voice, dict):
+        return "Text or a voice note."
+    receipt_id = receipt_id or voice_receipt_id(message_id or time.time_ns())
     del chat_id, message_id
-    key = (load_secrets().get("ELEVENLABS_API_KEY") or "").strip()
-    if not key:
-        return "Voice is wired. ElevenLabs key is missing."
     file_id = voice.get("file_id") or ""
     if not file_id:
         return "That voice note had no file."
     started = time.monotonic()
+    existing = read_json(voice_record_path(receipt_id), {})
+    if not isinstance(existing, dict) or not existing:
+        update_voice_record(
+            receipt_id,
+            status="queued",
+            captured_at=None,
+            transcribed_at=None,
+            engine_started_at=None,
+            bytes=None,
+            duration_seconds=voice.get("duration"),
+            mime_type=voice.get("mime_type") or "audio/ogg",
+            provider="elevenlabs",
+            model=SCRIBE_MODEL,
+            file_id_sha256=hashlib.sha256(str(file_id).encode()).hexdigest(),
+        )
+    if deadline is not None and time.monotonic() >= deadline:
+        return PHONE_TIMEOUT
+    key = (load_secrets().get("ELEVENLABS_API_KEY") or "").strip()
     try:
-        blob, name = telegram_file(token, file_id, deadline=deadline)
-        downloaded = time.monotonic()
+        with VOICE_CAPTURE_LOCK:
+            record = read_json(voice_record_path(receipt_id), {})
+            audio_file = record.get("audio_file") if isinstance(record, dict) else None
+            audio_path = voice_state_dir() / str(audio_file) if audio_file else None
+            if audio_path and audio_path.is_file():
+                blob = audio_path.read_bytes()
+                name = audio_path.name
+            else:
+                blob, name = telegram_file(token, file_id, deadline=deadline)
+            downloaded = time.monotonic()
+            if not audio_path or not audio_path.is_file():
+                audio_path = voice_audio_path(receipt_id, name)
+                atomic_write_bytes(audio_path, blob)
+        update_voice_record(
+            receipt_id,
+            status="downloaded",
+            captured_at=round(time.time(), 3),
+            bytes=len(blob),
+            audio_file=audio_path.name,
+        )
+        update_voice_record(receipt_id, status="transcribing")
+        if not key:
+            update_voice_record(receipt_id, status="capture-ready", recovery="transcription-key-missing")
+            return "Voice is saved, but the ElevenLabs key is missing."
         text = transcribe_voice(
             blob,
             name,
@@ -2615,6 +2790,14 @@ def handle_voice(
             timeout=bounded_timeout(deadline, 90),
             deadline=deadline,
         )
+    except VoiceTooLarge as exc:
+        update_voice_record(receipt_id, status="rejected-too-large", error=str(exc))
+        append_metric({"stage": "voice", "outcome": "too-large"})
+        return "That voice note is too large. Send it in two parts."
+    except (VoiceCaptureError, OSError) as exc:
+        update_voice_record(receipt_id, status="capture-failed", error=str(exc)[:240])
+        write_text(LAST_ERROR_FILE, str(exc))
+        return "Voice note held. Try again or check the bridge."
     except (RuntimeError, TimeoutError) as exc:
         write_text(LAST_ERROR_FILE, str(exc))
         deadline_hit = deadline is not None and time.monotonic() >= deadline
@@ -2626,21 +2809,49 @@ def handle_voice(
             }
         )
         if deadline_hit or isinstance(exc, TimeoutError):
+            update_voice_record(receipt_id, status="transcribing-timeout")
             return PHONE_TIMEOUT
+        update_voice_record(receipt_id, status="transcription-failed")
         return "Couldn't transcribe that. Try again or type it."
+    update_voice_record(
+        receipt_id,
+        status="transcribed",
+        transcribed_at=round(time.time(), 3),
+        transcript=text,
+        transcript_length=len(text),
+    )
+    if voice_intake_only(text):
+        update_voice_record(receipt_id, status="held", held_reason="intake-only")
+        return f"{VOICE_SAVED_HELD} Receipt {receipt_id}."
+    if saved_notify is not None:
+        try:
+            saved_notify(VOICE_SAVED_WORKING)
+        except Exception:
+            pass
     append_metric(
         {
             "stage": "voice",
             "outcome": "ok",
             "download_seconds": round(downloaded - started, 3),
             "transcribe_seconds": round(time.monotonic() - downloaded, 3),
+            "provider": "elevenlabs",
+            "model": SCRIBE_MODEL,
+            "bytes": len(blob),
+            "duration_seconds": voice.get("duration"),
+            "transcript_length": len(text),
         }
     )
     if deadline is not None and time.monotonic() >= deadline:
-        return PHONE_TIMEOUT
-    return handle_prompt(
+        return VOICE_SAVED_TIMEOUT
+    if can_start is not None and not can_start():
+        update_voice_record(receipt_id, status="held-cancelled")
+        return f"{VOICE_SAVED_HELD} Receipt {receipt_id}."
+    update_voice_record(receipt_id, status="engine-running", engine_started_at=round(time.time(), 3))
+    reply = handle_prompt(
         "", 0, None, f"Voice note: {text}", deadline=deadline, from_voice=True
     )
+    update_voice_record(receipt_id, status="completed", completed_at=round(time.time(), 3))
+    return reply
 
 
 def is_private_dm(chat: dict) -> bool:
@@ -2677,7 +2888,27 @@ class WorkCoordinator:
             # offset write. Repair that boundary before recovered work runs.
             advance_offset(next_offset)
             if item.get("status") == "running":
-                enqueue_outbox(item.get("id", time.time_ns()), chat_id, PHONE_FAIL)
+                if item.get("voice"):
+                    receipt_id = voice_receipt_id(item.get("id", time.time_ns()))
+                    record = read_json(voice_record_path(receipt_id), {})
+                    has_transcript = isinstance(record, dict) and bool(record.get("transcript"))
+                    if has_transcript:
+                        update_voice_record(
+                            receipt_id,
+                            status="interrupted",
+                            recovery="not-replayed-after-interruption",
+                        )
+                        recovery_reply = VOICE_INTERRUPTED_SAVED
+                    else:
+                        update_voice_record(
+                            receipt_id,
+                            status="interrupted-before-transcript",
+                            recovery="capture-may-be-retried",
+                        )
+                        recovery_reply = "Voice note held. Try again or check the bridge."
+                    enqueue_outbox(item.get("id", time.time_ns()), chat_id, recovery_reply)
+                else:
+                    enqueue_outbox(item.get("id", time.time_ns()), chat_id, PHONE_FAIL)
                 remove_inbox_job(item.get("id"))
                 write_text(LAST_ERROR_FILE, "uncertain interrupted job was not replayed")
                 continue
@@ -2770,8 +3001,9 @@ OUTBOX_DELIVERER: OutboxDeliverer | None = None
 
 def process_work_item(token: str, job: dict, delivery_notify=None) -> None:
     started = time.monotonic()
-    # The five-minute budget starts when Telegram accepts the ask, including
-    # any queue wait, so a busy bridge cannot silently extend the contract.
+    # Text asks spend their five-minute budget from Telegram acceptance,
+    # including queue wait. Voice gets a fresh bounded capture/work budget
+    # after it reaches the worker so queueing cannot discard the input.
     expires_at = float(job.get("expires_at") or (
         float(job.get("enqueued_at") or time.time()) + PHONE_REQUEST_TIMEOUT
     ))
@@ -2790,7 +3022,9 @@ def process_work_item(token: str, job: dict, delivery_notify=None) -> None:
         epoch = coordinator.epoch
     stop = threading.Event()
     pulse: threading.Thread | None = None
-    expired = time.monotonic() >= deadline and not command
+    # Voice is captured durably before transcription. Queue wait must never
+    # discard a voice note before that capture boundary is reached.
+    expired = time.monotonic() >= deadline and not command and not voice
     if not command and not expired:
         pulse = threading.Thread(
             target=feedback_pulse,
@@ -2806,7 +3040,18 @@ def process_work_item(token: str, job: dict, delivery_notify=None) -> None:
             reply = handle_prompt(token, chat_id, message_id, text, deadline=deadline)
             kind = "text"
         elif voice:
-            reply = handle_voice(token, chat_id, message_id, voice, deadline=deadline)
+            # Voice capture gets its own budget after queue wait. The note is
+            # already durable in the Telegram inbox, so waiting behind desk
+            # work must not consume the time needed to save its transcript.
+            voice_deadline = time.monotonic() + PHONE_REQUEST_TIMEOUT
+            saved_notify = lambda message: safe_send(token, chat_id, message)
+            reply = handle_voice(
+                token, chat_id, message_id, voice,
+                deadline=voice_deadline,
+                receipt_id=voice_receipt_id(job.get("id", message_id or time.time_ns())),
+                saved_notify=saved_notify,
+                can_start=(lambda: coordinator is None or coordinator.epoch == epoch),
+            )
             kind = "voice"
         else:
             reply = "Text or a voice note."
@@ -2904,6 +3149,22 @@ def handle_update(token: str, update: dict, enqueue) -> int:
     if isinstance(message_date, (int, float)):
         pickup_seconds = round(max(0.0, time.time() - float(message_date)), 3)
     position = int(enqueue(job))
+    if isinstance(voice, dict) and voice.get("file_id"):
+        receipt_id = voice_receipt_id(update_id)
+        update_voice_record(
+            receipt_id,
+            status="queued",
+            duration_seconds=voice.get("duration"),
+            mime_type=voice.get("mime_type") or "audio/ogg",
+            provider="elevenlabs",
+            model=SCRIBE_MODEL,
+            file_id_sha256=hashlib.sha256(str(voice["file_id"]).encode()).hexdigest(),
+        )
+        threading.Thread(
+            target=prefetch_voice,
+            args=(token, receipt_id, voice),
+            daemon=True,
+        ).start()
     acknowledged = None
     if position >= 1:
         acknowledged = safe_send(token, int(chat_id), PHONE_QUEUE)

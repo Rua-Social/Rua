@@ -821,7 +821,23 @@ class GoogleMissTest(RuntimeCase):
         self.assertIn("Chase the Fitzpatrick deposit.", todo.read_text())
         self.assertNotIn("Fitzpatrick", done.read_text())
 
-    def test_voice_ask_still_adds_a_do_line(self):
+    def test_voice_ask_only_adds_an_explicit_do_line(self):
+        todo = self.repo / "20-studio" / "todo.md"
+        todo.write_text("# Todo\n\n## Open\n")
+        with mock.patch.object(
+            bridge,
+            "run_grok",
+            return_value="Noted.\nLIST+ Do | Send the Ecoplex nudge",
+        ):
+            reply = bridge.handle_prompt(
+                "token", 420, 7,
+                "Voice note: Add one todo: Send the Ecoplex nudge",
+                from_voice=True,
+            )
+        self.assertEqual(reply, "Noted.")
+        self.assertIn("Send the Ecoplex nudge", todo.read_text())
+
+    def test_voice_ask_does_not_infer_a_do_line(self):
         todo = self.repo / "20-studio" / "todo.md"
         todo.write_text("# Todo\n\n## Open\n")
         with mock.patch.object(
@@ -832,8 +848,8 @@ class GoogleMissTest(RuntimeCase):
             reply = bridge.handle_prompt(
                 "token", 420, 7, "Voice note: nudge ecoplex", from_voice=True
             )
-        self.assertEqual(reply, "Noted.")
-        self.assertIn("Send the Ecoplex nudge", todo.read_text())
+        self.assertIn("Voice did not add a todo", reply)
+        self.assertNotIn("Send the Ecoplex nudge", todo.read_text())
 
     def test_refused_do_trailers_say_so_on_the_phone(self):
         todo = self.repo / "20-studio" / "todo.md"
@@ -1690,6 +1706,141 @@ class OutboxTest(RuntimeCase):
 
 
 class VoiceTest(RuntimeCase):
+    def test_prefetch_captures_audio_before_worker_reaches_voice(self):
+        with mock.patch.object(
+            bridge, "telegram_file", return_value=(b"voice", "voice.ogg")
+        ):
+            bridge.update_voice_record("voice-9", status="queued")
+            bridge.prefetch_voice("token", "voice-9", {"file_id": "file"})
+        record = json.loads((self.state / "voice" / "voice-9.json").read_text())
+        self.assertEqual(record["status"], "downloaded")
+        self.assertTrue((self.state / "voice" / record["audio_file"]).is_file())
+
+    def test_malformed_telegram_size_is_a_capture_error(self):
+        with mock.patch.object(
+            bridge, "api", return_value={"result": {"file_size": "wat", "file_path": "voice.ogg"}}
+        ):
+            with self.assertRaises(bridge.VoiceCaptureError):
+                bridge.telegram_file("token", "file")
+
+    def test_oversized_voice_has_plain_boundary_sentence(self):
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"ELEVENLABS_API_KEY": "key"}
+        ), mock.patch.object(
+            bridge, "telegram_file", side_effect=bridge.VoiceTooLarge("voice note is too large")
+        ):
+            self.assertEqual(
+                bridge.handle_voice("token", 420, 7, {"file_id": "file"}),
+                "That voice note is too large. Send it in two parts.",
+            )
+
+    def test_intake_only_voice_is_saved_without_running_engine(self):
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"ELEVENLABS_API_KEY": "key"}
+        ), mock.patch.object(
+            bridge, "telegram_file", return_value=(b"voice", "voice.ogg")
+        ), mock.patch.object(
+            bridge, "transcribe_voice",
+            return_value="Save this as intake. No action yet. Meeting notes about the launch.",
+        ), mock.patch.object(bridge, "handle_prompt") as handle_prompt:
+            reply = bridge.handle_voice("token", 420, 7, {"file_id": "file"})
+        self.assertIn("Voice saved. No actions added.", reply)
+        handle_prompt.assert_not_called()
+        record = json.loads(next((self.state / "voice").glob("*.json")).read_text())
+        self.assertEqual(record["status"], "held")
+
+    def test_saved_receipt_is_emitted_after_transcript_persistence(self):
+        saved = mock.Mock()
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"ELEVENLABS_API_KEY": "key"}
+        ), mock.patch.object(
+            bridge, "telegram_file", return_value=(b"voice", "voice.ogg")
+        ), mock.patch.object(
+            bridge, "transcribe_voice", return_value="book the room"
+        ), mock.patch.object(bridge, "handle_prompt", return_value="Done"):
+            reply = bridge.handle_voice(
+                "token", 420, 7, {"file_id": "file"}, saved_notify=saved
+            )
+        self.assertEqual(reply, "Done")
+        saved.assert_called_once_with(bridge.VOICE_SAVED_WORKING)
+        record = json.loads(next((self.state / "voice").glob("*.json")).read_text())
+        self.assertEqual(record["status"], "completed")
+
+    def test_cancelled_voice_never_starts_engine_after_capture(self):
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"ELEVENLABS_API_KEY": "key"}
+        ), mock.patch.object(
+            bridge, "telegram_file", return_value=(b"voice", "voice.ogg")
+        ), mock.patch.object(
+            bridge, "transcribe_voice", return_value="launch notes"
+        ), mock.patch.object(bridge, "handle_prompt") as handle_prompt:
+            reply = bridge.handle_voice(
+                "token", 420, 7, {"file_id": "file"}, can_start=lambda: False
+            )
+        self.assertIn("Voice saved. No actions added.", reply)
+        handle_prompt.assert_not_called()
+
+    def test_voice_capture_and_transcript_are_durable_before_engine(self):
+        observed = {}
+
+        def engine(*_args, **_kwargs):
+            records = list((self.state / "voice").glob("*.json"))
+            self.assertEqual(len(records), 1)
+            record = json.loads(records[0].read_text())
+            observed.update(record)
+            # The engine marker is written only after this durable transcript
+            # exists; its presence proves the no-replay boundary is crossed.
+            self.assertEqual(record["status"], "engine-running")
+            self.assertEqual(record["transcript"], "book the room")
+            self.assertTrue((self.state / "voice" / record["audio_file"]).is_file())
+            return "Done."
+
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"ELEVENLABS_API_KEY": "key"}
+        ), mock.patch.object(
+            bridge, "telegram_file", return_value=(b"voice", "voice.ogg")
+        ), mock.patch.object(
+            bridge, "transcribe_voice", return_value="book the room"
+        ), mock.patch.object(
+            bridge, "run_grok", side_effect=engine
+        ), mock.patch.object(bridge, "enqueue_outbox"), mock.patch.object(
+            bridge, "deliver_outbox", return_value=True
+        ), mock.patch.object(
+            bridge, "safe_send", return_value=True
+        ):
+            bridge.process_work_item(
+                "token",
+                {
+                    "id": 7,
+                    "chat_id": 420,
+                    "message_id": 70,
+                    "text": "",
+                    "voice": {"file_id": "file", "mime_type": "audio/ogg"},
+                },
+            )
+        self.assertEqual(observed["status"], "engine-running")
+        self.assertEqual(observed["transcript_length"], len("book the room"))
+
+    def test_queued_voice_is_captured_after_request_budget(self):
+        expired = bridge.time.monotonic() - 1
+        with mock.patch.object(bridge, "handle_voice", return_value="saved") as handle, mock.patch.object(
+            bridge, "enqueue_outbox"
+        ), mock.patch.object(bridge, "deliver_outbox", return_value=True):
+            bridge.process_work_item(
+                "token",
+                {
+                    "id": 8,
+                    "chat_id": 420,
+                    "message_id": 80,
+                    "text": "",
+                    "voice": {"file_id": "file"},
+                    "enqueued_at": 1.0,
+                    "expires_at": expired,
+                },
+            )
+        handle.assert_called_once()
+        self.assertGreater(handle.call_args.kwargs["deadline"], bridge.time.monotonic())
+
     def test_waiting_pulse_covers_transcription(self):
         pulse_started = threading.Event()
 
@@ -1716,6 +1867,8 @@ class VoiceTest(RuntimeCase):
             bridge, "enqueue_outbox"
         ), mock.patch.object(
             bridge, "deliver_outbox", return_value=True
+        ), mock.patch.object(
+            bridge, "safe_send", return_value=True
         ):
             bridge.process_work_item(
                 "token",

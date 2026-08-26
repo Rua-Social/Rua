@@ -26,6 +26,7 @@ not this seat.
 | Brainstorm | `/brainstorm …` or `brainstorm …` | Eyes + typing. A short think comes back. Not a deck. |
 | Desk ask | Other text from the paired user | One short result from the desk. A real commitment lands on `todo.md`. A done moves to `todo-done.md`. A refused write says so in one line. Machine `LIST+` lines never show. |
 | Voice ask | A voice note from the paired user | Transcribe, then the same path as text, except it never closes the todo. |
+| Voice intake | A voice note beginning “Save this as intake. No action yet.” | Save the information without running the desk or changing todos; return a receipt. |
 | Working | After an ask is accepted | Eyes reaction plus typing. |
 | Queue | A second ask while one is running | "Hold that. Still on the last one." |
 | Setup | `--check` or `--install` with no owner id | "Set TELEGRAM_USER_ID before starting the desk." |
@@ -73,9 +74,14 @@ this table.
 | Fixed engine missing | "Claude is busy. Try again in a minute." The engine name follows the configured engine. |
 | Other desk fail | "Desk hit an error. /status" |
 | Empty Grok text | "(no text)" |
-| Voice, no key | "Voice is wired. ElevenLabs key is missing." |
+| Voice, no key | "Voice is saved, but the ElevenLabs key is missing." |
 | Voice, no file | "That voice note had no file." |
 | Voice fail | "Couldn't transcribe that. Try again or type it." |
+| Voice saved | "Voice saved. Working from it." The transcript is already owner-only and durable. |
+| Voice held | "Voice saved. No actions added." The receipt identifies the saved intake. |
+| Voice saved, desk timeout | "Voice saved. The desk timed out. Your intake is safe." |
+| Voice interrupted after capture | "Voice saved. Desk stopped after work began. Check before retrying." |
+| Voice held for retry | "Voice note held. Try again or check the bridge." |
 | Fat or stale session | "Session reset. The last one was too big or gone." then the new reply. Only when the history file is missing, over the byte cap, or at the wrong effort. A normal success does not reset the next ask. |
 | Session restored at the wrong effort | "Session reset. The last one was too big or gone." then the new reply. |
 | Wrong inbound type | "Text or a voice note." |
@@ -89,6 +95,7 @@ this table.
 | Same commitment already open | The result, then: Already on the list. |
 | Refused todo write | One line after the result: "Todo is full. Close one." or "Not a todo line." |
 | Voice note reported a done | Voice never closes the list. "Voice can't close the list. Text it if it landed." |
+| Voice note inferred a Do | Voice does not add it. "Voice did not add a todo. Say \"Add one todo: ...\" if you want that." |
 | Todo empty | "Nothing open." |
 | Todo at seven open | "Todo is full. Close one." then the list, then "Text the action to close it." |
 | Open todo | Action text, `STALE` prefix if stale, then "Text the action to close it." |
@@ -113,6 +120,11 @@ One engine ask at a time. The poller stays awake. A second DM is
 acknowledged as queued; its own five-minute budget keeps running while it
 waits behind the first ask.
 
+Voice capture is kept safe while it waits behind desk work. A saved voice
+record lives in owner-only state outside Git. `/new` and engine switches may
+cut off desk work, but never delete a saved voice record. A saved receipt is
+proof that the information landed, not proof that the requested work finished.
+
 ## If it breaks
 
 Every miss the founder can act on has a plain sentence.
@@ -135,6 +147,14 @@ completeness, engagement.
 2. Eyes and typing throughout transcription and desk work. Phone stays in a pocket.
 3. **Worked:** the notification is the punchline.
 4. Failure: no first engine event in fixed mode → the named engine is busy; five-minute total timeout → "The desk timed out…"
+
+### Flow 1b — Long intake (founder, walking between meetings)
+
+1. Starts the note: “Save this as intake. No action yet.” Then speaks freely.
+2. The bridge saves the voice record before any desk work.
+3. **Worked:** “Voice saved. No actions added.” plus a receipt.
+4. Failure: the desk may stop later, but the saved intake remains available and
+   is not replayed automatically after uncertain engine work.
 
 ### Flow 2 — The desk forgot (founder, same footpath)
 
@@ -187,6 +207,13 @@ completeness, engagement.
    that line. No `LIST+`. No second ask to "put it on the list."
 4. Failure: niceties on `todo.md`; the same line twice; the line
    landing in `lists.md`; a voice note closing the list.
+
+### Flow 7 — Explicit voice todo (founder, after a call)
+
+1. Says: “Add one todo: send the deposit follow-up.”
+2. The desk may return one validated `Do` line; cap and duplicate rules still apply.
+3. **Worked:** the result is returned and the line appears on `/todo`.
+4. Any inferred action without that phrase is not added.
 
 ## Parked
 
