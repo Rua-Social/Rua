@@ -10,6 +10,7 @@ What exists today:
 - `animation-renderer/` — one job's outro render.
 - `html-to-pdf/` — print an HTML deck to A4 PDF with local Chrome.
 - `desk-bridge/` — Telegram seat for the Rua desk. Phone in, Grok on this Mac out.
+- `transcribe/` — shoot dialogue footage to transcripts for the edit-guide chat.
 
 Changes to a tool, or a new tool, run `00-system/skills/rua-ship-gate/`.
 A human session earns `EXPERIENCE.md`. Pixels Rua owns earn
