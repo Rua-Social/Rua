@@ -1721,7 +1721,9 @@ class OutboxTest(RuntimeCase):
             self.assertEqual(bridge.pending_outbox_count(), 1)
             return True
 
-        with mock.patch.object(bridge, "run_grok", return_value="Done"), mock.patch.object(
+        with mock.patch.object(bridge, "feedback_pulse"), mock.patch.object(
+            bridge, "run_grok", return_value="Done"
+        ), mock.patch.object(
             bridge, "deliver_outbox", side_effect=inspect_delivery
         ):
             bridge.process_work_item("token", job)
@@ -1736,7 +1738,9 @@ class OutboxTest(RuntimeCase):
             "enqueued_at": bridge.time.time(),
         }
         notify = mock.Mock()
-        with mock.patch.object(bridge, "run_grok", return_value="Done"), mock.patch.object(
+        with mock.patch.object(bridge, "feedback_pulse"), mock.patch.object(
+            bridge, "run_grok", return_value="Done"
+        ), mock.patch.object(
             bridge, "deliver_outbox", side_effect=AssertionError("must be asynchronous")
         ):
             bridge.process_work_item("token", job, delivery_notify=notify)
@@ -1842,6 +1846,8 @@ class VoiceTest(RuntimeCase):
         with mock.patch.object(
             bridge, "load_secrets", return_value={"ELEVENLABS_API_KEY": "key"}
         ), mock.patch.object(
+            bridge, "feedback_pulse"
+        ), mock.patch.object(
             bridge, "telegram_file", return_value=(b"voice", "voice.ogg")
         ), mock.patch.object(
             bridge, "transcribe_voice", return_value="book the room"
@@ -1867,7 +1873,9 @@ class VoiceTest(RuntimeCase):
 
     def test_queued_voice_is_captured_after_request_budget(self):
         expired = bridge.time.monotonic() - 1
-        with mock.patch.object(bridge, "handle_voice", return_value="saved") as handle, mock.patch.object(
+        with mock.patch.object(bridge, "feedback_pulse"), mock.patch.object(
+            bridge, "handle_voice", return_value="saved"
+        ) as handle, mock.patch.object(
             bridge, "enqueue_outbox"
         ), mock.patch.object(bridge, "deliver_outbox", return_value=True):
             bridge.process_work_item(
