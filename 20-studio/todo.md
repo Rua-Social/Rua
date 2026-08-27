@@ -7,4 +7,4 @@ Do not write todos anywhere else. Skill: `00-system/skills/rua-todo/`.
 
 ## Open
 
-- 2026-08-18 Chase the Fitzpatrick deposit on a dated thread. Mid-September holds on receipt.
+- 2026-08-18 STALE Chase the Fitzpatrick deposit on a dated thread. Mid-September holds on receipt.
