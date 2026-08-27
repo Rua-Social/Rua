@@ -66,6 +66,7 @@ Them:
   pricing table
 - `ecoplex_month1_aug2026.html` / `.pdf` — the month-1 pack
 - `thumbs/` — stills used in the pack
+- `brand/` — Ecoplex lockup and wordmark files used in the pack
 - Brand source: Ecoplex Brand Toolkit V01.00 (2024), not in Git
 - Working notes from the 18 August dive were in `/tmp/ecoplex-dive/`
   (machine-local, may be gone)
