@@ -821,7 +821,23 @@ class GoogleMissTest(RuntimeCase):
         self.assertIn("Chase the Fitzpatrick deposit.", todo.read_text())
         self.assertNotIn("Fitzpatrick", done.read_text())
 
-    def test_voice_ask_still_adds_a_do_line(self):
+    def test_voice_ask_only_adds_an_explicit_do_line(self):
+        todo = self.repo / "20-studio" / "todo.md"
+        todo.write_text("# Todo\n\n## Open\n")
+        with mock.patch.object(
+            bridge,
+            "run_grok",
+            return_value="Noted.\nLIST+ Do | Send the Ecoplex nudge",
+        ):
+            reply = bridge.handle_prompt(
+                "token", 420, 7,
+                "Voice note: Add one todo: Send the Ecoplex nudge",
+                from_voice=True,
+            )
+        self.assertEqual(reply, "Noted.")
+        self.assertIn("Send the Ecoplex nudge", todo.read_text())
+
+    def test_voice_ask_does_not_infer_a_do_line(self):
         todo = self.repo / "20-studio" / "todo.md"
         todo.write_text("# Todo\n\n## Open\n")
         with mock.patch.object(
@@ -832,8 +848,8 @@ class GoogleMissTest(RuntimeCase):
             reply = bridge.handle_prompt(
                 "token", 420, 7, "Voice note: nudge ecoplex", from_voice=True
             )
-        self.assertEqual(reply, "Noted.")
-        self.assertIn("Send the Ecoplex nudge", todo.read_text())
+        self.assertIn("Voice did not add a todo", reply)
+        self.assertNotIn("Send the Ecoplex nudge", todo.read_text())
 
     def test_refused_do_trailers_say_so_on_the_phone(self):
         todo = self.repo / "20-studio" / "todo.md"
@@ -1238,6 +1254,27 @@ class StreamSchemaTest(unittest.TestCase):
         self.assertEqual(meta["output_tokens"], 12)
         self.assertEqual(meta["reasoning_tokens"], 4)
 
+    def test_claude_tool_use_event_counts_as_live_capability(self):
+        meta = self.fresh_meta()
+        bridge._update_stream_meta(
+            {
+                "type": "assistant",
+                "message": {
+                    "content": [{"type": "tool_use", "name": "mcp__claude_ai_Gmail__search_threads"}]
+                },
+            },
+            meta,
+        )
+        self.assertEqual(meta["tool_events"], 1)
+
+    def test_live_google_prompt_forces_workspace_lookup(self):
+        with mock.patch.dict(os.environ, {"DESK_GOOGLE": "live"}):
+            prompt = bridge.live_google_prompt("What was my latest Gmail?")
+        self.assertIn("LIVE WORKSPACE REQUIREMENT", prompt)
+        self.assertIn("must call the connected Gmail, Calendar, or Drive tool", prompt)
+        self.assertIn("Europe/Dublin", prompt)
+        self.assertRegex(prompt, r"Current local time: \d{4}-\d{2}-\d{2}")
+
 
 class GrokStreamingTest(RuntimeCase):
     def run_with_process(
@@ -1260,6 +1297,29 @@ class GrokStreamingTest(RuntimeCase):
         ):
             reply = bridge.run_grok("a private prompt")
         return reply, popen
+
+    def test_empty_engine_reply_gets_a_plain_sentence(self):
+        stream = [
+            (0.0, json.dumps({
+                "type": "session", "sessionId": "s1",
+                "model": "grok-4.6-build", "effort": "medium",
+            }) + "\n"),
+            (0.0, json.dumps({"type": "end", "sessionId": "s1"}) + "\n"),
+        ]
+        process = PipeProcess(stream)
+        reply, _ = self.run_with_process(process)
+        self.assertEqual(reply, "The desk came back with nothing. Send it again.")
+        self.assertIn("no reply text", bridge.read_text(bridge.LAST_ERROR_FILE))
+
+    def test_live_google_answer_without_tool_event_is_rejected(self):
+        process = PipeProcess(success_stream("Stale answer."))
+        self.addCleanup(process.close)
+        with mock.patch.dict(os.environ, {"DESK_GOOGLE": "live"}), mock.patch.object(
+            bridge.subprocess, "Popen", return_value=process
+        ):
+            with self.assertRaises(bridge.EngineUnavailable) as caught:
+                bridge.run_engine_once("What was my latest Gmail?", "claude")
+        self.assertEqual(caught.exception.reason, "google-tools")
 
     def test_streaming_success_uses_medium_ten_turn_phone_command(self):
         process = PipeProcess(success_stream())
@@ -1690,6 +1750,141 @@ class OutboxTest(RuntimeCase):
 
 
 class VoiceTest(RuntimeCase):
+    def test_prefetch_captures_audio_before_worker_reaches_voice(self):
+        with mock.patch.object(
+            bridge, "telegram_file", return_value=(b"voice", "voice.ogg")
+        ):
+            bridge.update_voice_record("voice-9", status="queued")
+            bridge.prefetch_voice("token", "voice-9", {"file_id": "file"})
+        record = json.loads((self.state / "voice" / "voice-9.json").read_text())
+        self.assertEqual(record["status"], "downloaded")
+        self.assertTrue((self.state / "voice" / record["audio_file"]).is_file())
+
+    def test_malformed_telegram_size_is_a_capture_error(self):
+        with mock.patch.object(
+            bridge, "api", return_value={"result": {"file_size": "wat", "file_path": "voice.ogg"}}
+        ):
+            with self.assertRaises(bridge.VoiceCaptureError):
+                bridge.telegram_file("token", "file")
+
+    def test_oversized_voice_has_plain_boundary_sentence(self):
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"ELEVENLABS_API_KEY": "key"}
+        ), mock.patch.object(
+            bridge, "telegram_file", side_effect=bridge.VoiceTooLarge("voice note is too large")
+        ):
+            self.assertEqual(
+                bridge.handle_voice("token", 420, 7, {"file_id": "file"}),
+                "That voice note is too large. Send it in two parts.",
+            )
+
+    def test_intake_only_voice_is_saved_without_running_engine(self):
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"ELEVENLABS_API_KEY": "key"}
+        ), mock.patch.object(
+            bridge, "telegram_file", return_value=(b"voice", "voice.ogg")
+        ), mock.patch.object(
+            bridge, "transcribe_voice",
+            return_value="Save this as intake. No action yet. Meeting notes about the launch.",
+        ), mock.patch.object(bridge, "handle_prompt") as handle_prompt:
+            reply = bridge.handle_voice("token", 420, 7, {"file_id": "file"})
+        self.assertIn("Voice saved. No actions added.", reply)
+        handle_prompt.assert_not_called()
+        record = json.loads(next((self.state / "voice").glob("*.json")).read_text())
+        self.assertEqual(record["status"], "held")
+
+    def test_saved_receipt_is_emitted_after_transcript_persistence(self):
+        saved = mock.Mock()
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"ELEVENLABS_API_KEY": "key"}
+        ), mock.patch.object(
+            bridge, "telegram_file", return_value=(b"voice", "voice.ogg")
+        ), mock.patch.object(
+            bridge, "transcribe_voice", return_value="book the room"
+        ), mock.patch.object(bridge, "handle_prompt", return_value="Done"):
+            reply = bridge.handle_voice(
+                "token", 420, 7, {"file_id": "file"}, saved_notify=saved
+            )
+        self.assertEqual(reply, "Done")
+        saved.assert_called_once_with(bridge.VOICE_SAVED_WORKING)
+        record = json.loads(next((self.state / "voice").glob("*.json")).read_text())
+        self.assertEqual(record["status"], "completed")
+
+    def test_cancelled_voice_never_starts_engine_after_capture(self):
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"ELEVENLABS_API_KEY": "key"}
+        ), mock.patch.object(
+            bridge, "telegram_file", return_value=(b"voice", "voice.ogg")
+        ), mock.patch.object(
+            bridge, "transcribe_voice", return_value="launch notes"
+        ), mock.patch.object(bridge, "handle_prompt") as handle_prompt:
+            reply = bridge.handle_voice(
+                "token", 420, 7, {"file_id": "file"}, can_start=lambda: False
+            )
+        self.assertIn("Voice saved. No actions added.", reply)
+        handle_prompt.assert_not_called()
+
+    def test_voice_capture_and_transcript_are_durable_before_engine(self):
+        observed = {}
+
+        def engine(*_args, **_kwargs):
+            records = list((self.state / "voice").glob("*.json"))
+            self.assertEqual(len(records), 1)
+            record = json.loads(records[0].read_text())
+            observed.update(record)
+            # The engine marker is written only after this durable transcript
+            # exists; its presence proves the no-replay boundary is crossed.
+            self.assertEqual(record["status"], "engine-running")
+            self.assertEqual(record["transcript"], "book the room")
+            self.assertTrue((self.state / "voice" / record["audio_file"]).is_file())
+            return "Done."
+
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"ELEVENLABS_API_KEY": "key"}
+        ), mock.patch.object(
+            bridge, "telegram_file", return_value=(b"voice", "voice.ogg")
+        ), mock.patch.object(
+            bridge, "transcribe_voice", return_value="book the room"
+        ), mock.patch.object(
+            bridge, "run_grok", side_effect=engine
+        ), mock.patch.object(bridge, "enqueue_outbox"), mock.patch.object(
+            bridge, "deliver_outbox", return_value=True
+        ), mock.patch.object(
+            bridge, "safe_send", return_value=True
+        ):
+            bridge.process_work_item(
+                "token",
+                {
+                    "id": 7,
+                    "chat_id": 420,
+                    "message_id": 70,
+                    "text": "",
+                    "voice": {"file_id": "file", "mime_type": "audio/ogg"},
+                },
+            )
+        self.assertEqual(observed["status"], "engine-running")
+        self.assertEqual(observed["transcript_length"], len("book the room"))
+
+    def test_queued_voice_is_captured_after_request_budget(self):
+        expired = bridge.time.monotonic() - 1
+        with mock.patch.object(bridge, "handle_voice", return_value="saved") as handle, mock.patch.object(
+            bridge, "enqueue_outbox"
+        ), mock.patch.object(bridge, "deliver_outbox", return_value=True):
+            bridge.process_work_item(
+                "token",
+                {
+                    "id": 8,
+                    "chat_id": 420,
+                    "message_id": 80,
+                    "text": "",
+                    "voice": {"file_id": "file"},
+                    "enqueued_at": 1.0,
+                    "expires_at": expired,
+                },
+            )
+        handle.assert_called_once()
+        self.assertGreater(handle.call_args.kwargs["deadline"], bridge.time.monotonic())
+
     def test_waiting_pulse_covers_transcription(self):
         pulse_started = threading.Event()
 
@@ -1716,6 +1911,8 @@ class VoiceTest(RuntimeCase):
             bridge, "enqueue_outbox"
         ), mock.patch.object(
             bridge, "deliver_outbox", return_value=True
+        ), mock.patch.object(
+            bridge, "safe_send", return_value=True
         ):
             bridge.process_work_item(
                 "token",
@@ -1760,6 +1957,195 @@ class VoiceTest(RuntimeCase):
         )
 
 
+class GoogleOffTest(RuntimeCase):
+    def test_google_is_off_by_default(self):
+        self.assertFalse(bridge.google_live_enabled())
+        prompt = bridge.live_google_prompt("What was my latest Gmail?")
+        self.assertEqual(prompt, "What was my latest Gmail?")
+
+    def test_live_flag_reads_secrets_or_env(self):
+        self.write_owner_secrets()
+        with open(self.secrets, "a") as handle:
+            handle.write("export DESK_GOOGLE=live\n")
+        self.assertTrue(bridge.google_live_enabled())
+        with mock.patch.dict(os.environ, {"DESK_GOOGLE": "off"}):
+            self.assertFalse(bridge.google_live_enabled())
+
+    def test_off_mode_keeps_an_answer_without_a_tool_event(self):
+        process = PipeProcess(success_stream("From the card: Draft 4 is with them."))
+        self.addCleanup(process.close)
+        with mock.patch.object(bridge.subprocess, "Popen", return_value=process):
+            reply = bridge.run_engine_once("What was my latest Gmail?", "claude")
+        self.assertEqual(reply, "From the card: Draft 4 is with them.")
+
+    def test_off_mode_desk_rules_park_current_data_asks(self):
+        rules = bridge.desk_rules().lower()
+        self.assertIn("this seat has no live gmail", rules)
+        self.assertNotIn("live workspace requirement", rules)
+        command = bridge.desk_command("Read my latest Gmail", "", engine="grok")
+        self.assertIn(bridge.desk_rules(), command)
+
+
+class FileSendTest(RuntimeCase):
+    def make_file(self, rel: str = "20-studio/report.pdf", content: bytes = b"%PDF-fake") -> Path:
+        target = self.repo / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(content)
+        return target
+
+    def test_extract_strips_trailer_and_keeps_text(self):
+        text, paths = bridge.extract_file_sends(
+            "Month 1 report is ready.\nFILE+ 20-studio/report.pdf"
+        )
+        self.assertEqual(text, "Month 1 report is ready.")
+        self.assertEqual(paths, ["20-studio/report.pdf"])
+
+    def test_extract_keeps_only_one_path(self):
+        text, paths = bridge.extract_file_sends(
+            "Two files.\nFILE+ a.pdf\nFILE+ b.pdf"
+        )
+        self.assertEqual(paths, ["a.pdf"])
+        self.assertNotIn("FILE+", text)
+
+    def test_validate_repo_relative_path(self):
+        made = self.make_file()
+        resolved = bridge.validate_file_send("20-studio/report.pdf")
+        self.assertEqual(resolved, made.resolve())
+
+    def test_validate_refuses_traversal_hidden_missing_and_outside(self):
+        self.make_file()
+        downloads = self.root / "Downloads"
+        downloads.mkdir()
+        (downloads / "export.pdf").write_bytes(b"data")
+        with mock.patch.object(
+            bridge, "file_send_roots", return_value=[self.repo, downloads]
+        ):
+            self.assertEqual(
+                bridge.validate_file_send(str(downloads / "export.pdf")),
+                (downloads / "export.pdf").resolve(),
+            )
+            for bad in (
+                "../outside.pdf",
+                "/etc/hosts",
+                str(self.root / "secret" / "x.pdf"),
+                "20-studio/missing.pdf",
+                "20-studio",
+                ".git/config",
+            ):
+                with self.subTest(bad=bad):
+                    with self.assertRaises(ValueError):
+                        bridge.validate_file_send(bad)
+
+    def test_validate_refuses_oversize(self):
+        self.make_file(content=b"x" * 16)
+        with mock.patch.object(bridge, "TG_DOC_MAX_BYTES", 8, create=True):
+            with self.assertRaises(ValueError):
+                bridge.validate_file_send("20-studio/report.pdf")
+
+    def test_send_document_posts_multipart_to_senddocument(self):
+        doc = self.make_file()
+        with mock.patch.object(
+            bridge, "fetch_url_bytes", return_value=b'{"ok": true, "result": {}}'
+        ) as fetch:
+            bridge.send_document("token", 420, doc)
+        req = fetch.call_args.args[0]
+        self.assertTrue(req.full_url.endswith("/sendDocument"))
+        self.assertIn(b'name="document"; filename="report.pdf"', req.data)
+        self.assertIn(b'name="chat_id"', req.data)
+        self.assertIn(b"%PDF-fake", req.data)
+
+    def test_text_arrives_before_the_document(self):
+        self.make_file()
+        job = {
+            "id": 7,
+            "chat_id": 420,
+            "message_id": 70,
+            "text": "send me the report",
+            "voice": None,
+            "enqueued_at": bridge.time.time(),
+        }
+        calls = []
+
+        def fake_api(token, method, payload, timeout=None):
+            calls.append(("text", payload.get("text")))
+            return {"ok": True}
+
+        with mock.patch.object(bridge, "feedback_pulse"), mock.patch.object(
+            bridge,
+            "run_grok",
+            return_value="Here it is.\nFILE+ 20-studio/report.pdf",
+        ), mock.patch.object(bridge, "api", side_effect=fake_api), mock.patch.object(
+            bridge, "send_document", side_effect=lambda *a: calls.append(("doc", a[2]))
+        ) as send_document:
+            bridge.process_work_item("token", job)
+        self.assertEqual(calls[0], ("text", "Here it is."))
+        self.assertEqual(calls[1][0], "doc")
+        self.assertEqual(calls[1][1].name, "report.pdf")
+        send_document.assert_called_once()
+        self.assertEqual(bridge.read_json(bridge.OUTBOX_FILE, []), [])
+
+    def test_document_failure_retries_then_falls_back_with_mac_path(self):
+        self.make_file()
+        bridge.enqueue_document(7, 420, bridge.validate_file_send("20-studio/report.pdf"))
+        with mock.patch.object(
+            bridge, "send_document", side_effect=RuntimeError("telegram down")
+        ) as send_document, mock.patch.object(
+            bridge, "api", return_value={"ok": True}
+        ) as api_mock:
+            self.assertFalse(bridge.deliver_outbox("token"))
+            self.assertFalse(bridge.deliver_outbox("token"))
+            self.assertTrue(bridge.deliver_outbox("token"))
+        self.assertEqual(send_document.call_count, bridge.DOC_MAX_ATTEMPTS)
+        fallback = api_mock.call_args.args[2]["text"]
+        self.assertTrue(fallback.startswith("That file didn't send."))
+        self.assertIn("report.pdf", fallback)
+        self.assertEqual(bridge.read_json(bridge.OUTBOX_FILE, []), [])
+
+    def test_invalid_file_gets_a_plain_refusal_and_no_document(self):
+        job = {
+            "id": 7,
+            "chat_id": 420,
+            "message_id": 70,
+            "text": "send me the secrets",
+            "voice": None,
+            "enqueued_at": bridge.time.time(),
+        }
+        with mock.patch.object(bridge, "feedback_pulse"), mock.patch.object(
+            bridge, "run_grok", return_value="Found it.\nFILE+ ../../.grok/secrets/desk-bridge.env"
+        ), mock.patch.object(bridge, "api", return_value={"ok": True}) as api_mock, mock.patch.object(
+            bridge, "send_document"
+        ) as send_document:
+            bridge.process_work_item("token", job)
+        send_document.assert_not_called()
+        sent = [call.args[2]["text"] for call in api_mock.call_args_list]
+        self.assertEqual(len(sent), 1)
+        self.assertIn("Can't send that file from the phone seat.", sent[0])
+        self.assertNotIn("FILE+", sent[0])
+
+    def test_restart_resumes_pending_document_without_resending_text(self):
+        made = self.make_file()
+        bridge.enqueue_document(7, 420, made)
+        with mock.patch.object(bridge, "api") as api_mock, mock.patch.object(
+            bridge, "send_document"
+        ) as send_document:
+            self.assertTrue(bridge.deliver_outbox("token"))
+        api_mock.assert_not_called()
+        send_document.assert_called_once()
+        self.assertEqual(send_document.call_args.args[2], made.resolve())
+        self.assertEqual(bridge.read_json(bridge.OUTBOX_FILE, []), [])
+
+    def test_instant_command_never_leaks_a_file_trailer(self):
+        enqueue = mock.Mock()
+        with mock.patch.object(
+            bridge, "load_secrets", return_value={"TELEGRAM_USER_ID": "42"}
+        ), mock.patch.object(
+            bridge, "run_grok", return_value="Quick think.\nFILE+ 20-studio/report.pdf"
+        ), mock.patch.object(bridge, "send") as send:
+            bridge.handle_update("token", update(text="/brainstorm send me x"), enqueue)
+        send.assert_called_once()
+        self.assertEqual(send.call_args.args[2], "Quick think.")
+
+
 class MultipartTest(unittest.TestCase):
     def test_contains_model_and_file(self):
         body, boundary = bridge.multipart(
@@ -1774,23 +2160,10 @@ class MultipartTest(unittest.TestCase):
 class RulesTest(unittest.TestCase):
     def test_phone_rules_are_embedded_without_per_ask_experience_read(self):
         self.assertIn(GOOGLE_REPLY, bridge.DESK_RULES)
-        self.assertIn(bridge.PHONE_GOOGLE_MISSING, bridge.DESK_RULES)
-        self.assertIn("search_tool", bridge.DESK_RULES)
-        self.assertIn("use_tool", bridge.DESK_RULES)
-        self.assertIn("do not send them to /mcps", bridge.DESK_RULES.lower())
         self.assertNotIn(
             "read 30-tools/desk-bridge/experience.md", bridge.DESK_RULES.lower()
         )
-        self.assertNotIn(
-            "reply with exactly this sentence and nothing else: "
-            + GOOGLE_REPLY,
-            bridge.DESK_RULES,
-        )
-        self.assertIn(
-            "reply with exactly this sentence and nothing else: "
-            + bridge.PHONE_GOOGLE_MISSING,
-            bridge.DESK_RULES,
-        )
+        self.assertNotIn(bridge.PHONE_GOOGLE_MISSING, bridge.DESK_RULES)
         self.assertEqual(bridge.PHONE_GOOGLE_MISSING.count("\n"), 0)
         self.assertNotIn("/mcps", bridge.PHONE_GOOGLE_MISSING)
 
@@ -1801,14 +2174,45 @@ class RulesTest(unittest.TestCase):
         self.assertIn("20-studio/todo.md", rules)
         self.assertIn("do not write todos to lists.md", rules)
         self.assertIn("10-clients/<slug>/", rules)
-        self.assertIn("never reply with: google isn't on this phone seat", rules)
-        self.assertIn("use the gmail, calendar, and drive tools", rules)
-        self.assertIn("via search_tool then use_tool", rules)
-        self.assertIn(bridge.PHONE_GOOGLE_MISSING.lower(), rules)
+        self.assertIn("file+ <path>", rules)
+        self.assertNotIn(bridge.PHONE_GOOGLE_MISSING.lower(), rules)
         self.assertIn("a voice note cannot close the list", rules)
         self.assertIn("instagram and tiktok links", rules)
         self.assertIn("client-facing", rules)
         self.assertIn("still they recognise", rules)
+
+    def test_phone_rules_default_off_parks_current_data_asks(self):
+        rules = bridge.DESK_RULES.lower()
+        self.assertIn("this seat has no live gmail, calendar, or drive", rules)
+        self.assertIn(
+            "reply with exactly this sentence and nothing else: " + GOOGLE_REPLY.lower(),
+            rules,
+        )
+        self.assertNotIn("search_tool", rules)
+        self.assertNotIn("use_tool", rules)
+        self.assertEqual(bridge.DESK_RULES, bridge.desk_rules())
+
+    def test_phone_rules_live_google_variant_keeps_workspace_semantics(self):
+        with mock.patch.dict(os.environ, {"DESK_GOOGLE": "live"}):
+            rules = bridge.desk_rules()
+        low = rules.lower()
+        self.assertIn("search_tool", low)
+        self.assertIn("use_tool", low)
+        self.assertIn("never reply with: google isn't on this phone seat", low)
+        self.assertIn("do not send them to /mcps", low)
+        self.assertIn("preserve human relationship language", low)
+        self.assertIn('"directly to" means the entity appears in to', low)
+        self.assertIn("latest means the individual message timestamp", low)
+        self.assertIn("keep multi-entity asks multi-entity", low)
+        self.assertIn("relative time in europe/dublin", low)
+        self.assertIn('"follow up" means draft only', low)
+        self.assertIn("never mutate workspace as a side effect of a lookup", low)
+        self.assertIn("evidence that contradicts a connector result", low)
+        self.assertIn('do not repeat an older card or connector result as "latest"', low)
+        self.assertNotIn(
+            "reply with exactly this sentence and nothing else: " + GOOGLE_REPLY.lower(),
+            low,
+        )
 
     def test_reset_prefix(self):
         self.assertEqual(bridge.with_reset(False, "hi"), "hi")
