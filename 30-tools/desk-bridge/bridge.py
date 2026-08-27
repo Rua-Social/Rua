@@ -67,6 +67,7 @@ PHONE_QUEUE = "Hold that. Still on the last one."
 PHONE_GOOGLE = "Google isn't on this phone seat. Parked on the desk list."
 PHONE_GOOGLE_MISSING = "Google tools are not on this process."
 PHONE_GOOGLE_UNAVAILABLE = "Live Google data was unavailable on this engine. Try /engine auto or ask again."
+PHONE_EMPTY = "The desk came back with nothing. Send it again."
 VOICE_SAVED_WORKING = "Voice saved. Working from it."
 VOICE_SAVED_HELD = "Voice saved. No actions added."
 VOICE_SAVED_TIMEOUT = "Voice saved. The desk timed out. Your intake is safe."
@@ -81,7 +82,7 @@ VOICE_CAPTURE_LOCK = threading.Lock()
 ACTIVE_PROCESS_LOCK = threading.RLock()
 ACTIVE_GROK_PROCESS: subprocess.Popen | None = None
 RUN_LOCK_FD: int | None = None
-DESK_RULES = """You are the Rua desk conductor, reached by Telegram while the founder is on the go.
+DESK_RULES_HEAD = """You are the Rua desk conductor, reached by Telegram while the founder is on the go.
 Read 20-studio/desk.md and AGENTS.md when the class of work needs them.
 Name the class to yourself before loading doctrine. Do not invent work.
 Do the work. Do not narrate loading, searching, or thinking.
@@ -101,20 +102,33 @@ A line starting with Voice note: is a spoken message. Treat it as the ask.
 Instagram and TikTok links in the message are intake, not decoration. Capture them, do the asked work, reply with what landed and where.
 A client-facing document is written for the person who will sit with it and the person it is for. No internal paths, no steal-language, no studio process, no names they did not put in the room. References they sent appear as the thing itself: a still they recognise, then a link.
 Do not ask them to sit down at the Mac unless the machine itself is the blocker.
-This bridge sends text only. If work creates a file, name its repo path; do not claim it is attached.
+When the founder explicitly asks for a file on the phone, send it: end the reply with one line — FILE+ <path>. The path must sit inside the repo, ~/Downloads, or ~/Desktop; repo-relative paths work. One file per reply. The bridge validates and sends the document. Still name the path in the reply. Never emit FILE+ for a file the founder did not ask for.
 Named clients: read 10-clients/<slug>/ first for non-live context. That record is the pocket card. Todo is 20-studio/todo.md. lists.md is a diary. Do not brief a stale diary line over the instance or the founder.
-If the founder corrects a desk fact or supplies evidence that contradicts a connector result, believe them and emit LIST+ Done or Moving when appropriate. Do not repeat an older card or connector result as "latest". Say that the connected source did not return the newer item and briefly name what you searched.
+"""
+DESK_RULES_GOOGLE_LIVE = """If the founder corrects a desk fact or supplies evidence that contradicts a connector result, believe them and emit LIST+ Done or Moving when appropriate. Do not repeat an older card or connector result as "latest". Say that the connected source did not return the newer item and briefly name what you searched.
 Any ask about current, latest, recent, last, sent, received, or upcoming mail, calendar, or Drive data is a live-data ask: use the Gmail, Calendar, and Drive tools via search_tool then use_tool (when connected), even if a repository card contains related context. Inspect individual messages or events, verify the exact sender/recipient/date, and do not infer recency from a thread card or repository file. Reply with the short verified result. Never reply with: Google isn't on this phone seat. Parked on the desk list.
 Preserve human relationship language before translating it into search syntax. For outbound mail, "to" or "for" a person or organisation means the latest individual sent message involving that entity across To, CC, replies, known aliases, and relevant threads. State the actual To/CC/thread role. "Directly to" means the entity appears in To; a reply still counts and it does not mean a new standalone thread.
 Latest means the individual message timestamp, not thread order or search rank. Keep multi-entity asks multi-entity and return one labelled result per entity. Interpret relative time in Europe/Dublin and state the exact local timestamp when recency matters.
 Workspace lookups are read-only. "Follow up" means draft only. Send, schedule, share, or update only when the founder explicitly names that action and its target is unambiguous. Never mutate Workspace as a side effect of a lookup.
 Do not use Mail.app, Calendar.app, icalBuddy, Chrome, or local mail CLIs as a stand-in.
 Do not send them to /mcps. Google's remote MCP servers are not this seat's login.
-Hold a craft conversation if he asked for a hold. Do not write the deck or the concept list unless he asked for the file.
+"""
+DESK_RULES_GOOGLE_OFF = """This seat has no live Gmail, Calendar, or Drive. Answer from the repository record when it genuinely covers the ask. When the ask needs current Google data the record does not have, reply with exactly this sentence and nothing else: Google isn't on this phone seat. Parked on the desk list.
+If the founder corrects a desk fact or supplies evidence, believe them and emit LIST+ Done or Moving when appropriate. Do not repeat an older card as "latest".
+Do not use Mail.app, Calendar.app, icalBuddy, Chrome, or local mail CLIs as a stand-in.
+"""
+DESK_RULES_TAIL = """Hold a craft conversation if he asked for a hold. Do not write the deck or the concept list unless he asked for the file.
 Do not spawn subagents or call another model from this phone seat.
 If a tool fails auth or 401s, try it once, then answer with what you have. Do not burn the turn budget retrying.
 A message that starts with park, backlog, or idea is a capture the bridge already handled. Do not re-park it.
 """
+DESK_RULES = DESK_RULES_HEAD + DESK_RULES_GOOGLE_OFF + DESK_RULES_TAIL
+
+
+def desk_rules() -> str:
+    if google_live_enabled():
+        return DESK_RULES_HEAD + DESK_RULES_GOOGLE_LIVE + DESK_RULES_TAIL
+    return DESK_RULES
 
 
 class GrokFirstEventTimeout(RuntimeError):
@@ -754,6 +768,16 @@ def configured_engine() -> str:
     return "grok"
 
 
+def google_live_enabled() -> bool:
+    """Live Gmail/Calendar/Drive on the phone seat. Off unless opted in."""
+    raw = (
+        os.environ.get("DESK_GOOGLE")
+        or load_secrets().get("DESK_GOOGLE")
+        or ""
+    )
+    return raw.strip().lower() in {"live", "on", "1", "true", "yes"}
+
+
 def engine_order() -> list[str]:
     raw = (
         os.environ.get("DESK_ENGINE_ORDER")
@@ -882,13 +906,13 @@ def desk_command(prompt: str, session_id: str, engine: str | None = None) -> lis
             "--effort",
             PHONE_EFFORT,
             "--append-system-prompt",
-            DESK_RULES,
+            desk_rules(),
         ]
         if session_id:
             cmd.extend(["--resume", session_id])
         return cmd
     if chosen == "codex":
-        phone_prompt = f"{DESK_RULES}\n\nPhone ask:\n{prompt}"
+        phone_prompt = f"{desk_rules()}\n\nPhone ask:\n{prompt}"
         if session_id:
             return [
                 codex_bin(),
@@ -924,7 +948,7 @@ def desk_command(prompt: str, session_id: str, engine: str | None = None) -> lis
         "--no-subagents",
         "--no-plan",
         "--rules",
-        DESK_RULES,
+        desk_rules(),
         "--no-auto-update",
         "--effort",
         PHONE_EFFORT,
@@ -1105,6 +1129,192 @@ def pending_outbox_count() -> int:
     return len(current) if isinstance(current, list) else 0
 
 
+FILE_SEND_RE = re.compile(r"^FILE\+\s+(.+)$", re.I)
+FILE_SEND_MAX = 1
+TG_DOC_TIMEOUT = 120
+TG_DOC_MAX_BYTES = 50 * 1024 * 1024  # Telegram bot upload cap
+DOC_MAX_ATTEMPTS = 3
+DOC_REFUSED = "Can't send that file from the phone seat. It's at "
+DOC_FAILED = "That file didn't send. It's on the Mac: "
+
+
+def extract_file_sends(text: str) -> tuple[str, list[str]]:
+    """Strip FILE+ trailers from the phone text; keep at most one path."""
+    kept: list[str] = []
+    paths: list[str] = []
+    for line in (text or "").splitlines():
+        match = FILE_SEND_RE.match(line.strip())
+        if match:
+            if len(paths) < FILE_SEND_MAX:
+                paths.append(match.group(1).strip().strip("'\""))
+            continue
+        kept.append(line)
+    return "\n".join(kept).strip(), paths
+
+
+def file_send_roots() -> list[Path]:
+    return [REPO, Path.home() / "Downloads", Path.home() / "Desktop"]
+
+
+def validate_file_send(raw: str) -> Path:
+    """Resolve a requested file inside the allowed roots, or refuse."""
+    candidate = Path(raw).expanduser()
+    if not candidate.is_absolute():
+        candidate = REPO / candidate
+    try:
+        resolved = candidate.resolve(strict=True)
+    except (OSError, RuntimeError) as exc:
+        raise ValueError("no such file") from exc
+    if not resolved.is_file():
+        raise ValueError("not a file")
+    for root in file_send_roots():
+        try:
+            rel = resolved.relative_to(root.resolve())
+        except ValueError:
+            continue
+        if any(part.startswith(".") for part in rel.parts):
+            raise ValueError("hidden path")
+        break
+    else:
+        raise ValueError("outside allowed roots")
+    if resolved.stat().st_size > TG_DOC_MAX_BYTES:
+        raise ValueError("over the Telegram size cap")
+    return resolved
+
+
+def send_document(
+    token: str, chat_id: int, path: Path, timeout: float = TG_DOC_TIMEOUT
+) -> None:
+    blob = path.read_bytes()
+    body, bound = multipart(
+        {"chat_id": str(chat_id)},
+        path.name,
+        blob,
+        "application/octet-stream",
+        field="document",
+    )
+    req = urllib.request.Request(
+        f"https://api.telegram.org/bot{token}/sendDocument",
+        data=body,
+        headers={"Content-Type": f"multipart/form-data; boundary={bound}"},
+        method="POST",
+    )
+    try:
+        raw = fetch_url_bytes(req, timeout, max_bytes=2 * 1024 * 1024)
+        data = json.loads(raw.decode())
+    except urllib.error.HTTPError as exc:
+        body_text = exc.read().decode(errors="replace")
+        raise RuntimeError(f"telegram sendDocument HTTP {exc.code}: {body_text[:300]}") from exc
+    except (TimeoutError, socket.timeout) as exc:
+        raise RuntimeError("telegram sendDocument timed out") from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"telegram sendDocument failed: {exc.reason}") from exc
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise RuntimeError(f"telegram sendDocument bad response: {exc}") from exc
+    if not isinstance(data, dict) or not data.get("ok"):
+        raise RuntimeError("telegram sendDocument was not accepted")
+
+
+def enqueue_document(source_id: int | str, chat_id: int, path: Path) -> None:
+    """Durably mark a document for delivery behind its text entry."""
+    item_id = f"{source_id}:doc"
+    with STATE_LOCK:
+        current = read_json(OUTBOX_FILE, [])
+        if not isinstance(current, list):
+            current = []
+        if any(str(item.get("id")) == item_id for item in current if isinstance(item, dict)):
+            return
+        current.append(
+            {
+                "id": item_id,
+                "chat_id": int(chat_id),
+                "parts": [],
+                "next_part": 0,
+                "created_at": round(time.time(), 3),
+                "document": {"path": str(path), "attempts": 0},
+            }
+        )
+        write_json(OUTBOX_FILE, current)
+
+
+def update_outbox_head(item_id: str, section: str, **fields) -> None:
+    with STATE_LOCK:
+        current = read_json(OUTBOX_FILE, [])
+        if not isinstance(current, list) or not current:
+            return
+        head = current[0]
+        if not isinstance(head, dict) or str(head.get("id")) != str(item_id):
+            return
+        target = head.get(section)
+        if not isinstance(target, dict):
+            return
+        target.update(fields)
+        write_json(OUTBOX_FILE, current)
+
+
+def pop_outbox_entry(item_id: str) -> None:
+    with STATE_LOCK:
+        current = read_json(OUTBOX_FILE, [])
+        if not isinstance(current, list) or not current:
+            return
+        head = current[0]
+        if isinstance(head, dict) and str(head.get("id")) == str(item_id):
+            current.pop(0)
+            write_json(OUTBOX_FILE, current)
+
+
+def fail_document(token: str, item: dict, error: str, attempts: int) -> bool:
+    """Bounded retries, then one plain fallback text naming the Mac path."""
+    item_id = str(item.get("id"))
+    write_text(LAST_ERROR_FILE, f"document delivery: {error}")
+    attempts += 1
+    if attempts < DOC_MAX_ATTEMPTS:
+        update_outbox_head(item_id, "document", attempts=attempts)
+        append_metric({"stage": "document", "outcome": "pending"})
+        return False
+    doc = item.get("document") if isinstance(item.get("document"), dict) else {}
+    path = str(doc.get("path") or "")
+    try:
+        api(
+            token,
+            "sendMessage",
+            {"chat_id": int(item["chat_id"]), "text": DOC_FAILED + path},
+            timeout=TG_SEND_TIMEOUT,
+        )
+    except (KeyError, TypeError, ValueError, RuntimeError):
+        pass
+    pop_outbox_entry(item_id)
+    append_metric({"stage": "document", "outcome": "failed"})
+    return True
+
+
+def deliver_document(token: str, item: dict) -> bool:
+    """Send one document entry. True when the entry is finished."""
+    item_id = str(item.get("id"))
+    doc = item.get("document") if isinstance(item.get("document"), dict) else {}
+    try:
+        chat_id = int(item["chat_id"])
+        attempts = int(doc.get("attempts") or 0)
+    except (KeyError, TypeError, ValueError) as exc:
+        write_text(LAST_ERROR_FILE, f"document delivery: {exc}")
+        pop_outbox_entry(item_id)
+        return True
+    try:
+        path = validate_file_send(str(doc.get("path") or ""))
+    except ValueError as exc:
+        # A bad path never gets better: no retries, one plain fallback.
+        return fail_document(token, item, str(exc), DOC_MAX_ATTEMPTS)
+    try:
+        send_document(token, chat_id, path)
+    except RuntimeError as exc:
+        return fail_document(token, item, str(exc), attempts)
+    pop_outbox_entry(item_id)
+    append_metric(
+        {"stage": "document", "outcome": "ok", "bytes": path.stat().st_size}
+    )
+    return True
+
+
 def deliver_outbox(token: str) -> bool:
     # Only one sender claims the outbox, but state writes remain available to
     # the poller and worker while Telegram is slow or unreachable.
@@ -1120,20 +1330,29 @@ def deliver_outbox(token: str) -> bool:
                 if not current:
                     return True
                 item = dict(current[0])
-                parts = item.get("parts") or []
-                try:
-                    index = int(item.get("next_part") or 0)
-                    chat_id = int(item["chat_id"])
-                except (KeyError, TypeError, ValueError) as exc:
-                    write_text(LAST_ERROR_FILE, f"outbox delivery: {exc}")
-                    return False
-                if index >= len(parts):
-                    current.pop(0)
-                    write_json(OUTBOX_FILE, current)
-                    append_metric({"stage": "delivery", "outcome": "ok"})
-                    continue
-                part = str(parts[index])
+                document = item.get("document")
+                if not isinstance(document, dict):
+                    document = None
+                    parts = item.get("parts") or []
+                    try:
+                        index = int(item.get("next_part") or 0)
+                        chat_id = int(item["chat_id"])
+                    except (KeyError, TypeError, ValueError) as exc:
+                        write_text(LAST_ERROR_FILE, f"outbox delivery: {exc}")
+                        return False
+                    if index >= len(parts):
+                        current.pop(0)
+                        write_json(OUTBOX_FILE, current)
+                        append_metric({"stage": "delivery", "outcome": "ok"})
+                        continue
+                    part = str(parts[index])
 
+            # A document entry rides the same queue behind its text entry, so
+            # the text answer is always delivered before the file send starts.
+            if document is not None:
+                if deliver_document(token, item):
+                    continue
+                return False
             try:
                 api(
                     token,
@@ -2347,7 +2566,7 @@ def requires_live_google(prompt: str) -> bool:
 
 
 def live_google_prompt(prompt: str) -> str:
-    if not requires_live_google(prompt):
+    if not google_live_enabled() or not requires_live_google(prompt):
         return prompt
     local_now = datetime.now(ZoneInfo("Europe/Dublin"))
     time_label = local_now.strftime("%Y-%m-%d %H:%M:%S %Z")
@@ -2453,8 +2672,13 @@ def run_engine_once(
 
     # A live Google answer without a tool event is unsafe: it may be a stale
     # repository/card answer. In auto mode this becomes a capability fallback;
-    # fixed-engine mode returns an explicit unavailable message.
-    if requires_live_google(prompt) and not meta.get("tool_events"):
+    # fixed-engine mode returns an explicit unavailable message. Only applies
+    # while live Google is enabled on this seat.
+    if (
+        google_live_enabled()
+        and requires_live_google(prompt)
+        and not meta.get("tool_events")
+    ):
         SESSION_FILE.unlink(missing_ok=True)
         SESSION_META_FILE.unlink(missing_ok=True)
         append_metric(
@@ -2539,7 +2763,9 @@ def run_engine_once(
         json.dumps(run_record, separators=(",", ":")),
     )
     append_metric({"stage": "grok", "outcome": "ok", **run_record})
-    return with_reset(reset, text or "(no text)")
+    if not text:
+        write_text(LAST_ERROR_FILE, f"{engine} finished with no reply text")
+    return with_reset(reset, text or PHONE_EMPTY)
 
 
 def with_reset(reset: bool, text: str) -> str:
@@ -2548,7 +2774,7 @@ def with_reset(reset: bool, text: str) -> str:
     return "Session reset. The last one was too big or gone.\n\n" + text
 
 
-def multipart(fields: dict[str, str], filename: str, blob: bytes, ctype: str) -> tuple[bytes, str]:
+def multipart(fields: dict[str, str], filename: str, blob: bytes, ctype: str, field: str = "file") -> tuple[bytes, str]:
     bound = "----rua" + uuid.uuid4().hex
     parts: list[bytes] = []
     for name, value in fields.items():
@@ -2562,7 +2788,7 @@ def multipart(fields: dict[str, str], filename: str, blob: bytes, ctype: str) ->
     parts.append(
         (
             f"--{bound}\r\n"
-            f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'
+            f'Content-Disposition: form-data; name="{field}"; filename="{filename}"\r\n'
             f"Content-Type: {ctype}\r\n\r\n"
         ).encode()
         + blob
@@ -3124,7 +3350,19 @@ def process_work_item(token: str, job: dict, delivery_notify=None) -> None:
     if coordinator is not None and coordinator.epoch != epoch:
         remove_inbox_job(job["id"])
         return
+    documents: list[Path] = []
+    reply, file_paths = extract_file_sends(reply)
+    for raw_path in file_paths:
+        try:
+            documents.append(validate_file_send(raw_path))
+        except ValueError:
+            reply = f"{reply}\n\n{DOC_REFUSED}{raw_path}".strip()
     enqueue_outbox(job["id"], chat_id, reply)
+    try:
+        for doc_path in documents:
+            enqueue_document(job["id"], chat_id, doc_path)
+    except Exception as exc:  # file delivery must never endanger the text reply
+        write_text(LAST_ERROR_FILE, f"document send: {exc}")
     # Once the result is durable, the work is complete. Retire the inbox job
     # before delivery so a crash after Telegram accepts the reply cannot cause
     # recovery to append a false generic failure.
@@ -3184,6 +3422,10 @@ def handle_update(token: str, update: dict, enqueue) -> int:
         reply = handle_prompt(
             token, int(chat_id), msg.get("message_id"), text
         )
+        # Instant commands never send files; a stray FILE+ trailer from a
+        # slash-brainstorm must not leak to the phone. Real asks take the
+        # worker path, where FILE+ becomes a document delivery.
+        reply, _dropped_paths = extract_file_sends(reply)
         safe_send(token, int(chat_id), reply)
         append_metric(
             {
@@ -3301,6 +3543,7 @@ def cmd_check() -> int:
     print(f"owner user   {owner}")
     eleven = (env.get("ELEVENLABS_API_KEY") or "").strip()
     print(f"scribe       {'ok' if eleven else 'missing ELEVENLABS_API_KEY'}")
+    print(f"google       {'live' if google_live_enabled() else 'off (repo record answers)'}")
     setting = configured_engine()
     required = engine_order() if setting == "auto" else [setting]
     print(f"engine       {setting}")

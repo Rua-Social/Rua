@@ -86,6 +86,25 @@ knowledge base or permanent media archive.
   "Save this as intake. No action yet." is held without running the engine
   and returns a receipt. Voice may add a todo only when it explicitly says
   "Add one todo: ..."; it never closes a todo.
+- Live Google is off by default on the phone seat (`DESK_GOOGLE` unset or
+  anything but `live`). A current mail, calendar, or Drive ask is answered
+  from the repository record when that genuinely covers it; otherwise the
+  desk emits the parked-Google sentence, the bridge parks it once on the
+  desk diary, and the pocket brief rides along. No capability gate, no
+  engine fallthrough, no LIVE WORKSPACE wrapper. `DESK_GOOGLE=live` in
+  `desk-bridge.env` restores the gated live-lookup behavior; the Google
+  bullets below (capability gate, workspace language, multi-entity,
+  read-only lookups, founder-evidence precedence) apply only then.
+- When the founder explicitly asks for a file, the desk reply may carry
+  one hidden `FILE+ <path>` trailer. The bridge strips it, validates the
+  path (a regular file inside the repo, `~/Downloads`, or `~/Desktop`; no
+  hidden path components; ≤50MB), delivers the text first, then sends the
+  document with Telegram `sendDocument` through the same durable outbox.
+  A refused path gets one plain sentence naming it; a failed send retries
+  at most 3 times, then texts the Mac path. A restart resumes a pending
+  document without resending the text or rerunning the engine.
+- An engine run that finishes with no reply text sends "The desk came
+  back with nothing. Send it again." and names the stage in `last_error`.
 - Asks that require current Gmail, Calendar, or Drive data are
   capability-gated: the selected engine must make a live Google tool call
   before its answer is accepted. In `auto` mode, an engine that cannot do so
@@ -182,14 +201,18 @@ python3 30-tools/desk-bridge/bridge.py --install
 ```
 
 Then DM `@Rua_desk_bot`; send a text, a second text while the first
-is running, an obvious Google ask (calendar or last mail), and a
-voice note. The Google ask must come back as the live result, not
-"Google isn't on this phone seat." `/status` must show effort,
+is running, a current mail or calendar ask, and a voice note. With
+Google off, the ask comes back from the repository record or as the
+parked-Google sentence with the pocket brief — never a three-engine
+wait. `/status` must show effort,
 queue depth, pending, and last timing as plain lines, not JSON.
 `/brief` and `/todo` must not mention a `lists.md` diary line.
 A desk ask that names a commitment must show that line on the next
 `/todo` and must not print `LIST+`. A voice note that reports a done
 must not close the list; the reply ends with the voice-refusal line.
+"Send me <a repo file>" must deliver the text answer first and then the
+file as a Telegram document; a path outside the allowed roots gets the
+plain refusal sentence.
 
 `EXPERIENCE.md` is the session contract. A later change that
 touches pairing, waiting, voice-fail, voice capture, or session-drop must

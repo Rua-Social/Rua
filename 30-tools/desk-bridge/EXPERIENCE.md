@@ -25,6 +25,7 @@ not this seat.
 | Idea | `/idea …` or `idea …` | Instant. Short stays on the list. Longer goes to `20-studio/ideas/`. |
 | Brainstorm | `/brainstorm …` or `brainstorm …` | Eyes + typing. A short think comes back. Not a deck. |
 | Desk ask | Other text from the paired user | One short result from the desk. A real commitment lands on `todo.md`. A done moves to `todo-done.md`. A refused write says so in one line. Machine `LIST+` lines never show. |
+| File | Ask for the file: "send me the Ecoplex month-1 PDF", or have a doc made and sent | The text answer, then the document. Repo, Downloads, or Desktop only. One file per ask. A raw `FILE+` line never shows. |
 | Voice ask | A voice note from the paired user | Transcribe, then the same path as text, except it never closes the todo. |
 | Voice intake | A voice note beginning “Save this as intake. No action yet.” | Save the information without running the desk or changing todos; return a receipt. |
 | Working | After an ask is accepted | Eyes reaction plus typing. |
@@ -46,11 +47,11 @@ not this seat.
 | "Claude is busy. Try again in a minute." | Wait silently for an upstream first response. The engine name follows fixed mode. |
 | "The desk timed out. Send it again or try a smaller ask." | A stack trace or a fifteen-minute wait |
 | "Couldn't transcribe that. Try again or type it." | Guess at a garbled note |
-| Name the repo path when work creates a file | Claim the text-only bridge attached it |
+| An asked-for file arrives as a document; the path is named either way | A raw `FILE+` line on the phone, or claiming a file was attached when it wasn't |
 | "On the list." / "Sent to the desk." | "Got it!" "Love this idea!" "I'll brainstorm that for you" |
 | A commitment becomes one todo line; the reply stays the result | `LIST+` on the phone, a todo in `lists.md`, niceties on the open list |
 | The instance or todo answer first | Lead with a Google miss when the card already has it |
-| Live mail, calendar, Drive from the Gmail / Calendar / Drive tools | Mail.app, Calendar.app, Chrome, "Google isn't on this phone seat" |
+| Current-data asks: the record answers when it covers the ask, else the parked sentence in seconds | Hanging on Google, a three-engine failure run, Mail.app, Calendar.app, Chrome |
 | Filter: escalate what blindsides, handle the ask, park niceties | A studio essay, a second org, "on it" |
 | Client-facing files: written for the person who sits with them, and the person they are for | Internal paths, steal-language, process notes, names that are not in the room |
 | Links they send are the thing: a still they recognise, then a click | A table of URLs the founder has to talk through |
@@ -73,7 +74,7 @@ this table.
 | Timeout (5 min) | "The desk timed out. Send it again or try a smaller ask." |
 | Fixed engine missing | "Claude is busy. Try again in a minute." The engine name follows the configured engine. |
 | Other desk fail | "Desk hit an error. /status" |
-| Empty Grok text | "(no text)" |
+| Empty engine reply | "The desk came back with nothing. Send it again." |
 | Voice, no key | "Voice is saved, but the ElevenLabs key is missing." |
 | Voice, no file | "That voice note had no file." |
 | Voice fail | "Couldn't transcribe that. Try again or type it." |
@@ -86,7 +87,11 @@ this table.
 | Session restored at the wrong effort | "Session reset. The last one was too big or gone." then the new reply. |
 | Wrong inbound type | "Text or a voice note." |
 | Long reply | Extra Telegram messages, no "1/2". |
-| Google tools missing | "Google tools are not on this process." The bridge, not the desk prompt, detects this after a live lookup is attempted. Not the parked-Google sentence. Not `/mcps`. |
+| Google tools missing (live mode) | "Google tools are not on this process." The bridge, not the desk prompt, detects this after a live lookup is attempted. Not the parked-Google sentence. Not `/mcps`. |
+| Current mail/calendar/Drive ask, Google off | The record answer when it genuinely covers the ask. Otherwise "Google isn't on this phone seat. Parked on the desk list." plus the pocket brief. Seconds, not a three-engine wait. |
+| File asked for | The text answer, then the document. |
+| File refused | "Can't send that file from the phone seat. It's at …" |
+| File send failed | Three tries, then: "That file didn't send. It's on the Mac: …" |
 | Park, nothing after the word | "Say what to park." |
 | Parked | "On the list." |
 | Idea, nothing after the word | "Say the idea." |
@@ -112,6 +117,7 @@ this table.
 Text, voice note, `/help`, `/start`, `/new`, `/engine`, `/status`, `/brief`, `/todo`, `/park`, `/idea`.
 An unknown `/command` is help, not an engine ask. The words `status`, `brief`, `todo`, `park`, and `idea` are commands.
 `/new`, a valid `/engine` switch, and the other commands cut the line. They do not wait behind an engine ask. `/new` does not change the selected engine.
+Ask for a file and it arrives as a Telegram document — the repo, Downloads, or Desktop only, one file per ask.
 
 Not this seat: Slack, TTS, images, video notes, the official
 Telegram plugin, anyone else's Telegram, a fifth Grok room.
@@ -164,6 +170,10 @@ completeness, engagement.
 4. He can restate the ask. `/status` will not say "none" as if nothing happened.
 
 ### Flow 3 — Tomorrow brief (founder, on the street)
+
+Live-Google flow. Applies when `DESK_GOOGLE=live`; while Google is off,
+a current-data ask gets the record answer or the parked sentence in
+seconds, and flows 3–3c do not run.
 
 1. Asks what's on the calendar tomorrow, last doc on Drive, last mail.
 2. Eyes and typing.
@@ -231,11 +241,20 @@ completeness, engagement.
 3. **Worked:** the result is returned and the line appears on `/todo`.
 4. Any inferred action without that phrase is not added.
 
+### Flow 8 — File to the phone (founder, away from the Mac)
+
+1. Asks for a file — "send me the Ecoplex month-1 PDF" — or asks for a doc to be made and sent.
+2. Eyes and typing. The desk works; the text answer lands, then the document.
+3. **Worked:** the file opens on the phone.
+4. Failure: a path outside the repo, Downloads, or Desktop → "Can't send that file from the phone seat. It's at …"; a failed send → three quiet retries, then "That file didn't send. It's on the Mac: …".
+
 ## Parked
 
 1. Mark chunked replies (1/2).
 2. Split the three voice-fail causes.
-3. Telegram file attachments. This bridge sends text and repo paths.
+3. Live Google on the phone seat. Suspended 27 Aug: it never returned an
+   answer the founder trusted and hung on failure. The machinery stays,
+   gated behind `DESK_GOOGLE=live`.
 4. Google's remote MCP servers (`/mcps` `i`). Phone `grok -p` gets
    grok.com Gmail / Calendar / Drive via managed gateway env, the
    same connectors as the dashboard TUI. Not a second Google login.

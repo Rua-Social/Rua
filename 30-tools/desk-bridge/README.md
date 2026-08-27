@@ -8,7 +8,8 @@ conductor out. Not a new org chart. How the phone behaves:
 
 You DM `@Rua_desk_bot`. A launchd process on this Mac runs the selected
 engine in `~/Rua` and texts you back. A voice note is transcribed first,
-then takes the same path.
+then takes the same path. Ask for a file and it arrives as a Telegram
+document.
 
 Out of scope: Slack, spoken replies, images, a public webhook,
 anyone else's Telegram, the official Claude Telegram plugin.
@@ -49,6 +50,15 @@ From the paired Telegram DM, `/engine auto|claude|codex|grok` persists a
 local override without rewriting the secrets file. Switching clears the
 current engine session, queued asks, and cooldowns; `/new` clears the session
 and queue without changing the selected engine.
+
+Live Gmail, Calendar, and Drive on the phone seat are off by default: a
+current-data ask is answered from the repository record when that covers
+it, or parked with one plain sentence in seconds. To restore the gated
+live-lookup behavior, set in `desk-bridge.env`:
+
+```bash
+export DESK_GOOGLE=live
+```
 
 Voice notes also need `~/.grok/secrets/elevenlabs.env`:
 
@@ -116,6 +126,15 @@ Completed work is written to a local outbox before Telegram delivery,
 so a transient send failure does not rerun the work. A dedicated sender
 retries without blocking message pickup or the sole engine worker. One
 ask runs at a time; later messages are acknowledged and queued.
+
+Ask for a file — "send me the Ecoplex month-1 PDF" — and the desk sends
+it as a Telegram document after the text answer. The desk can also create
+the file first (a tailored pricing doc, a PDF) and send it the same way.
+Paths must sit in the repo, `~/Downloads`, or `~/Desktop`; one file per
+ask, 50MB cap, no hidden path components. Refusals and failed sends come
+back as one plain sentence naming the Mac path. Document sends ride the
+same durable outbox as text: a restart resumes a pending document without
+resending the text or rerunning the engine.
 
 Voice records move through `queued`, `downloaded`, `transcribing`,
 `transcribed`, `engine-running`, and `completed`. A restart never replays a
