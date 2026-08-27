@@ -17,10 +17,10 @@ itself.
 
 ## Done
 
-- Bare `rua-desk` presents Claude, Codex, Grok, and Gemini as selectable
-  seats when attached to a terminal.
+- Bare `rua-desk` presents Claude, Codex, Grok, Gemini, and Kimi Code as
+  selectable seats when attached to a terminal.
 - Direct commands remain available: `claude`, `codex`, `grok`, `gemini`,
-  and Grok's `grok-one` single-session mode.
+  `kimi`, and Grok's `grok-one` single-session mode.
 - `status`, `card`, `ping`, and `help` remain available.
 - Every harness starts with the Rua repository as its working directory.
 - A missing harness, missing repository, invalid selection, and unknown

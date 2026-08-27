@@ -17,6 +17,7 @@ seat_label() {
     codex) print -r -- "Codex" ;;
     grok) print -r -- "Grok" ;;
     gemini) print -r -- "Gemini" ;;
+    kimi) print -r -- "Kimi Code" ;;
     *) print -r -- "$1" ;;
   esac
 }
@@ -40,6 +41,7 @@ print_status() {
   printf "  %-8s  %s\n" "codex" "$(seat_version codex)"
   printf "  %-8s  %s\n" "grok" "$(seat_version grok)"
   printf "  %-8s  %s\n" "gemini" "$(seat_version gemini)"
+  printf "  %-8s  %s\n" "kimi" "$(seat_version kimi)"
   print
   print -r -- "The repo is the desk. Choose the harness that fits this sitting."
   print -r -- "Operator card: 20-studio/desk.md"
@@ -53,6 +55,7 @@ rua-desk codex        open Codex CLI
 rua-desk grok         open the Grok dashboard
 rua-desk grok-one     open one Grok session
 rua-desk gemini       open Gemini CLI
+rua-desk kimi         open Kimi Code CLI
 rua-desk status       show installed seats and versions
 rua-desk card         print the operator card
 rua-desk ping         ask each installed seat one line
@@ -79,6 +82,7 @@ launch_seat() {
     claude) exec claude ;;
     codex) exec codex ;;
     gemini) exec gemini ;;
+    kimi) exec kimi ;;
   esac
 }
 
@@ -104,6 +108,7 @@ print_menu() {
   print -r -- "  2  Codex"
   print -r -- "  3  Grok dashboard"
   print -r -- "  4  Gemini"
+  print -r -- "  5  Kimi Code"
   print
   print -r -- "  s  Status"
   print -r -- "  c  Operator card"
@@ -115,7 +120,7 @@ choose_seat() {
   local choice=""
   print_menu
   while true; do
-    printf "Choose a seat [1-4, s, c, q]: "
+    printf "Choose a seat [1-5, s, c, q]: "
     choice=""
     if ! IFS= read -r choice; then
       print
@@ -128,10 +133,11 @@ choose_seat() {
       2|codex) launch_seat codex ;;
       3|grok) launch_seat grok ;;
       4|gemini) launch_seat gemini ;;
+      5|kimi) launch_seat kimi ;;
       s|status) print; print_status; print ;;
       c|card) show_card; print; print_menu ;;
       q|quit|exit) print -r -- "Desk closed."; return ;;
-      *) print -r -- "Choose 1-4, a seat name, s, c, or q." ;;
+      *) print -r -- "Choose 1-5, a seat name, s, c, or q." ;;
     esac
   done
 }
@@ -163,13 +169,14 @@ ping_seats() {
   ping_one claude claude -p "Reply with exactly one line: CLAUDE_OK then your model name. Do not use tools. Do not explain." --output-format text --disable-slash-commands &
   ping_one gemini gemini -p "Reply with exactly one line: GEMINI_OK then your model name. Do not use tools. Do not explain." -o text --approval-mode plan --skip-trust &
   ping_one codex codex exec --skip-git-repo-check -C "$workdir" "Reply with exactly one line: CODEX_OK then your model name. Do not use tools. Do not explain." &
+  ping_one kimi kimi -p "Reply with exactly one line: KIMI_OK then your model name. Do not use tools. Do not explain." --output-format text &
   wait
 
   local seat
-  for seat in claude codex grok gemini; do
+  for seat in claude codex grok gemini kimi; do
     printf "%-8s  " "$seat"
     if [[ -s "$workdir/$seat.txt" ]]; then
-      grep -E -m1 "${seat:u}_OK|GROK_OK|CLAUDE_OK|GEMINI_OK|CODEX_OK|^$seat:" "$workdir/$seat.txt" \
+      grep -E -m1 "${seat:u}_OK|GROK_OK|CLAUDE_OK|GEMINI_OK|CODEX_OK|KIMI_OK|^$seat:" "$workdir/$seat.txt" \
         || tail -n 3 "$workdir/$seat.txt" | tr '\n' ' '
       print
     else
@@ -192,7 +199,7 @@ case "$command_name" in
       print_status
     fi
     ;;
-  claude|codex|grok|gemini) launch_seat "$command_name" ;;
+  claude|codex|grok|gemini|kimi) launch_seat "$command_name" ;;
   grok-one) launch_grok_one ;;
   status) print_status ;;
   card) show_card ;;

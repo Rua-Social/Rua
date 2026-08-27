@@ -30,7 +30,7 @@ the terminal's pixels.
 
 | State | What they see or hear | Gap |
 | --- | --- | --- |
-| Ready | Four numbered seats plus status, card, and quit | None |
+| Ready | Five numbered seats plus status, card, and quit | None |
 | Launching | `Opening <seat> at <repo>` | None |
 | Missing harness | `<seat> is not installed or not on PATH.` | Installation itself stays with that vendor |
 | Missing repo | `Rua repo not found at <path>. Set RUA_REPO to the checkout.` | None |
@@ -72,14 +72,14 @@ Do not optimize: feature parity between harnesses.
 ### Flow 1 — Choose a seat (founder, starting work)
 
 1. Run `rua-desk`.
-2. Read the four seats and choose by number or name.
+2. Read the five seats and choose by number or name.
 3. **Worked:** see `Opening <seat> at <repo>`, then the selected harness.
 4. Failure: a missing harness is named plainly and the founder returns to
    the terminal.
 
 ### Flow 2 — Open a known seat (founder, resuming work)
 
-1. Run `rua-desk claude`, `codex`, `grok`, or `gemini`.
+1. Run `rua-desk claude`, `codex`, `grok`, `gemini`, or `kimi`.
 2. **Worked:** the named harness opens directly in the Rua repository.
 3. Failure: an unknown command prints help; a missing executable names the
    missing seat.

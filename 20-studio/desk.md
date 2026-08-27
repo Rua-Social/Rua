@@ -19,12 +19,13 @@ VS Code can host a chat panel or a terminal. It does not become the
 coordinator just because four models are installed. The coordinator is
 the repository: `AGENTS.md`, the right skill, and files on disk.
 
-## One repo, four seats
+## One repo, five seats
 
 The personal OS is this repo opened through whichever harness fits the
 sitting. Run bare `rua-desk` and choose the seat. No harness owns the desk.
 
-- **Entry:** `rua-desk`. Claude, Codex, Grok, and Gemini are equal choices.
+- **Entry:** `rua-desk`. Claude, Codex, Grok, Gemini, and Kimi Code are
+  equal choices.
 - **State:** Git. If it is not a file, it is not the org.
 - **Procedure:** a skill, when the work is a repeated method.
 - **Hands:** the selected harness and the tools it genuinely has.
@@ -57,6 +58,7 @@ What works:
 | Claude Code | Claude's own harness. Plugins, Claude memory. | Anthropic | `rua-desk claude` |
 | Gemini CLI | Google's own harness. Multimodal if you use it. | Google | `rua-desk gemini` |
 | Codex | OpenAI harness in ChatGPT.app. Computer use. GPT-5.6. | ChatGPT | `rua-desk codex` |
+| Kimi Code | Kimi's own harness. K2.7-Code / K3 direct on Moonshot, full hands, repo skills. No Grok cage. | kimi login | `rua-desk kimi` |
 
 `rua-desk grok` opens the dashboard. `rua-desk grok-one` opens a
 single session if you want a quiet thread.
@@ -64,7 +66,7 @@ single session if you want a quiet thread.
 ## Sit down
 
 1. Run `rua-desk`.
-2. Choose Claude, Codex, Grok, or Gemini for this sitting.
+2. Choose Claude, Codex, Grok, Gemini, or Kimi Code for this sitting.
 3. Name the class before loading doctrine. See `AGENTS.md`.
 4. Stay in that harness until the work needs different hands or a thread
    is already in flight elsewhere. Git and files carry the handoff.
@@ -75,6 +77,7 @@ rua-desk claude    # open Claude Code directly
 rua-desk codex     # open Codex directly
 rua-desk grok      # open the Grok dashboard directly
 rua-desk gemini    # open Gemini directly
+rua-desk kimi      # open Kimi Code directly
 rua-desk status    # see what is installed
 rua-desk ping      # each installed seat answers one line
 ```
@@ -227,7 +230,9 @@ review prompt):
   managed gateway env. Google's remote MCP servers are not the path:
   `/mcps` `i` hangs. Not Mail.app. Not a local mail CLI.
 - Multimodal: Gemini CLI, or `ai-cli` Gemini for a one-shot.
-- Phone: never Kimi, never a four-seat fan-out.
+- Phone: one ask, one engine, no fan-out. Kimi is a desktop seat, not
+  a phone engine. Any new phone engine must prove first-event speed and
+  per-ask cost on this seat before it enters the configured order.
 
 `kimi_run` is a reader. That is still the point of the MCP.
 `/model kimi-code` can write. The 17 Aug timeout was the cage, not
@@ -245,6 +250,7 @@ Do not put Kimi inside Claude Code for Grok to call.
 | Tool / software | Any installed seat | Use `rua-ship-gate`. In Grok, this is `tools`. |
 | Papa Rua | Any installed seat | Read `40-papa-rua/README.md`. In Grok, this is `papa`. |
 | Claude-only memory or Claude plugins | Claude Code | Different hands, not a Grok `/model` switch. |
+| Kimi skills, K3 with full hands, a mostly-Kimi sitting | Kimi Code | Different hands, not a `kimi_run` cage or a Grok `/model` switch. |
 | Gemini-only account, multimodal CLI | Gemini CLI | Different hands. |
 | Computer use / a Codex thread already in flight | Codex | Finish it there. Resume with the resume-codex skill. |
 
@@ -268,6 +274,11 @@ The bus is Git and files, not a chat export.
 Kimi is a Moonshot API model on this machine. `/model kimi` and
 `/model kimi-code` are live. The key is `MOONSHOT_API_KEY`, not
 in Git.
+
+Kimi the brain is inside Grok. Kimi Code the harness is not: it is
+its own seat (`rua-desk kimi`) with full hands, this repo's skills,
+and no reader cage. When the sitting is mostly Kimi, open the seat
+instead of fighting `/model` inside Grok.
 
 OpenRouter is still not set up. Do not add Claude or GPT as Grok
 `/model` entries unless there is an API key for that vendor and a

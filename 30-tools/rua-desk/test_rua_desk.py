@@ -25,7 +25,7 @@ class RuaDeskTests(unittest.TestCase):
         (self.repo / "20-studio" / "desk.md").write_text(
             "# Test operator card\n", encoding="utf-8"
         )
-        for seat in ("claude", "codex", "grok", "gemini"):
+        for seat in ("claude", "codex", "grok", "gemini", "kimi"):
             fake = self.bin / seat
             fake.write_text(
                 "#!/bin/sh\n"
@@ -64,6 +64,7 @@ class RuaDeskTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn(f"Rua desk  {self.repo}", result.stdout)
         self.assertIn("claude test-version", result.stdout)
+        self.assertIn("kimi test-version", result.stdout)
         self.assertIn("The repo is the desk.", result.stdout)
         self.assertNotIn("Choose a seat [", result.stdout)
 
@@ -73,12 +74,22 @@ class RuaDeskTests(unittest.TestCase):
             "codex": "",
             "grok": "dashboard",
             "gemini": "",
+            "kimi": "",
+        }
+        expected_labels = {
+            "claude": "Claude",
+            "codex": "Codex",
+            "grok": "Grok",
+            "gemini": "Gemini",
+            "kimi": "Kimi Code",
         }
         for seat, args in expected_args.items():
             with self.subTest(seat=seat):
                 result = self.run_desk(seat)
                 self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertIn(f"Opening {seat.title()} at {self.repo}", result.stdout)
+                self.assertIn(
+                    f"Opening {expected_labels[seat]} at {self.repo}", result.stdout
+                )
                 self.assertIn(
                     f"FAKE {seat} PWD={self.repo} ARGS={args}", result.stdout
                 )
@@ -107,7 +118,7 @@ class RuaDeskTests(unittest.TestCase):
         env = {**self.env, "RUA_DESK_INTERACTIVE": "1"}
         result = self.run_desk(input_text="nope\nq\n", env=env)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Choose 1-4, a seat name, s, c, or q.", result.stdout)
+        self.assertIn("Choose 1-5, a seat name, s, c, or q.", result.stdout)
         self.assertIn("Desk closed.", result.stdout)
         self.assertEqual(result.stdout.count("Choose a seat ["), 2)
         self.assertNotIn("choice=", result.stdout)
@@ -143,6 +154,7 @@ class RuaDeskTests(unittest.TestCase):
         self.assertIn("rua-desk codex", result.stderr)
         self.assertIn("rua-desk grok", result.stderr)
         self.assertIn("rua-desk gemini", result.stderr)
+        self.assertIn("rua-desk kimi", result.stderr)
 
     def test_missing_repo_is_plain_and_actionable(self) -> None:
         missing = self.root / "missing"

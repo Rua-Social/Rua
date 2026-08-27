@@ -1,7 +1,7 @@
 # rua-desk
 
 Terminal front door for the Rua desk. The repo is the desk; Claude, Codex,
-Grok, and Gemini are selectable harness seats.
+Grok, Gemini, and Kimi Code are selectable harness seats.
 
 ## Use
 
@@ -12,6 +12,7 @@ rua-desk codex        # open Codex CLI
 rua-desk grok         # open the Grok dashboard
 rua-desk grok-one     # open one Grok session
 rua-desk gemini       # open Gemini CLI
+rua-desk kimi         # open Kimi Code CLI
 rua-desk status       # show installed seats and versions
 rua-desk card         # read the operator card
 rua-desk ping         # ask every installed seat for one line
@@ -34,7 +35,7 @@ ln -sfn "$PWD/30-tools/rua-desk/rua-desk" ~/.local/bin/rua-desk
 
 Ensure `~/.local/bin` is on `PATH`. The launcher requires the macOS-provided
 Z shell. Each optional seat requires its vendor CLI (`claude`, `codex`,
-`grok`, or `gemini`) and its own login. There are no package dependencies.
+`grok`, `gemini`, or `kimi`) and its own login. There are no package dependencies.
 
 ## Verify
 
