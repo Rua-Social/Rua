@@ -31,6 +31,15 @@ nothing being built. Do not use it to protect a memoir of one job sitting
 in a skill file. Do not use it to block a proportionate improvement that
 is genuinely justified.
 
+## How work moves
+
+Work passes through fixed roles: fetch, digest, the founder decides, draft,
+then two independent gates (house style and facts). Labour and rules are
+delegated; taste and decisions are the founder's. Roles are functions any
+model can fill, not products tied to one harness. Read
+`00-system/working-roles.md` before dividing work across seats or standing up
+a new one.
+
 ## Start of a chat
 
 Name the class before loading doctrine.
