@@ -1,9 +1,9 @@
 # transcribe
 
 Turn shoot dialogue footage into transcripts for the edit-guide chat.
-Replaces the FCP closed-captions to ITT round trip: drop the dialogue
-selects in a folder, run one command, put the SRT into the chat with the
-concepts deck.
+Local mlx-whisper on this Mac. Two models: `whisper-large-v3` (edit
+guide) and `--fast` turbo (scout only). Do not send this audio to a
+cloud STT.
 
 Tested on two real shoot interviews (10 min and 17 min) against FCP's own
 captions. Whisper won on brand names, punctuation and coverage.

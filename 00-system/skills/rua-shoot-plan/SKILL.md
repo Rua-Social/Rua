@@ -77,13 +77,15 @@ to a skill that is not in this repository. When the footage is in, take the
 human's instruction for how the cuts will be made. Then come back here for the
 ledger and the handover.
 
-The default ingest from footage to edit guide: put the dialogue selects in a
-folder per shoot day or block and run `30-tools/transcribe/` on it, with a
-`--prompt` sentence built from this client's names, brands and venues. B-roll
-and exteriors are not transcribed. The SRT files go into the edit-guide chat
-with the concepts deck. Model choice and options live in the tool's README.
-Mapping lines to concepts and choosing takes stays a human chat step;
-transcription is the deterministic part.
+The default ingest from footage to edit guide is local, on this Mac.
+Put the dialogue selects in a folder per shoot day or block and run
+`30-tools/transcribe/` on it. That tool is mlx-whisper: `whisper-large-v3`
+for anything that feeds an edit guide, `--fast` (turbo) only for scouting.
+Do not send shoot dialogue to a cloud STT. `--prompt` is a sentence built
+from this client's names, brands and venues. B-roll and exteriors are not
+transcribed. The SRT files go into the edit-guide chat with the concepts
+deck. Mapping lines to concepts and choosing takes stays a human chat
+step; transcription is the deterministic local part.
 
 ---
 
