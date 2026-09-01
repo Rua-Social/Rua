@@ -27,6 +27,12 @@ class TestFindMedia:
         found = find_media(tmp_path)
         assert [p.name for p in found] == ["a.mp4", "b.wav", "c.MOV"]
 
+    def test_folder_skips_appledouble_sidecar_wavs(self, tmp_path):
+        (tmp_path / "interview.wav").touch()
+        (tmp_path / "._interview.wav").touch()
+        found = find_media(tmp_path)
+        assert [p.name for p in found] == ["interview.wav"]
+
     def test_non_media_file_rejected(self, tmp_path):
         notes = tmp_path / "notes.txt"
         notes.touch()

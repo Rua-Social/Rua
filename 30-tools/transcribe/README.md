@@ -32,8 +32,11 @@ The first run downloads the model (about 3GB) into
   --prompt "Kitchen design interview with the designer. Brand and client names here."
 ```
 
-- Input is one file or a folder. A folder is iterated sorted, media files
-  only (`mp4 mov m4v m4a wav mp3 aac`), everything else skipped.
+- The unit of work is a **folder of dialogue selects**. A single file is
+  only for a human-named clip after the folder already exists. Do not
+  pick one short file to prove the tool.
+- A folder is iterated sorted, media files only (`mp4 mov m4v m4a wav mp3
+  aac`), everything else skipped.
 - Default output is one `.srt` per input, alongside the input. `--out dir`
   redirects. `--formats srt,txt` adds a prose `.txt`.
 - `--prompt` primes names and vocabulary (brands, people, venues). Worth

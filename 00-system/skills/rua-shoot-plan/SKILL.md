@@ -3,9 +3,11 @@ name: rua-shoot-plan
 description: >
   Use this skill for a defined Rua-led content sprint: research through shoot to
   handover. Trigger on shoot plan, concepts deck, schedule, shot list, pre-production
-  reissue, delivery ledger, or handover for a sprint that has been scoped and gated.
-  Do not use it for pickup, shoot-only, edit-only, or any job where Rua is executing
-  a supplied concept. Confirm job-type before loading the stages.
+  reissue, coming home from a shoot, delivery ledger, or handover for a sprint that
+  has been scoped and gated. Do not use it for pickup, shoot-only, edit-only, or any
+  job where Rua is executing a supplied concept. Confirm job-type before loading the
+  stages. Ingest (folder of dialogue selects to local SRTs) still runs on pickup
+  via `30-tools/transcribe/`; this skill is not required for that step.
 ---
 
 # Defined Rua-led content sprint
@@ -72,20 +74,9 @@ first delivery document after the gate.
 
 If those are unclear, ask. Do not start a Week 0 deck to invent a sprint.
 
-Cutting, grade and per-asset edit guides are outside this skill. Do not hand off
-to a skill that is not in this repository. When the footage is in, take the
-human's instruction for how the cuts will be made. Then come back here for the
-ledger and the handover.
-
-The default ingest from footage to edit guide is local, on this Mac.
-Put the dialogue selects in a folder per shoot day or block and run
-`30-tools/transcribe/` on it. That tool is mlx-whisper: `whisper-large-v3`
-for anything that feeds an edit guide, `--fast` (turbo) only for scouting.
-Do not send shoot dialogue to a cloud STT. `--prompt` is a sentence built
-from this client's names, brands and venues. B-roll and exteriors are not
-transcribed. The SRT files go into the edit-guide chat with the concepts
-deck. Mapping lines to concepts and choosing takes stays a human chat
-step; transcription is the deterministic local part.
+Cutting sits in `reel-edit-guide`, after Stage 7b has SRTs on disk.
+The handover sits in Stage 8, after the cuts exist. Do not merge those
+two documents. Do not open `reel-edit-guide` to skip ingest.
 
 ---
 
@@ -194,6 +185,30 @@ Single day is the default. More days only when the scope and the price say so.
 Later days, if scoped, run as solo pickup: B-roll, exteriors, anything that
 did not land. No client coordination is required on a solo pickup day.
 
+### Stage 7b, Coming home (ingest)
+
+The unit of work is the dialogue-selects folder for that day or block.
+This is the automation that is in place. Transcription is deterministic.
+Mapping is not.
+
+1. Name the folder. One shoot day or block. Not one clip. Not a slice of
+   a long interview. If the folder is missing, ask. Do not substitute.
+2. Run `30-tools/transcribe/` on that folder. Local mlx-whisper,
+   `whisper-large-v3`. `--fast` is scout-only and does not feed a guide.
+   Do not send shoot dialogue to a cloud STT. Skip AppleDouble `._` files.
+3. `--prompt` is one sentence of this client's names, brands and venues.
+   B-roll and exteriors stay out of the folder.
+4. Write the SRT set to the vault offload for this job. Never Desktop.
+   Never Git.
+5. Stop. Put the SRT set in the chat with the latest concepts deck.
+   Mapping lines to concepts, choosing takes, and writing the edit guide
+   is the next human step. `reel-edit-guide` starts there.
+
+Forbidden: picking the smallest clip to prove Whisper works; writing a
+deck or PDF before the folder has SRTs; treating an export still as
+ingest when the camera original exists; folding the SRT dump into a
+handover.
+
 ### Stage 8, Delivery and closeout
 
 After the cuts exist, build the delivery ledger and the handover. Read
@@ -234,7 +249,11 @@ each other. A paused or narrower sprint may stop before all six exist.
 **Delivery, client-facing**
 
 6. **Handover.** Ledger if a floor was sold, made assets, pending items, copy,
-   location, next. Stage 8.
+   location, next. Stage 8. Built after the cuts exist.
+
+The edit guide is an internal cut list. It is not one of these six. It is
+owned by `reel-edit-guide`, after Stage 7b. Do not ship it to the client
+as if it were the handover.
 
 Build instructions for HTML decks are in `references/document-build.md`.
 That file is a recipe. Approved client assets beat it.

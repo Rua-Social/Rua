@@ -3,9 +3,10 @@
 Stage 8. Two artefacts close a full sprint: the delivery ledger and the
 handover. Both are built after the cuts exist.
 
-Cutting is outside this skill. Do not call a skill that is not in this
-repository. Take the human's instruction for how the cuts were made, then
-reconcile and hand over.
+Cutting is outside this skill. The night-of cut list is `reel-edit-guide`,
+and only after Stage 7b has SRTs on disk. Take the human's instruction for
+how the cuts were made, then reconcile and hand over. Do not rebuild the
+edit guide inside the handover.
 
 Match the handover to what was sold. A light handover is correct when the
 finish is files plus captions. A fuller handover is correct when a floor

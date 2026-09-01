@@ -1,81 +1,113 @@
 ---
 name: reel-edit-guide
-description: Generate a structured, timestamped edit guide for Instagram Reels from interview transcripts (.itt or similar caption files). Use this skill whenever the founder uploads a transcript, mentions editing a Reel, asks for edit points, wants to identify a hook or money line, or needs to structure interview footage into a 60-75 second short-form video. Triggers on phrases like "edit guide", "cut this down", "find the hook", "what should I use from this interview", or any time a transcript file is provided alongside a request to produce video content.
+description: >
+  Use after transcripts exist for a shoot. Build the internal cut list:
+  source clock, flags, global cut list, B-roll map, per-piece IN and OUT.
+  Trigger on edit guide, cut list, hook, money line, or "what do I use
+  from this." Do not use to write a handover — that reads the exports.
 ---
 
-# Reel Edit Guide
+# Edit guide
 
-Produces a structured, timestamped edit guide from an interview transcript for a 60–75 second Instagram Reel.
+Internal working document. Not client-facing.
 
-## Inputs
-
-- A transcript file (`.itt`, `.srt`, `.vtt`, or plain text with timestamps)
-- Context about the subject/brand (provided in conversation or inferred from transcript)
-- Target duration: 60–75 seconds (default), adjustable if specified
-
-## Output Format
-
-Produce a guide with four sections:
-
----
-
-**EDIT GUIDE — [Subject/Brand] Reel ([target duration])**
+The editor makes real decisions from this: might leave something out,
+add something else, name it differently. The handover reads the exports
+as they land, not this guide. Do not try to predict those decisions here.
 
 ---
 
-**HOOK (0:00–0:05)**
-`[timestamp]`
-*"Quote"*
-→ Why this line works as a hook. What emotion or curiosity it creates.
-**B-roll suggestion:** Visual that would pair well.
+## Before starting
+
+State at the top:
+
+- **Source:** what file or FCP sequence the timecodes come from.
+  Raw clip clock and sequence clock are not the same. Say which.
+- **Purpose:** what this guide is for (sold films, social cutdowns,
+  FAQ master, etc.)
+- **Target runtime** if there is one.
+- **Aspect** if it matters (9:16, 16:9, both).
 
 ---
 
-**NARRATIVE BODY (0:05–0:50)**
+## Flags
 
-For each included clip:
-`[start – end timestamp]`
-*"Quote or paraphrase"*
-→ Why it's included. What it adds to the story.
-**B-roll suggestion:** (if relevant)
+Client decisions that must be resolved before polish. List them near
+the top, numbered. Typical reasons: consent for a face on public
+channels, a figure someone might flinch at, a refused credit, a brand
+spelling, a line they disavowed on camera.
 
-For each skipped section:
-*[CUT — skip [timestamp range], reason e.g. "tangent", "too technical", "pace killer"]*
+A flag is a stop, not a caption note.
 
 ---
 
-**CALL TO ACTION (0:50–end)**
-`[timestamp]`
-*"Quote"*
-→ Brief note on delivery or overlay text suggestion.
+## Global cut list
+
+Gone from every cut, no review. Common entries:
+
+- Slates and take-heads
+- Darragh / crew prompts (trim; use text cards where the question is needed)
+- Coaching, restarts, upset — hard exclude
+- Crew mess in frame unless lived-in is the look
+- Lines the subject rejected on camera
 
 ---
 
-## Process
+## B-roll map
 
-1. **Read the full transcript first.** Don't start selecting until you've scanned the whole thing.
+Named clips, what each shows, what audio line it pairs with. One table
+or list per location or block. This is the overlay bank — same shots
+can cover multiple pieces with different audio.
 
-2. **Identify the money line.** The single most emotionally resonant or surprising quote. This usually anchors the middle-to-end of the body section.
+---
 
-3. **Work backwards to find the hook.** Pick the line most likely to stop a scroll. Should raise a question or make a bold claim. Avoid intros, pleasantries, or anything that requires context to land.
+## Pieces
 
-4. **Build the body.** Select 3–5 clips that form a logical arc: problem → craft/process → payoff. Cut anything that is tangential, repetitive, or slows pace.
+One block per piece. Grade first:
 
-5. **Find or note a natural CTA.** A line where the subject mentions where to find them, what they make, or a clear next step. If none exists, flag it so the founder can add a caption overlay.
+- **CUT FIRST** — sold, or the first thing that has to exist tonight
+- **HARVEST** — extra cut from the same spine; new audio or new first
+  frame, same pictures where that was the point
+- **HOLD** — needs a human decision before polish; do not ship it
 
-6. **Check total runtime.** Estimate read/spoken duration of selected clips. Aim for 45–55 seconds of interview audio to leave room for B-roll pauses and music. Flag if over or under.
+Per piece:
 
-## Principles
+1. Source file and clock
+2. IN — OUT (with anchor phrase at each end so a recut survives a re-export)
+3. Picture: named clips, not generic descriptions
+4. Mute-proof first line — lifted from real speech; placeholder if
+   nothing works yet; never invented
+5. Hard exclude for this piece
 
-- **Cut ruthlessly.** A 90-second answer usually has 8 seconds of gold. Find it.
-- **Preserve natural speech rhythm.** Don't cut mid-thought in a way that sounds jarring.
-- **Label every cut.** Always explain why something was removed, not just what was kept.
-- **B-roll is story.** Suggest specific visuals that reinforce the line, not generic "product shot" notes.
-- **One narrative thread.** If the transcript covers multiple topics, pick the strongest one and cut the rest.
+---
 
-## Edge Cases
+## What this is not
 
-- **No clear hook in transcript:** Flag this. Suggest the best available option and note that a written caption hook may be needed instead.
-- **Interview is under 3 minutes:** May not have enough material. Note this and suggest follow-up questions to fill gaps.
-- **Multiple strong money lines:** Pick the most emotional one for the body. Note the others as potential hook alternatives or for a second cut.
-- **Subject speaks in long, unbroken paragraphs:** Identify natural breath pauses or sentence ends that could serve as cut points. Note them explicitly.
+**Not the handover.** The handover is built after exports exist. It reads
+the exported files, maps them against what was sold (floor / landed /
+upside), pulls suggested copy from real lines, and notes what is still
+open. That shape comes from `references/delivery-closeout.md` in the
+shoot-plan skill.
+
+**Not a social cutdown plan.** If the job needs a ranked bank of social
+clips with hook strategy and package recommendation, that is a separate
+document. Same source footage, different purpose.
+
+---
+
+## Delivery
+
+Working files live in the vault offload for this job. Never Desktop.
+Never Git.
+
+If they asked for a file on the phone: direction line first, then one
+A4 PDF from the document-build recipe. No SRT, wav, html, or txt dump.
+
+---
+
+## House style
+
+- No em dashes.
+- No invented quotes.
+- Timecodes from the source clock, stated once at the top.
+- Caption laws, taboos, and tone come from this job.
