@@ -289,35 +289,28 @@ Until then this note is the desk.
 
 ## On the phone
 
-Telegram bot `@Rua_desk_bot` is the same desk, reached while away.
-The process lives on this Mac: `30-tools/desk-bridge/`.
-It is a seat, not a fifth room and not a new agent file.
+The phone is Hermes Telegram. One session, moved on purpose:
+`/handoff telegram` from the desk, resume the same session when you sit
+down. Do not start a fresh phone thread expecting the desk agent to
+answer it.
 
-How the phone behaves is `30-tools/desk-bridge/EXPERIENCE.md`.
-This chat is a phone, not a studio log.
+`30-tools/desk-bridge/` is stopped. Do not start it. Do not install a
+second Telegram bot.
+
+How the phone behaves: short result, no studio log, voice is the ask.
+Classify a voice note (todo / idea / brainstorm / intake / ask) before
+writing anything. Do not guess onto `todo.md`.
 
 - Work silently. Class, doctrine, and file-hunting stay off-screen.
 - Send one short result: what happened, where it is, what they need.
 - Short paragraphs. No markdown tables. No file trees. No "Loading…".
 - If you send a file, say it is in the chat. Do not recap the job.
 - Voice notes are inbound. They are transcribed, then treated as the ask.
-- Phone runs at medium effort. `DESK_ENGINE=auto` uses Claude, Codex, then
-  Grok and only falls through before any tool work. Studio seats stay on
-  their own settings.
-- Do not install the official Telegram plugin. This seat is desk-bridge.
 - Open actions live in `20-studio/todo.md`. Closed lines in
-  `todo-done.md`. Skill: `00-system/skills/rua-todo/`. `/brief` and
-  `/todo` read only that file. If the phone is blocked, write it
-  under Desk → Blocked in `lists.md`. That file is the diary, not
-  the todo.
-- Real mail and calendar live in Google Workspace (Gmail, Google
-  Calendar), signed in as `darragh@ruasocial.ie`. Mac Mail.app and
-  Calendar.app are unused. Do not open them, or icalBuddy, or a
-  local mail CLI. Dashboard Grok reaches Workspace via grok.com
-  connectors. Phone `grok -p` uses the same connectors (managed
-  gateway env). Answer from `rua vault` and `todo.md` first. If
-  those are silent, use the Google tools. Never dump the parked-Google
-  sentence. Do not send them to `/mcps`.
+  `todo-done.md`. Skill: `00-system/skills/rua-todo/`.
+- Named client facts: `rua vault search` then `rua vault get`.
+- Real mail and calendar live in Google Workspace. Mac Mail.app and
+  Calendar.app are unused.
 
 ## Optional: VS Code as the file surface
 
