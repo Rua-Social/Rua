@@ -5,8 +5,8 @@ Rua Social / Rua Studio's own operations, not client-delivered work.
 What exists today:
 
 - `founder-context.md` — what Rua is optimising for. Read it when founder
-  or business intent materially affects a decision. Do not read it to plan
-  a shoot.
+  or business intent materially affects a decision. Stop there. Named
+  evidence is `rua vault`, on purpose. Do not read it to plan a shoot.
 - `desk.md` — how the founder sits down: one repo and four selectable
   harness seats. Operating note, not doctrine.
 - `todo.md` — the only founder open-actions list. Closed lines in

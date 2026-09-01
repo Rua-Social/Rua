@@ -58,7 +58,7 @@ words this client uses.
 
 ## Before Stage 1
 
-Confirm, from the human or from `10-clients/<slug>/`:
+Confirm, from the human or from `rua vault` for this engagement:
 
 - The job-type is a defined Rua-led sprint.
 - Responsibilities, finish point and commercial terms are agreed.

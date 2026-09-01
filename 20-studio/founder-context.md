@@ -70,8 +70,7 @@ The commercial model for the second is unresolved. Do not invent one.
 
 Cut to one line, 18 August, on the founder's instruction: an August 2026
 synthesis named defined creative ownership as a possible operating model.
-It was never adopted and is not policy. Evidence, if it is ever revisited:
-`founder-context-provenance.md`.
+It was never adopted and is not policy.
 
 ## Acquisition
 
@@ -133,8 +132,9 @@ No em dashes in copy written on his behalf.
 
 ## On this context
 
-This document is deliberately compressed and lossy. It is the operational distillation, not the full record.
+This document is the operational distillation. Stop here for founder
+and direction questions.
 
-The evidence, historical examples and unresolved questions behind it live in `founder-context-provenance.md`.
-
-Consult the provenance only when a task genuinely requires deeper founder-specific reasoning, or when this baseline is being reconsidered. It is not needed for ordinary work.
+Named-client evidence is not in Git. Retrieve it on purpose with
+`rua vault search` then `rua vault get`. Do not open a second founder
+file to finish the sentence.

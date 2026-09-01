@@ -15,9 +15,9 @@ Portable method. Loaded for a matching job-type.
 **Instance** (external vault via `rua vault`)  
 Named facts about one engagement. Loaded only when that engagement is the job.
 
-**Library** (`00-system/reference-map.md`, `00-system/reference-audit/`)  
-Index of real artefacts, most of them outside Git. Consulted on purpose. Never default
-context for a production chat.
+**Library** (`00-system/reference-map.md`)  
+A pointer. Named artefacts live in the vault. Consulted on purpose through
+`rua vault`. Never default context for a production chat.
 
 **Founder record** (`20-studio/founder-context.md`)  
 Read for business, hiring, pricing philosophy, music-direction questions. Not read to plan
@@ -43,8 +43,8 @@ Roles (the owner, the operator, the regular, the decision-maker). Job-types. Che
 Document hierarchy. Payment and scope rules that apply to every engagement. Build recipes
 labelled as recipes.
 
-A worked example, if any, lives in `90-archive/` or in that client's instance record. It is
-not loaded unless the human asks to see how one job ran.
+A worked example, if any, lives in `90-archive/` or in that client's vault
+record. It is not loaded unless the human asks to see how one job ran.
 
 ## Job-types
 

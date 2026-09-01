@@ -12,7 +12,7 @@ instructions, skills, and code.
 
 ```
 00-system/      Doctrine, templates, rewrite contract, library index
-10-clients/     Named instance records, one directory per client in play
+10-clients/     Marker only. Named records are retrieved with rua vault
 20-studio/      Founder context, sales workflow, and desk note
 30-tools/       Deterministic software projects (e.g. animation-renderer)
 40-papa-rua/    Papa Rua releases, content, live, business

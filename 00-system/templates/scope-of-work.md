@@ -8,8 +8,8 @@ such as a retainer with a defined monthly output.
 
 It captures only what every engagement needs settled in advance. It is not a
 service menu, a pricing system or a qualification tool. Copy it into
-`10-clients/<client>/00-brief/` and fill it in; delete guidance notes
-(in italics) from the working copy.
+the engagement record outside Git and retrieve it with `rua vault`.
+Delete guidance notes (in italics) from the working copy.
 
 ---
 

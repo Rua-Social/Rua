@@ -15,7 +15,7 @@ bounded engagement Rua legitimately accepts, whatever shape it takes.
 
 2. **Agree responsibilities, scope and commercial terms** using the
    scope-of-work template (`00-system/templates/scope-of-work.md`). The
-   filled copy lives in `10-clients/<client>/` with the brief.
+   filled copy lives in that engagement's vault record with the brief.
 
 3. **Invoice the required initial payment** under the terms stated in the
    scope of work.
@@ -29,9 +29,9 @@ bounded engagement Rua legitimately accepts, whatever shape it takes.
    is received. If the initial payment goes quiet, chase it on a dated
    thread. It does not drift while the work continues.
 
-5. **Create or activate the client engagement area** under
-   `10-clients/<client>/`. Use the folders the job needs. Do not force a
-   six-phase sprint tree onto pickup or a tight package.
+5. **Create or activate the client engagement record** outside Git
+   and retrieve it with `rua vault`. Use the folders the job needs.
+   Do not force a six-phase sprint tree onto pickup or a tight package.
 
 6. **Hand confirmed production into the appropriate delivery workflow.**
    For a defined Rua-led content sprint, that is the shoot-plan skill,
