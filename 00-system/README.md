@@ -32,14 +32,14 @@ Reusable document or data scaffolds for recurring Rua work.
 Templates are not finished client work, brand assets, or standalone
 software.
 
-### `reference-map.md` and `reference-audit/`
+### `reference-map.md`
 
-Library index and the evidence for how it was built. Consulted on purpose.
-Never default context for a production chat.
+A pointer to the library. Named artefacts are retrieved with `rua vault`.
+Consulted on purpose. Never default context for a production chat.
 
 ## Boundaries
 
-- Client-specific work → `10-clients/`
+- Client-specific work → `rua vault`. `10-clients/` is a marker, not a record.
 - Rua Social / Rua Studio business operations → `20-studio/`
 - Standalone software and internal tools → `30-tools/`
 

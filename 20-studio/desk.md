@@ -103,14 +103,14 @@ pin. Reuse them. Do not open a room because a new idea showed up.
 | --- | --- | --- |
 | `desk` | Read `20-studio/desk.md`. You are the conductor. Wait for a class. Do not invent work. | Sit-down, founder, systems, `/desk-brief`, board |
 | `sales` | Read `20-studio/sales/README.md` and `00-system/templates/scope-of-work.md`. Do not start a delivery skill. | Scope, proposal, invoice, payment gate |
-| `job` | Name the engagement. Read only `10-clients/<slug>/` for that engagement. | The one live client job |
+| `job` | Name the engagement. Retrieve only that record with `rua vault`. | The one live client job |
 | `tools` | Read `00-system/skills/rua-ship-gate/SKILL.md`. Software only. Code, session, and look. | Anything under `30-tools/` |
 | `papa` | Read `40-papa-rua/README.md`. Do not invent a release. | Papa Rua |
 
 One live `job` room. If there is no live engagement, leave it idle.
 If two paid engagements are live at once, do not add a second
-job room. Rename and reseed this one to the slug you are sitting
-on. Park the other in Git. Do not keep a room per old client.
+job room. Rename and reseed this one to the engagement you are sitting
+on. Park the other in the vault. Do not keep a room per old client.
 
 ## Kimi: do not repeat 17 August
 
@@ -315,7 +315,7 @@ This chat is a phone, not a studio log.
   Calendar.app are unused. Do not open them, or icalBuddy, or a
   local mail CLI. Dashboard Grok reaches Workspace via grok.com
   connectors. Phone `grok -p` uses the same connectors (managed
-  gateway env). Answer from `10-clients/` and `todo.md` first. If
+  gateway env). Answer from `rua vault` and `todo.md` first. If
   those are silent, use the Google tools. Never dump the parked-Google
   sentence. Do not send them to `/mcps`.
 

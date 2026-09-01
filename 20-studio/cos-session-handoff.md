@@ -99,7 +99,8 @@ The home changed.
 ### 2.1 Ranked walking card
 
 `/brief` is not first-bullet order. It ranks a gated Do, and one
-live client card from `10-clients/*/README.md`.
+live client card retrieved with `rua vault` when that engagement
+is the job.
 
 After the split, `/brief` reads **`20-studio/todo.md` only**, plus
 that client card. It does **not** read `lists.md`.
@@ -176,7 +177,7 @@ spark          street capture, no commitment     /park /idea
 held thought   long enough to keep               20-studio/ideas/
 project        named, one next move, or it dies  a sentence, not a folder
 commitment     founder owns doing it             todo.md only
-paid job       client, scope, money              10-clients/<slug>/
+paid job       client, scope, money              rua vault
 ```
 
 **Project is a class decision** (“this is sales”), not
@@ -221,7 +222,7 @@ Split (this is an open fork — see §5):
 Conductor recommendation to lock: **UX refuse**, plus a **bridge
 hard-refuse** on `LIST+ Do` unless the speech already contains one
 founder-owned action and a name already on `todo.md` or in
-`10-clients/`. Grok will keep writing tidy trailers because a
+the vault. Grok will keep writing tidy trailers because a
 clean line looks like handling the ask. Doctrine alone will not
 stop that. The tell: `/todo` grows things he cannot do from the
 street.
@@ -240,7 +241,7 @@ ramble  →  refuse, or /idea file
         →  desk names the class          (sales / job / tools / papa)
         →  that room reads the file
         →  todo.md only if he owns a next action
-        →  10-clients/<slug> only if it is a real job
+        →  rua vault only if it is a real named job
 ```
 
 `kimi_run` + `kimi` for a cheap first extract on the dashboard.

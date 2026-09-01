@@ -23,36 +23,21 @@ chat) and load only that class's doctrine.
 5. Open a library artefact only if the human asked, or if doctrine does not
    cover the deliverable and the human agrees to look at a source.
 
-If a cited path is missing, report that. Do not reconstruct it from another
-client or from a map description.
+If a cited path is missing, or the vault does not return a record, say so.
+Do not reconstruct it from another client.
 
-## The reference map
+## Library
 
-`00-system/reference-map.md` is a library index of past documents. Most of
-the sources it cites are machine-local and outside Git. It is not a design
-canon and it is not how a job starts.
+Named artefacts live in the vault. `00-system/reference-map.md` is a
+pointer, not the catalogue. Do not read it as a source. Do not start a
+job from it.
 
-Do not read it in full by default. Do not import it here. Do not start
-ordinary client work at Part D.
+When the human asked to look up a deliverable type, or named an
+engagement:
 
-When the human is asking about the library, or has agreed you may look up a
-deliverable type:
-
-1. Check whether an exact-client instance record exists via `rua vault`.
-   Read it only when it matches the current client.
-2. Use Part D of the map to find candidate artefacts.
-3. Read the relevant Part A or B record.
-4. Open the original cited artefact before relying on or borrowing from it.
-
-**Open the original before borrowing from it.** The map describes what a
-document does and where it sits. Never reproduce wording, a structure or a
-component solely from the map's description.
-
-If a cited path no longer resolves, report that instead of reconstructing
-the source from the map.
-
-Supporting evidence for how the map was built lives in
-`00-system/reference-audit/2026-08-14/`.
+1. `rua vault search` then `rua vault get` for that record only.
+2. Open the original artefact the record cites before borrowing from it.
+3. If search or get fails, stop. Do not grep Git or mounted disks.
 
 ## Selecting precedent
 
@@ -73,12 +58,9 @@ automatically Rua brand requirements. Do not infer intentional design rules
 from recurrence alone. Current discovery, approved client assets and
 explicit briefs take priority. `references/document-build.md` is a recipe.
 
-Some cited sources have no usable text layer and must be rendered to page
-images rather than text-extracted. The map identifies these sources
-individually.
+## The map is not canon
 
-## The map is evidence, not canon
-
-A discrepancy between the map and a skill is not permission to modify
-either. Change skill files, including `references/document-build.md`, only
-when explicitly asked. The rewrite contract is `00-system/rewrite-contract.md`.
+A discrepancy between a vault record and a skill is not permission to
+modify either. Change skill files, including `references/document-build.md`,
+only when explicitly asked. The rewrite contract is
+`00-system/rewrite-contract.md`.

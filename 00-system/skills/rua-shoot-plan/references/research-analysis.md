@@ -31,12 +31,8 @@ Use the channels they actually use. Do not assume one platform.
 ## The channel pull (required when a handle exists)
 
 The pull is a file in the instance, not a vibe from a scroll in chat.
-
-Path: `10-clients/<slug>/01-research/channel-pull.json`
-
-Write it before findings. Instagram is the first automated source. A later
-TikTok or other pull uses the same shape. The handle lives on the instance,
-never in this skill.
+It lives in that engagement's vault record. Do not invent a Git client
+path. The handle lives on the instance, never in this skill.
 
 Pull the last six months with xpoz (`xpoz__getInstagramPostsByUser`, by
 username). Write what came back. Do not wait for a manual export. If xpoz

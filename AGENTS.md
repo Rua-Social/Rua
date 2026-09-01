@@ -59,9 +59,9 @@ Reusable instruction and named work are not the same thing.
 - **Instance**: named facts about one engagement live outside Git.
   Load only through `rua vault search` then `rua vault get` when that
   engagement is the job. `10-clients/` is a marker, not a record.
-- **Library** (`00-system/reference-map.md`, `00-system/reference-audit/`):
-  an index of real artefacts, most of them outside Git. Consult on purpose.
-  Never default context for a production chat.
+- **Library** (`00-system/reference-map.md`):
+  a pointer. Named artefacts live in the vault. Consult on purpose
+  through `rua vault`. Never default context for a production chat.
 
 The founder record (`20-studio/founder-context.md`) is read for business,
 hiring, pricing philosophy or music-direction questions. It is not read to
