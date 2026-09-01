@@ -30,7 +30,9 @@ def find_media(target: Path) -> list[Path]:
     if target.is_dir():
         files = sorted(
             p for p in target.iterdir()
-            if p.is_file() and p.suffix.lower() in MEDIA_EXTENSIONS
+            if p.is_file()
+            and not p.name.startswith("._")
+            and p.suffix.lower() in MEDIA_EXTENSIONS
         )
         if not files:
             raise ValueError(f"no media files in {target}")
