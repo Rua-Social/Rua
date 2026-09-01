@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Brand Sky Outro — WebGL</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #1a1a1a; overflow: hidden; }
+  #wrap { position: absolute; top: 50%; left: 50%; transform-origin: center center; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+  <div id="wrap"><canvas id="stage"></canvas></div>
+
+<script src="params.js"></script>
+<script>
+/* ------------------------------------------------------------------
+   Same picture as index.html, computed in one WebGL2 pass.
+
+   Why this exists: index.html stacks four translucent divs and lets the
+   browser composite them. Every layer lands in an 8-bit buffer before the
+   next one blends over it, so quantisation error compounds four times, and
+   the gradient bands. Here the whole composite is done in float32 and
+   quantised exactly once, with a dither applied immediately before that
+   single quantisation. Same maths, same look, no banding.
+------------------------------------------------------------------ */
+
+const P = PARAMS;
+const cv = document.getElementById('stage');
+const wrap = document.getElementById('wrap');
+
+cv.width  = P.width;
+cv.height = P.height;
+
+function fit() {
+  const s = Math.min(window.innerWidth / P.width, window.innerHeight / P.height);
+  wrap.style.transform = `translate(-50%, -50%) scale(${s})`;
+}
+fit();
+window.addEventListener('resize', fit);
+
+const gl = cv.getContext('webgl2', {
+  alpha: false,
+  antialias: false,
+  depth: false,
+  premultipliedAlpha: false,
+  preserveDrawingBuffer: true,   // so page.screenshot() can read it back
+  colorSpace: 'srgb',
+});
+if (!gl) throw new Error('WebGL2 unavailable');
+
+const MAXB = 16;
+
+const VS = `#version 300 es
+in vec2 p;
+void main() { gl_Position = vec4(p, 0.0, 1.0); }`;
+
+const FS = `#version 300 es
+precision highp float;
+out vec4 fragColour;
+
+uniform vec2  uRes;
+uniform float uT;          // 0..1 through the loop
+uniform int   uCount;
+uniform float uDither;     // LSB of dither, 0 = off
+
+// per blob
+uniform vec3  uCol[${MAXB}];
+uniform float uAlpha[${MAXB}];
+uniform vec2  uC[${MAXB}];
+uniform float uRadius[${MAXB}];
+uniform vec2  uAmp[${MAXB}];
+uniform float uCycles[${MAXB}];
+uniform float uPhase[${MAXB}];
+uniform float uScaleAmp[${MAXB}];
+
+const float TAU = 6.283185307179586;
+
+/* The CSS gradient this replaces is:
+     rgba(c, a)        0%
+     rgba(c, a*0.62)  28%
+     rgba(c, a*0.24)  50%
+     rgba(c, a*0.06)  68%
+     rgba(c, 0)       82%
+   Every stop is the SAME rgb, so premultiplied vs straight interpolation
+   is identical and this is just a piecewise-linear ramp on alpha.
+
+   Those percentages are relative to the gradient's ending shape, and
+   radial-gradient(circle, ...) defaults to farthest-corner, so on a
+   square box 100% sits at (size/2)*sqrt(2), not size/2. See uRadius use
+   below — getting this wrong is what made the first version of this
+   shader disagree with the CSS by 14 code values. */
+float falloff(float t) {
+  if (t >= 0.82) return 0.0;
+  if (t < 0.28) return mix(1.0,  0.62, t / 0.28);
+  if (t < 0.50) return mix(0.62, 0.24, (t - 0.28) / 0.22);
+  if (t < 0.68) return mix(0.24, 0.06, (t - 0.50) / 0.18);
+  return               mix(0.06, 0.0,  (t - 0.68) / 0.14);
+}
+
+// Interleaved gradient noise (Jimenez). Cheap, blue-ish spectrum, no texture.
+float ign(vec2 v) {
+  return fract(52.9829189 * fract(dot(v, vec2(0.06711056, 0.00583715))));
+}
+
+/* Uniform [0,1) -> symmetric triangular [-1,1], by inverse CDF.
+
+   Triangular is the distribution that makes the quantisation error the same
+   size no matter where the signal sits between two code values. Uniform
+   dither doesn't: error collapses to zero exactly on a code value and peaks
+   between them, so the grain visibly pulses as a gradient drifts across
+   boundaries. On a slow-moving gradient that pulse is the artifact you'd
+   actually notice.
+
+   Note you cannot build this by summing two offset ign() taps. Offsetting
+   the input only adds a constant inside the fract chain, so the second tap
+   comes out as fract(first + 0.84) — perfectly correlated, zero new
+   entropy. Measured: 0.00% of pixels deviate from that relationship. The
+   sum is a sawtooth, not a triangle (sd 0.4525 against a target of 0.4082),
+   and it modulates 1.22x across the code range. This remap measures
+   sd 0.4080 and modulates 1.00x, using one hash instead of two. */
+float triDither(float u) {
+  float v = 2.0 * u - 1.0;
+  return sign(v) * (1.0 - sqrt(max(0.0, 1.0 - abs(v))));
+}
+
+void main() {
+  vec2 frag = gl_FragCoord.xy;
+  // Flip Y: CSS measures from the top, gl_FragCoord from the bottom.
+  vec2 px = vec2(frag.x, uRes.y - frag.y);
+
+  float W = uRes.x;                 // all geometry is a fraction of WIDTH
+  vec3 c = vec3(1.0);               // white stage background
+
+  for (int i = 0; i < ${MAXB}; i++) {
+    if (i >= uCount) break;
+
+    float ang = TAU * uCycles[i] * uT + uPhase[i];
+    vec2  d   = vec2(uAmp[i].x * sin(ang), uAmp[i].y * cos(ang)) * W;
+    float sc  = 1.0 + uScaleAmp[i] * sin(ang + 1.1);
+
+    // Undo the div's transform: translate(d) scale(sc) about its own centre.
+    vec2  centre = uC[i] * W + d;
+
+    /* farthest-corner: the stop percentages are relative to the box
+       half-diagonal. The CSS version additionally clips this at the box's
+       border-radius (r / sqrt(2)), which chops the tail while alpha is
+       still ~5% of peak and leaves a faint hard-edged ring. We deliberately
+       do NOT reproduce that clip — the falloff runs to zero as intended. */
+    float r = uRadius[i] * W * sc * 1.41421356;
+
+    float t = distance(px, centre) / r;
+    float a = uAlpha[i] * falloff(t);
+
+    c = c * (1.0 - a) + uCol[i] * a;   // source-over, in sRGB, as CSS does
+  }
+
+  /* Dither BEFORE the driver quantises to 8 bits — that single rounding is
+     the only place precision is lost, so it is the only place dither can
+     help. Doing it afterwards (an ffmpeg noise filter, say) paints over the
+     bands rather than removing them. */
+  /* The textbook refinement here is to fade towards narrower uniform dither
+     near 0.0 and 1.0, since clamping one tail of a symmetric distribution
+     biases the result. Measured on this frame it is a net loss: almost the
+     whole image sits near white, so the guard fires nearly everywhere and
+     the lost amplitude costs more than the bias it prevents. Flat runs
+     after the ProRes round trip, 9px with the guard against 5px without.
+     Left out deliberately — if the palette ever moves somewhere darker and
+     more mid-tone, it is worth revisiting. */
+  if (uDither > 0.0) {
+    c += triDither(ign(frag)) * uDither / 255.0;
+  }
+
+  fragColour = vec4(c, 1.0);
+}`;
+
+function compile(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+    throw new Error(gl.getShaderInfoLog(s));
+  }
+  return s;
+}
+
+const prog = gl.createProgram();
+gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS));
+gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
+gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+  throw new Error(gl.getProgramInfoLog(prog));
+}
+gl.useProgram(prog);
+
+const vao = gl.createVertexArray();
+gl.bindVertexArray(vao);
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER,
+  new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+const loc = gl.getAttribLocation(prog, 'p');
+gl.enableVertexAttribArray(loc);
+gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+const U = n => gl.getUniformLocation(prog, n);
+
+// Flatten params into the uniform arrays once.
+const blobs = P.blobs.slice(0, MAXB);
+const col = [], alpha = [], cc = [], rad = [], amp = [], cyc = [], pha = [], sca = [];
+for (const b of blobs) {
+  const rgb = P.colours[b.colour].split(',').map(s => +s.trim() / 255);
+  let a = b.alpha;
+  if (b.colour === 'blue') a = Math.min(a, P.blueAlphaCap);
+  col.push(...rgb);
+  alpha.push(a);
+  cc.push(b.cx, b.cy);
+  rad.push(b.radius);
+  amp.push(b.ampX, b.ampY);
+  cyc.push(b.cycles);
+  pha.push(b.phase);
+  sca.push(b.scaleAmp);
+}
+
+gl.viewport(0, 0, P.width, P.height);
+gl.uniform2f(U('uRes'), P.width, P.height);
+gl.uniform1i(U('uCount'), blobs.length);
+gl.uniform1f(U('uDither'), P.dither === undefined ? 1.0 : P.dither);
+gl.uniform3fv(U('uCol'), new Float32Array(col));
+gl.uniform1fv(U('uAlpha'), new Float32Array(alpha));
+gl.uniform2fv(U('uC'), new Float32Array(cc));
+gl.uniform1fv(U('uRadius'), new Float32Array(rad));
+gl.uniform2fv(U('uAmp'), new Float32Array(amp));
+gl.uniform1fv(U('uCycles'), new Float32Array(cyc));
+gl.uniform1fv(U('uPhase'), new Float32Array(pha));
+gl.uniform1fv(U('uScaleAmp'), new Float32Array(sca));
+
+const uT = U('uT');
+
+/* Draw one exact frame. capture.js calls this directly, so the rendered
+   frame is a pure function of the frame index — no clock, no rAF timing,
+   nothing that can drift or drop. */
+function drawFrame(i) {
+  const total = Math.round(P.fps * P.duration);
+  gl.uniform1f(uT, (i % total) / total);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.finish();
+}
+window.drawFrame = drawFrame;
+window.TOTAL_FRAMES = Math.round(P.fps * P.duration);
+
+// Preview: free-run against the wall clock. Capture never uses this path.
+let playing = true;
+window.stopPreview = () => { playing = false; };
+const t0 = performance.now();
+function tick(now) {
+  if (!playing) return;
+  const total = Math.round(P.fps * P.duration);
+  const f = Math.floor(((now - t0) / 1000) * P.fps) % total;
+  drawFrame(f);
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

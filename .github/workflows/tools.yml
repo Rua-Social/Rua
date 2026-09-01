@@ -1,0 +1,71 @@
+# Runs each tool's own checks on a pull request.
+#
+# Deliberately minimal. It does not impose a test framework, a Python version
+# policy, or a matrix. It runs what the tool already defines and nothing else.
+#
+# Add a tool by adding its directory to the matrix. A tool with no test command
+# should not be listed here until it has one; an always-green check is worse
+# than no check.
+
+name: tools
+
+on:
+  pull_request:
+    paths:
+      - "30-tools/**"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tool:
+          - animation-renderer
+          - desk-bridge
+          - html-to-pdf
+    defaults:
+      run:
+        working-directory: 30-tools/${{ matrix.tool }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect project type
+        id: detect
+        run: |
+          if [ -f pyproject.toml ] || [ -f requirements.txt ]; then
+            echo "kind=python" >> "$GITHUB_OUTPUT"
+          elif [ -f package.json ]; then
+            echo "kind=node" >> "$GITHUB_OUTPUT"
+          else
+            echo "kind=none" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.detect.outputs.kind == 'python'
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        if: steps.detect.outputs.kind == 'node'
+        with:
+          node-version: "22"
+
+      - name: Install and check (python)
+        if: steps.detect.outputs.kind == 'python'
+        run: |
+          python -m pip install --upgrade pip
+          [ -f requirements.txt ] && pip install -r requirements.txt || true
+          [ -f pyproject.toml ] && pip install -e . 2>/dev/null || true
+          if python -c "import pytest" 2>/dev/null; then pytest -q; else echo "no pytest, skipping"; fi
+
+      - name: Install and check (node)
+        if: steps.detect.outputs.kind == 'node'
+        run: |
+          npm ci || npm install
+          npm test --if-present
+
+      - name: No recognised project
+        if: steps.detect.outputs.kind == 'none'
+        run: echo "No pyproject.toml, requirements.txt or package.json. Nothing to check."

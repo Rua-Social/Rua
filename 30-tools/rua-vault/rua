@@ -1,0 +1,237 @@
+#!/usr/bin/env python3
+"""Deliberate external vault retrieval. No ambient search."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import stat
+import sys
+import unicodedata
+from urllib.parse import unquote, urlparse
+
+EXIT_OK = 0
+EXIT_MISSING = 1
+EXIT_INVALID = 2
+EXIT_VAULT = 3
+EXIT_SOURCE = 4
+EXIT_RECORD = 5
+MAX_BYTES = 1_048_576
+REF_CHARS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.")
+
+
+def fail(code: int, message: str) -> None:
+    print(message, file=sys.stderr)
+    raise SystemExit(code)
+
+
+def default_manifest() -> Path:
+    xdg = os.environ.get("XDG_CONFIG_HOME")
+    base = Path(xdg) if xdg else Path.home() / ".config"
+    return base / "rua" / "vault" / "manifest.json"
+
+
+def manifest_path() -> Path:
+    override = os.environ.get("RUA_VAULT_MANIFEST")
+    return Path(override) if override else default_manifest()
+
+
+def inside_git(path: Path) -> bool:
+    current = path if path.is_dir() else path.parent
+    for parent in [current, *current.parents]:
+        if (parent / ".git").exists():
+            return True
+    return False
+
+
+def lstat_or_none(path: Path):
+    try:
+        return path.lstat()
+    except OSError:
+        return None
+
+
+def load_manifest() -> dict:
+    path = manifest_path()
+    info = lstat_or_none(path)
+    if info is None or not stat.S_ISREG(info.st_mode):
+        fail(EXIT_VAULT, "Vault unavailable.")
+    if stat.S_ISLNK(info.st_mode) or path.is_symlink():
+        fail(EXIT_VAULT, "Vault unavailable.")
+    if info.st_mode & (stat.S_IRWXG | stat.S_IRWXO):
+        fail(EXIT_VAULT, "Vault unavailable.")
+    parent = path.parent
+    parent_info = lstat_or_none(parent)
+    if parent_info is None or parent_info.st_mode & (stat.S_IRWXG | stat.S_IRWXO):
+        fail(EXIT_VAULT, "Vault unavailable.")
+    if inside_git(path.resolve()):
+        fail(EXIT_VAULT, "Vault unavailable.")
+    try:
+        raw = path.read_bytes()
+        data = json.loads(raw.decode("utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        fail(EXIT_VAULT, "Vault unavailable.")
+    if not isinstance(data, dict) or data.get("version") != 1:
+        fail(EXIT_VAULT, "Vault unavailable.")
+    entries = data.get("entries")
+    if not isinstance(entries, list):
+        fail(EXIT_VAULT, "Vault unavailable.")
+    seen = set()
+    cleaned = []
+    required = ("ref", "label", "aliases", "uri", "sha256")
+    for entry in entries:
+        if not isinstance(entry, dict) or any(key not in entry for key in required):
+            fail(EXIT_VAULT, "Vault unavailable.")
+        ref = entry["ref"]
+        if not isinstance(ref, str) or not ref or any(ch not in REF_CHARS for ch in ref):
+            fail(EXIT_VAULT, "Vault unavailable.")
+        if ref in seen:
+            fail(EXIT_VAULT, "Vault unavailable.")
+        seen.add(ref)
+        if not isinstance(entry["label"], str):
+            fail(EXIT_VAULT, "Vault unavailable.")
+        aliases = entry["aliases"]
+        if not isinstance(aliases, list) or any(not isinstance(item, str) for item in aliases):
+            fail(EXIT_VAULT, "Vault unavailable.")
+        if not isinstance(entry["uri"], str) or not isinstance(entry["sha256"], str):
+            fail(EXIT_VAULT, "Vault unavailable.")
+        cleaned.append(entry)
+    return {"version": 1, "entries": cleaned}
+
+
+def fold(text: str) -> str:
+    return unicodedata.normalize("NFKC", text).casefold()
+
+
+def search_entries(entries: list, query: str) -> list:
+    needle = fold(query)
+    matches = []
+    for entry in entries:
+        haystacks = [entry["label"], *entry["aliases"]]
+        if any(needle in fold(item) for item in haystacks):
+            matches.append(entry)
+    matches.sort(key=lambda item: (fold(item["label"]), item["ref"]))
+    return matches
+
+
+def file_from_uri(uri: str) -> Path:
+    parsed = urlparse(uri)
+    if parsed.scheme != "file" or parsed.netloc not in ("", "localhost"):
+        fail(EXIT_SOURCE, "Source unavailable.")
+    path = Path(unquote(parsed.path))
+    if os.name == "nt" and path.parts and path.parts[0] == "/":
+        path = Path(path.as_posix().lstrip("/"))
+    return path
+
+
+def read_payload(entry: dict) -> bytes:
+    path = file_from_uri(entry["uri"])
+    info = lstat_or_none(path)
+    if info is None:
+        fail(EXIT_SOURCE, "Source unavailable.")
+    if stat.S_ISLNK(info.st_mode) or path.is_symlink():
+        fail(EXIT_SOURCE, "Source unavailable.")
+    if not stat.S_ISREG(info.st_mode):
+        fail(EXIT_SOURCE, "Source unavailable.")
+    if info.st_size > MAX_BYTES:
+        fail(EXIT_SOURCE, "Source unavailable.")
+    try:
+        resolved = path.resolve()
+    except OSError:
+        fail(EXIT_SOURCE, "Source unavailable.")
+    if inside_git(resolved):
+        fail(EXIT_SOURCE, "Source unavailable.")
+    try:
+        fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    except OSError:
+        fail(EXIT_SOURCE, "Source unavailable.")
+    try:
+        data = os.read(fd, MAX_BYTES + 1)
+    finally:
+        os.close(fd)
+    if len(data) > MAX_BYTES:
+        fail(EXIT_SOURCE, "Source unavailable.")
+    digest = hashlib.sha256(data).hexdigest()
+    if digest != entry["sha256"]:
+        fail(EXIT_RECORD, "Record invalid.")
+    return data
+
+
+def cmd_search(args: argparse.Namespace) -> None:
+    query = args.query
+    if len(query.strip()) < 3:
+        fail(EXIT_INVALID, "Invalid command.")
+    entries = load_manifest()["entries"]
+    matches = search_entries(entries, query)
+    if not matches:
+        fail(EXIT_MISSING, "Record missing.")
+    if args.json:
+        print(json.dumps({"matches": [{"ref": m["ref"], "label": m["label"]} for m in matches]}))
+        return
+    for match in matches:
+        print(f"{match['ref']}\t{match['label']}")
+
+
+def cmd_get(args: argparse.Namespace) -> None:
+    ref = args.ref
+    if not ref or any(ch not in REF_CHARS for ch in ref):
+        fail(EXIT_INVALID, "Invalid command.")
+    entries = load_manifest()["entries"]
+    found = next((item for item in entries if item["ref"] == ref), None)
+    if found is None:
+        fail(EXIT_MISSING, "Record missing.")
+    data = read_payload(found)
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        fail(EXIT_RECORD, "Record invalid.")
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "ref": found["ref"],
+                    "label": found["label"],
+                    "sha256": found["sha256"],
+                    "content": text,
+                }
+            )
+        )
+        return
+    sys.stdout.write(text)
+
+
+def silent_error(_message: str) -> None:
+    fail(EXIT_INVALID, "Invalid command.")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="rua")
+    parser.error = silent_error
+    sub = parser.add_subparsers(dest="group")
+    vault = sub.add_parser("vault")
+    vault.error = silent_error
+    vault_sub = vault.add_subparsers(dest="action")
+    search = vault_sub.add_parser("search")
+    search.add_argument("--json", action="store_true")
+    search.add_argument("query")
+    search.set_defaults(func=cmd_search)
+    get_cmd = vault_sub.add_parser("get")
+    get_cmd.add_argument("--json", action="store_true")
+    get_cmd.add_argument("ref")
+    get_cmd.set_defaults(func=cmd_get)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if getattr(args, "func", None) is None:
+        fail(EXIT_INVALID, "Invalid command.")
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()

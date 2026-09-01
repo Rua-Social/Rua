@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rua PDF fixture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@page { size: A4; margin: 0; }
+:root {
+  --night: #1a1a2e; --purple: #7c3aed;
+  --serif: 'Instrument Serif', Georgia, serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+}
+body { font-family: var(--sans); }
+.page { width: 210mm; height: 297mm; background: white; page-break-after: always; break-after: page; overflow: hidden; }
+.page:last-child { page-break-after: auto; break-after: auto; }
+.cover { background: var(--night); color: white; padding: 64px 56px; display: flex; flex-direction: column; justify-content: center; }
+.cover-label { font-size: 10px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--purple); margin-bottom: 20px; }
+.cover h1 { font-family: var(--serif); font-style: italic; font-size: 58px; line-height: 1.1; }
+.cover-bar { width: 80px; height: 4px; background: var(--purple); margin: 24px 0 28px; }
+.cover-sub { font-size: 15px; color: rgba(255,255,255,0.55); max-width: 420px; line-height: 1.7; }
+.inner { padding: 64px 56px; }
+.inner h2 { font-family: var(--serif); font-style: italic; font-size: 36px; color: var(--night); margin-bottom: 18px; }
+.inner p { color: #2d2d3f; font-size: 13px; line-height: 1.65; max-width: 420px; }
+</style>
+</head>
+<body>
+  <div class="page cover">
+    <div class="cover-label">Concepts</div>
+    <h1>Sample deck</h1>
+    <div class="cover-bar"></div>
+    <p class="cover-sub">Two pages. The cover must print solid navy.</p>
+  </div>
+  <div class="page inner">
+    <h2>Interior page</h2>
+    <p>If this is page two and the cover is navy, local Chrome print is good enough.</p>
+  </div>
+</body>
+</html>

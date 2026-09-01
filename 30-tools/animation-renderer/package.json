@@ -1,0 +1,20 @@
+{
+  "name": "brand-sky-outro",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Brand Sky animated gradient outro card",
+  "scripts": {
+    "dev":     "node dev.js",
+    "check":   "node check-colour.js",
+    "render":  "node render.js",
+    "verify":  "node verify.js",
+    "build":   "npm run render && npm run verify",
+
+    "capture": "node capture.js",
+    "encode":  "bash encode.sh",
+    "build:legacy": "npm run check && npm run capture && npm run encode"
+  },
+  "dependencies": {
+    "puppeteer": "^23.0.0"
+  }
+}

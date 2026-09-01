@@ -1,0 +1,11 @@
+{
+  "name": "rua-ways-to-work-present",
+  "private": true,
+  "description": "Build the 16:9 present cut of the working offer.",
+  "scripts": {
+    "build": "node ways-to-work-present.js"
+  },
+  "dependencies": {
+    "pptxgenjs": "3.12.0"
+  }
+}
