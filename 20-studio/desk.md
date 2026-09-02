@@ -289,11 +289,12 @@ Until then this note is the desk.
 
 ## On the phone
 
-The phone is default Hermes Telegram. One token, one gateway. It is not
-`rua-desk` and it is not a second bot.
+The phone is this one Hermes Telegram chat. One token, one thread. It
+is Hermes, not a second bot and not a group of bots.
 
-Specialists run with `rua-seat <pa|desk|reader|maker|checker|flags> "ask"`.
-A mention is not a handoff. Wait for stdout, then pass it on.
+When the ask is a specialist's, Hermes runs
+`rua-seat <pa|desk|reader|maker|checker|flags> "ask"` and answers in
+the same chat. A mention is not a handoff.
 
 `90-archive/desk-bridge/` is history. Do not start it. Do not install a
 second Telegram bot. Do not bind this token to a specialist profile.
