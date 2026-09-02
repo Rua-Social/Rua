@@ -8,7 +8,7 @@ Doctrine: `00-system/skills/rua-git-flow/`.
 ## 1. Local hook (per machine)
 
 Blocks a direct push to `main` from this machine. When a push includes
-`30-tools/html-to-pdf` or `30-tools/desk-bridge`, it also runs
+`30-tools/html-to-pdf`, `30-tools/rua-desk`, `30-tools/rua-vault` or `30-tools/rua-seat`, it also runs
 `00-system/check-tools.sh`.
 
 ```sh

@@ -1,6 +1,6 @@
 #!/bin/sh
-# Rua pre-push hook. Blocks a direct push to main. Runs html-to-pdf and
-# desk-bridge tests when those trees are in the push.
+# Rua pre-push hook. Blocks a direct push to main. Runs tool tests when
+# html-to-pdf, rua-desk, rua-vault, or rua-seat are in the push.
 #
 # Install:
 #   git config core.hooksPath .githooks
@@ -47,7 +47,7 @@ MSG
   else
     base=$remote_sha
   fi
-  if git diff --name-only "$base" "$local_sha" | grep -q '^30-tools/\(html-to-pdf\|desk-bridge\)/'; then
+  if git diff --name-only "$base" "$local_sha" | grep -q '^30-tools/\(html-to-pdf\|rua-desk\|rua-vault\|rua-seat\)/'; then
     run_tools_check=1
   fi
 done

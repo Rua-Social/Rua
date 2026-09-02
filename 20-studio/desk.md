@@ -289,13 +289,14 @@ Until then this note is the desk.
 
 ## On the phone
 
-The phone is Hermes Telegram. One session, moved on purpose:
-`/handoff telegram` from the desk, resume the same session when you sit
-down. Do not start a fresh phone thread expecting the desk agent to
-answer it.
+The phone is default Hermes Telegram. One token, one gateway. It is not
+`rua-desk` and it is not a second bot.
 
-`30-tools/desk-bridge/` is stopped. Do not start it. Do not install a
-second Telegram bot.
+Specialists run with `rua-seat <pa|desk|reader|maker|checker|flags> "ask"`.
+A mention is not a handoff. Wait for stdout, then pass it on.
+
+`90-archive/desk-bridge/` is history. Do not start it. Do not install a
+second Telegram bot. Do not bind this token to a specialist profile.
 
 How the phone behaves: short result, no studio log, voice is the ask.
 Classify a voice note (todo / idea / brainstorm / intake / ask) before
