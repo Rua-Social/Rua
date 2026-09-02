@@ -59,6 +59,19 @@ A new role is earned only when the work genuinely repeats and benefits from
 its own context, its own rules, or a different model. Do not add roles ahead
 of that. This is the same proportionality rule as the rest of this repo.
 
+## Handoff
+
+A mention in a chat is not a handoff. The other role has to actually run
+and return. The founder should not have to say "quote them" or "don't send
+mail". Look-ups are read-only until he says send, book, or delete.
+
+How the run is invoked is harness-specific. On this machine the command is
+`rua-seat <role> "the ask"`. Wait for what they said, then pass it on.
+
+Voice and typing will mangle names. Search the vault with the heard
+phrase, the words stuck together, and a distinctive chunk before saying
+there is no record.
+
 ## Sovereignty and model-agnosticism
 
 These roles are the law. The mapping of role to model to harness is a
