@@ -31,17 +31,18 @@ planned notes). It is not the todo.
 - YYYY-MM-DD One concrete action in one sentence.
 ```
 
-After seven days the bridge marks it `STALE`. Cap is seven open
+After seven days a line is marked `STALE`. Cap is seven open
 lines. A duplicate, a nicety, or a system note is not a line.
+
+The PA writes this file. Other seats read it or `rua-seat pa`.
 
 ## Do
 
 - Read `20-studio/todo.md` when the ask needs the list.
 - Add only a real next action the founder owns.
 - Close a line by moving it to `todo-done.md` when it landed.
-- On the phone, use `LIST+ Do | …` or `LIST+ Done | …`. The
-  bridge writes the files. A voice note adds `Do` only; closing a
-  line takes a typed ask.
+- On the phone, Hermes `rua-seat`s pa. Do not invent LIST+ or a
+  second list.
 
 ## Do not
 
