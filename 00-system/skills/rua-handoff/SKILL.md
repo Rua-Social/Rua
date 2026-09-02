@@ -23,6 +23,10 @@ rua-seat desk "vault search Dental"
 
 Wait for stdout. Then quote the useful lines to the founder.
 
+If a vault card or the founder names a path (`/Volumes/T7/...`), `ls` it.
+The fetch seat can read that disk when it is mounted. Run the command
+before saying you cannot access it.
+
 If `rua-seat` is missing, the same job is:
 
 ```sh

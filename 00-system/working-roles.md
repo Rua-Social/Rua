@@ -27,7 +27,9 @@ doctrine and which material load, not the shape of the path.
 
 1. **Fetch.** Pull the material and the facts the work needs. Run the
    deterministic tools (transcription, vault lookups, exports, counts).
-   Track the todo. No judgement.
+   Track the todo. No judgement. If a record names a path, try it. A
+   mounted volume is in play. Do not announce that a disk or CLI is
+   unavailable until a command you ran failed.
 2. **Digest.** Turn one large source at a time into neutral findings:
    counts, formats, verbatim lines, what is there, cited to source. Stop
    before interpreting. "This format appears fourteen times" is a finding.
