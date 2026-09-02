@@ -10,7 +10,6 @@ What exists today:
 - `animation-renderer/` — one job's outro render.
 - `html-to-pdf/` — print an HTML deck to A4 PDF with local Chrome.
 - `rua-desk/` — engine-neutral terminal front door for the Rua repository.
-- `desk-bridge/` — Telegram seat for the Rua desk. Phone in, selected engine on this Mac out.
 - `transcribe/` — shoot dialogue footage to transcripts for the edit-guide chat.
 - `rua-vault/` — deliberate retrieval of one external client record.
 - `rua-seat/` — run one other seat and print what they said. A mention is not a handoff.
