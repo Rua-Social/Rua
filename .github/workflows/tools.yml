@@ -23,8 +23,10 @@ jobs:
       matrix:
         tool:
           - animation-renderer
-          - desk-bridge
           - html-to-pdf
+          - rua-desk
+          - rua-vault
+          - rua-seat
     defaults:
       run:
         working-directory: 30-tools/${{ matrix.tool }}

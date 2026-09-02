@@ -27,7 +27,9 @@ doctrine and which material load, not the shape of the path.
 
 1. **Fetch.** Pull the material and the facts the work needs. Run the
    deterministic tools (transcription, vault lookups, exports, counts).
-   Track the todo. No judgement.
+   Track the todo. No judgement. If a record names a path, try it. A
+   mounted volume is in play. Do not announce that a disk or CLI is
+   unavailable until a command you ran failed.
 2. **Digest.** Turn one large source at a time into neutral findings:
    counts, formats, verbatim lines, what is there, cited to source. Stop
    before interpreting. "This format appears fourteen times" is a finding.
@@ -58,6 +60,19 @@ not stand up a seat for work that has one correct output.
 A new role is earned only when the work genuinely repeats and benefits from
 its own context, its own rules, or a different model. Do not add roles ahead
 of that. This is the same proportionality rule as the rest of this repo.
+
+## Handoff
+
+A mention in a chat is not a handoff. The other role has to actually run
+and return. The founder should not have to say "quote them" or "don't send
+mail". Look-ups are read-only until he says send, book, or delete.
+
+How the run is invoked is harness-specific. On this machine the command is
+`rua-seat <role> "the ask"`. Wait for what they said, then pass it on.
+
+Voice and typing will mangle names. Search the vault with the heard
+phrase, the words stuck together, and a distinctive chunk before saying
+there is no record.
 
 ## Sovereignty and model-agnosticism
 

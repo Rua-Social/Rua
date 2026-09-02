@@ -1,4 +1,7 @@
-# desk-bridge
+# desk-bridge (archived)
+
+Stopped. Do not install. Do not start. Phone is Hermes Telegram on the
+default gateway; specialists via `rua-seat`. Kept here as history.
 
 Telegram seat for the Rua desk. Phone in, same repo and one configured
 conductor out. Not a new org chart. How the phone behaves:

@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+"""Hand work to one other Rua seat and print what they returned.
+
+A mention in chat is not a handoff. This command is.
+"""
+from __future__ import annotations
+
+import argparse
+import shutil
+import subprocess
+import sys
+
+SEATS = ("desk", "pa", "reader", "maker", "checker", "flags")
+EXIT_OK = 0
+EXIT_INVALID = 2
+EXIT_RUN = 4
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="rua seat")
+    parser.add_argument("seat", help="desk, pa, reader, maker, checker, or flags")
+    parser.add_argument("ask", nargs=argparse.REMAINDER, help="the ask, in quotes")
+    args = parser.parse_args(argv)
+    seat = args.seat.strip().lower()
+    if seat.startswith("rua-"):
+        seat = seat[4:]
+    if seat not in SEATS:
+        print(f"Unknown seat. Use one of: {', '.join(SEATS)}", file=sys.stderr)
+        return EXIT_INVALID
+    ask = " ".join(args.ask).strip()
+    if not ask:
+        print("Give an ask, e.g. rua seat pa \"what is new in the inbox\"", file=sys.stderr)
+        return EXIT_INVALID
+    hermes = shutil.which("hermes")
+    if hermes is None:
+        print("hermes not on PATH", file=sys.stderr)
+        return EXIT_RUN
+    result = subprocess.run(
+        [hermes, "-p", f"rua-{seat}", "chat", "-q", ask],
+        check=False,
+    )
+    return EXIT_OK if result.returncode == 0 else EXIT_RUN
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

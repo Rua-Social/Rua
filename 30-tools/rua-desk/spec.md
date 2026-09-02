@@ -13,7 +13,7 @@ itself.
 - A shared session across harnesses.
 - Making harness-specific features available in every harness.
 - New agents, orchestration, APIs, dependencies, or graphical surfaces.
-- Changing the Telegram desk-bridge engine selection.
+- Binding Telegram to a specialist Hermes profile.
 
 ## Done
 
