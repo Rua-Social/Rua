@@ -6,6 +6,8 @@ A mention in chat is not a handoff. This command is.
 from __future__ import annotations
 
 import argparse
+import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -14,6 +16,38 @@ SEATS = ("desk", "pa", "reader", "maker", "checker", "flags")
 EXIT_OK = 0
 EXIT_INVALID = 2
 EXIT_RUN = 4
+ASK_TOKEN = "__RUA_SEAT_ASK__"
+
+
+def build_command(seat: str, ask: str) -> list[str]:
+    """Build argv for the seat runner.
+
+    Default binding (this machine): hermes -p rua-<seat> chat -q <ask>
+    Override with RUA_SEAT_RUNNER, a shell-like template that must include
+    {seat} and {ask}. Example:
+      RUA_SEAT_RUNNER='other-runner --profile rua-{seat} --prompt {ask}'
+    """
+    template = os.environ.get("RUA_SEAT_RUNNER", "").strip()
+    if not template:
+        hermes = shutil.which("hermes")
+        if hermes is None:
+            print("hermes not on PATH", file=sys.stderr)
+            raise SystemExit(EXIT_RUN)
+        return [hermes, "-p", f"rua-{seat}", "chat", "-q", ask]
+
+    if "{ask}" not in template:
+        print("RUA_SEAT_RUNNER must include {ask}", file=sys.stderr)
+        raise SystemExit(EXIT_INVALID)
+    rendered = template.replace("{seat}", seat).replace("{ask}", ASK_TOKEN)
+    try:
+        argv = shlex.split(rendered)
+    except ValueError as exc:
+        print(f"Invalid RUA_SEAT_RUNNER: {exc}", file=sys.stderr)
+        raise SystemExit(EXIT_INVALID) from exc
+    if ASK_TOKEN not in argv:
+        print("RUA_SEAT_RUNNER must keep {ask} as its own argument", file=sys.stderr)
+        raise SystemExit(EXIT_INVALID)
+    return [ask if part == ASK_TOKEN else part for part in argv]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -31,14 +65,11 @@ def main(argv: list[str] | None = None) -> int:
     if not ask:
         print("Give an ask, e.g. rua seat pa \"what is new in the inbox\"", file=sys.stderr)
         return EXIT_INVALID
-    hermes = shutil.which("hermes")
-    if hermes is None:
-        print("hermes not on PATH", file=sys.stderr)
-        return EXIT_RUN
-    result = subprocess.run(
-        [hermes, "-p", f"rua-{seat}", "chat", "-q", ask],
-        check=False,
-    )
+    try:
+        command = build_command(seat, ask)
+    except SystemExit as exc:
+        return int(exc.code)
+    result = subprocess.run(command, check=False)
     return EXIT_OK if result.returncode == 0 else EXIT_RUN
 
 

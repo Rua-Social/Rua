@@ -9,7 +9,21 @@ rua seat reader "digest this URL, neutral findings only"
 
 Seats: desk, pa, reader, maker, checker, flags.
 
-On this machine the command calls `hermes -p rua-<seat> chat -q`. That is a harness binding, not doctrine. The doctrine is: the other role actually ran and returned.
+## Binding
+
+Default on this machine: `hermes -p rua-<seat> chat -q <ask>`. That is a
+harness binding, not doctrine. The doctrine is: the other role actually ran
+and returned.
+
+Override the runner with `RUA_SEAT_RUNNER`, a shell-like template that must
+include `{seat}` and `{ask}`:
+
+```sh
+export RUA_SEAT_RUNNER='other-runner --profile rua-{seat} --prompt {ask}'
+rua-seat pa "what is new in the inbox"
+```
+
+Unset `RUA_SEAT_RUNNER` to keep the Hermes default.
 
 ## Install
 

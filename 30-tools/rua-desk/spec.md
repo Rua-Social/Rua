@@ -21,7 +21,7 @@ itself.
   seats when attached to a terminal.
 - Direct commands remain available: `claude`, `codex`, `grok`, `gemini`,
   and Grok's `grok-one` single-session mode.
-- `status`, `card`, `ping`, and `help` remain available.
+- `status`, `card`, `ping`, `doctor`, and `help` remain available.
 - Every harness starts with the Rua repository as its working directory.
 - A missing harness, missing repository, invalid selection, and unknown
   command each produce a plain, actionable sentence.
@@ -39,4 +39,4 @@ readlink ~/.local/bin/rua-desk
 ```
 
 Then run bare `rua-desk`, choose an installed seat, and confirm its opening
-message names `/Users/darraghhoare/Rua` before the harness takes over.
+message names the checkout path (default `$HOME/Rua`, or `$RUA_REPO`) before the harness takes over.

@@ -56,6 +56,7 @@ rua-desk gemini       open Gemini CLI
 rua-desk status       show installed seats and versions
 rua-desk card         print the operator card
 rua-desk ping         ask each installed seat one line
+rua-desk doctor       check repo, seats, hooks, skills, vault
 rua-desk help         show this help
 EOF
 }
@@ -183,6 +184,100 @@ ping_seats() {
   print -r -- "Each OK line proves that seat answered independently."
 }
 
+
+print_doctor() {
+  local hard_fail=0
+  local soft_fail=0
+  local line=""
+  local hooks_path=""
+  local skill=""
+  local target=""
+  local vault_manifest="${RUA_VAULT_MANIFEST:-${XDG_CONFIG_HOME:-$HOME/.config}/rua/vault/manifest.json}"
+
+  pass() { print -r -- "PASS  $1" }
+  fail() { print -r -- "FAIL  $1"; hard_fail=1 }
+  warn() { print -r -- "WARN  $1"; soft_fail=1 }
+
+  print -r -- "Rua desk doctor  $RUA_DESK_REPO"
+  print
+
+  if [[ -f "$RUA_DESK_REPO/AGENTS.md" ]]; then
+    pass "AGENTS.md present"
+  else
+    fail "AGENTS.md missing at checkout root"
+  fi
+
+  local seat
+  for seat in claude codex grok gemini; do
+    if command -v "$seat" >/dev/null 2>&1; then
+      pass "seat $seat on PATH ($(seat_version "$seat"))"
+    else
+      warn "seat $seat missing from PATH"
+    fi
+  done
+
+  if command -v rua >/dev/null 2>&1; then
+    pass "rua on PATH"
+  else
+    warn "rua missing from PATH (vault CLI)"
+  fi
+  if command -v rua-seat >/dev/null 2>&1; then
+    pass "rua-seat on PATH"
+  else
+    warn "rua-seat missing from PATH"
+  fi
+
+  hooks_path="$(git -C "$RUA_DESK_REPO" config --get core.hooksPath 2>/dev/null || true)"
+  if [[ -z "$hooks_path" ]]; then
+    warn "core.hooksPath unset (expected .githooks)"
+  elif [[ "$hooks_path" == ".githooks" || "$hooks_path" == "$RUA_DESK_REPO/.githooks" ]]; then
+    pass "core.hooksPath=$hooks_path"
+  else
+    warn "core.hooksPath=$hooks_path (expected .githooks)"
+  fi
+
+  if [[ -d "$RUA_DESK_REPO/.grok/skills" ]]; then
+    local found_rua_skill=0
+    for skill in "$RUA_DESK_REPO"/.grok/skills/rua-*; do
+      [[ -e "$skill" || -L "$skill" ]] || continue
+      found_rua_skill=1
+      if [[ -L "$skill" ]]; then
+        target="$(readlink "$skill" 2>/dev/null || true)"
+        if [[ "$target" == ../../00-system/skills/* ]]; then
+          pass "symlink $(basename "$skill") -> $target"
+        else
+          fail "symlink $(basename "$skill") points elsewhere ($target)"
+        fi
+      else
+        fail "$(basename "$skill") is not a symlink into 00-system/skills"
+      fi
+    done
+    if (( found_rua_skill == 0 )); then
+      warn "no .grok/skills/rua-* entries"
+    fi
+  else
+    warn ".grok/skills directory missing"
+  fi
+
+  if [[ -f "$vault_manifest" ]]; then
+    pass "vault manifest present ($vault_manifest)"
+  else
+    warn "vault manifest missing ($vault_manifest)"
+  fi
+
+  print
+  if (( hard_fail )); then
+    print -r -- "Doctor failed."
+    return 1
+  fi
+  if (( soft_fail )); then
+    print -r -- "Doctor ok with warnings."
+    return 0
+  fi
+  print -r -- "Doctor ok."
+  return 0
+}
+
 command_name="${1:-}"
 case "$command_name" in
   "")
@@ -197,6 +292,7 @@ case "$command_name" in
   status) print_status ;;
   card) show_card ;;
   ping|demo) ping_seats ;;
+  doctor) print_doctor ;;
   -h|--help|help) usage ;;
   *)
     print -u2 -r -- "Unknown Rua desk command: $command_name"

@@ -15,6 +15,7 @@ rua-desk gemini       # open Gemini CLI
 rua-desk status       # show installed seats and versions
 rua-desk card         # read the operator card
 rua-desk ping         # ask every installed seat for one line
+rua-desk doctor       # check repo, seats, hooks, skills, vault
 rua-desk help         # show commands
 ```
 
@@ -41,6 +42,7 @@ Z shell. Each optional seat requires its vendor CLI (`claude`, `codex`,
 ```sh
 python3 -m unittest discover -s 30-tools/rua-desk -p 'test_*.py'
 30-tools/rua-desk/rua-desk status
+30-tools/rua-desk/rua-desk doctor
 ```
 
 The session contract is [EXPERIENCE.md](EXPERIENCE.md). The approved build
