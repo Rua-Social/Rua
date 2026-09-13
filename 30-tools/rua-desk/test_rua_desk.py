@@ -144,6 +144,52 @@ class RuaDeskTests(unittest.TestCase):
         self.assertIn("rua-desk grok", result.stderr)
         self.assertIn("rua-desk gemini", result.stderr)
 
+
+    def test_doctor_passes_with_agents_and_symlinks(self) -> None:
+        (self.repo / "AGENTS.md").write_text("# test\n", encoding="utf-8")
+        skills = self.repo / "00-system" / "skills" / "rua-todo"
+        skills.mkdir(parents=True)
+        (skills / "SKILL.md").write_text("# skill\n", encoding="utf-8")
+        grok = self.repo / ".grok" / "skills"
+        grok.mkdir(parents=True)
+        (grok / "rua-todo").symlink_to("../../00-system/skills/rua-todo")
+        # Point hooksPath at a path inside the temp repo without touching user gitconfig globally:
+        # doctor reads git config for the repo; set local config in the temp repo.
+        subprocess.run(
+            ["git", "init"],
+            cwd=self.repo,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "core.hooksPath", ".githooks"],
+            cwd=self.repo,
+            check=True,
+            capture_output=True,
+        )
+        (self.repo / ".githooks").mkdir(exist_ok=True)
+        # Fake rua / rua-seat on PATH
+        for name in ("rua", "rua-seat"):
+            fake = self.bin / name
+            fake.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            fake.chmod(0o755)
+        result = self.run_desk("doctor")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("PASS  AGENTS.md present", result.stdout)
+        self.assertIn("PASS  symlink rua-todo", result.stdout)
+        self.assertIn("Doctor ok", result.stdout)
+
+    def test_doctor_fails_without_agents(self) -> None:
+        result = self.run_desk("doctor")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("FAIL  AGENTS.md missing", result.stdout)
+        self.assertIn("Doctor failed.", result.stdout)
+
+    def test_help_lists_doctor(self) -> None:
+        result = self.run_desk("help")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("rua-desk doctor", result.stdout)
+
     def test_missing_repo_is_plain_and_actionable(self) -> None:
         missing = self.root / "missing"
         env = {**self.env, "RUA_REPO": str(missing)}
