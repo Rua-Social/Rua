@@ -97,3 +97,21 @@ This README describes the workflow that exists. It is not a CRM, pipeline
 tracker, proposal library or rate card. Add structure here only when
 repeated friction earns it. Do not invent a commercial model for
 subcontract work in this file.
+
+
+### Sales preparation and review
+
+When asked to prepare an ICP, messaging and outreach sequence, use the current
+business direction in `20-studio/founder-context.md` and the supplied market
+and prospect evidence. State the buyer, relevant need, supporting proof,
+message, sequence and likely objections. Mark unsupported claims and unresolved
+commercial choices for the founder. Apply `00-system/communication.md`.
+
+When a sales team loop is explicitly requested, divide bounded work among
+available workers: evidence and buyer fit, messaging and sequence, then review
+of objections and unsupported claims. Use `00-system/working-roles.md` for
+handoffs. Run a revision against returned findings. Stop when the requested
+outputs are coherent and supported, or when a specific missing fact or founder
+decision prevents completion. Report that dependency instead of cycling without
+new evidence. If workers are unavailable, disclose that and do the supported
+preparation directly. Sending outreach requires explicit authorization.

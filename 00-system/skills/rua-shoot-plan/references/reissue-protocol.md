@@ -2,7 +2,9 @@
 
 Stage 5. Creative changes that arrive after the concepts deck is approved
 flow back through the concepts deck before anything downstream is rebuilt.
-The schedule is never the home for a creative correction.
+For an explicit schedule-only request, use the last approved concepts and
+current brief, recording authorized changes and their source in the schedule.
+This exception does not authorize new creative decisions.
 
 ---
 
@@ -29,9 +31,8 @@ deck reissue.
 These belong in the schedule and do not need a concepts reissue on their
 own.
 
-If anything is ambiguous, treat it as creative. The cost of an extra
-iteration is small. The cost of a creative change living only in the
-schedule is a broken source of truth.
+If a change is ambiguous, check the brief and prior decisions. Ask about a
+material unresolved creative choice; continue with settled logistics.
 
 ---
 
@@ -45,7 +46,9 @@ schedule is a broken source of truth.
    logistics.
 5. Shot list update. Rebuild from the new schedule.
 
-Do not shortcut from step 1 to step 4.
+For pure logistics, or an explicit schedule-only request, skip step 3. Produce
+only the requested outputs and identify the approved concepts and current brief
+used. The old deck remains unchanged until a deck update is requested.
 
 ---
 

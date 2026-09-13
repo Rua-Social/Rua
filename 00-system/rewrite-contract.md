@@ -85,10 +85,8 @@ Provisional. Overturn any mark in a later session.
 - Extras are a new written agreement with price and time stated first.
 - Client owns talent, access and venue prep. Flag once. Do not build a chasing apparatus.
 - Missing path: report it. Do not invent the source.
-- Copy written on the founder's behalf: no em dashes.
-- Client-facing prose: no "it's not X, it's Y"; no staccato fragments; no marketing jargon;
-  address the client in their own document; do not talk about them in the third person
-  inside that document.
+- Replies and copy follow `00-system/communication.md`; current audience and voice
+  choices govern client-specific wording.
 
 ### This kind of job (defined Rua-led sprint)
 
@@ -101,7 +99,9 @@ Provisional. Overturn any mark in a later session.
   not specification.
 - Greenlight: categorise live, kill freely, log every kill.
 - Concepts deck is the source of truth. Schedule is derived. Shot list is derived.
-- Creative change after approval goes back through the concepts deck, then derived docs.
+- Creative change after approval normally goes through the concepts deck, then derived docs.
+  For an explicitly requested schedule-only update, use the last approved concepts
+  and current brief; record authorized changes and their source in the schedule.
 - Order concepts by who must be there, lightest first.
 - Types: standalone, mini-series, recurring, asset bank, sub-concepts.
 - Treatment pages use the anatomy in `concept-development.md`.

@@ -20,8 +20,9 @@ It is not the default for every Rua job. If the scope is pickup, shoot-only,
 edit-only, or another bounded package, stop. Use the scope of work. Do not run
 these stages.
 
-Read this file fully before producing a document. Discussion first. The document
-is the output second. Wait for an explicit go-ahead before building.
+Read this file fully before producing a document. Use the conversation to
+establish the requested output. A request to build or update it supplies the
+go-ahead; do not ask for the same approval again.
 
 Read `00-system/rewrite-contract.md` if you are about to add a rule, an example,
 or a name.
@@ -30,19 +31,9 @@ or a name.
 
 ## House style (client-facing and skill text)
 
-- No em dashes. Use commas, brackets, colons, or restructure.
-- No "it's not X, it's Y" construction, in any variant. State what something is.
-- No third-person references to the client inside the client's own document.
-  Address them directly.
-- No staccato fragments.
-- No marketing jargon. Write like a smart person talking to another smart person.
-- Post copy is pulled from real lines in the footage. Where there is no good line
-  yet, leave a placeholder. Never invent a quote and attribute it to a person.
-- Caption length, editorial taboos, and tone laws come from this client's brief
-  and research, not from a previous job.
-
-When reviewing a draft, fix machine-writing tells without being asked: double
-full stops, hedging filler, formulaic openers, and the constructions above.
+Read `00-system/communication.md` and apply the current client's brief.
+Post copy comes from real footage lines. Leave a placeholder where no good line
+exists; never invent a quote or transfer another client's editorial rules.
 
 ---
 
@@ -143,8 +134,7 @@ Run it well:
 - Kill anything that does not work and replace it with something that does.
 - Log every kill so it carries into the change log.
 
-Come out with an agreed list. Wait for an explicit go-ahead before building
-the deck.
+Come out with an agreed list. Build the deck when requested; carry forward any go-ahead already given.
 
 ### Stage 4, Concepts deck and iteration
 
@@ -160,9 +150,10 @@ Iteration can happen async.
 ### Stage 5, Pre-production and the reissue loop
 
 A pre-production call locks logistics and the schedule shape. It almost always
-also surfaces creative changes. Those do not get patched into the schedule.
+also surfaces creative changes. Record them against the approved concepts.
 
-Creative changes flow back through the concepts deck first. Read
+Creative changes normally flow through the concepts deck first. The schedule-only
+exception below applies when the human chooses it. Read
 `references/reissue-protocol.md`.
 
 Issue a simple staff release template to the client here, so it is ready
@@ -170,7 +161,13 @@ before the schedule goes out.
 
 ### Stage 6, Schedule and shot list
 
-Both derive from the latest concepts deck. Client-facing schedule: block cards,
+Use the latest approved concepts deck. When the human requests schedule-only
+hygiene without a new deck, skip Stage 4 and use the last approved concepts plus
+the current brief. Record the sources and any authorized changes in the schedule
+change log. Do not invent missing creative decisions; ask only about details that
+block an accurate schedule. Produce only the requested outputs.
+
+Client-facing schedule: block cards,
 flag boxes, consolidated action list, question sets for talent. Internal shot
 list: capture reference by block, conservative floor. The client never sees
 the shot list.
@@ -263,12 +260,15 @@ That file is a recipe. Approved client assets beat it.
 ## Document hierarchy and the reissue rule
 
 - The concepts deck is the single source of truth.
-- The schedule is derived from the concepts deck.
+- The schedule derives from approved concepts, with the current brief supplying
+  authorized changes for an explicit schedule-only update.
 - The shot list is derived from the schedule.
 
-Any creative change after the concepts deck is approved flows into a new dated
-concepts iteration first, and only then rebuilds the schedule and shot list.
-Never patch a creative correction into the schedule directly.
+Creative changes normally enter a dated concepts iteration before the schedule
+and shot list are rebuilt. For an explicit schedule-only request, the last
+approved concepts and current brief govern the update. Record each authorized
+change and its source in the schedule; do not silently treat the old deck as
+updated. This exception does not authorize new creative decisions.
 
 ---
 
