@@ -40,6 +40,40 @@ model can fill, not products tied to one harness. Read
 `00-system/working-roles.md` before dividing work across seats or standing up
 a new one.
 
+## Working rules
+
+Read `00-system/communication.md` for replies, copy and reviews.
+User instructions take precedence over skill guidelines. Carry forward scope,
+choices and authorization from the conversation. A request to create, fix or
+implement authorizes the ordinary work needed to complete it. Prepare the
+concrete result before asking for any remaining approval. Ask only when missing
+information materially changes the outcome or an action needs authorization.
+Continue independent work while that answer is pending.
+
+Infer the job class from available context. Ask only when uncertainty affects
+the work. Use the requested deliverable and finish point; a skill's full workflow
+does not require extra deliverables. An explicit review-only request permits
+inspection and findings, with no file writes, implementation or commits.
+
+For current Gmail, Calendar or Drive facts, use the connected Workspace tools.
+Discover available tools before declaring access unavailable. Prefer those tools
+to Mac Mail or Calendar. Local notes can provide context but cannot establish
+current mailbox or calendar state. If a tool fails, report the attempted lookup
+and the gap. Desk or Telegram access must be verified in the current environment;
+a past working connection is not proof of present access. Sending messages needs
+explicit authorization; a lookup or draft request does not provide it.
+
+Report actions as completed only when a tool result confirms completion. Label
+proposals, attempts, pending work and unknown facts accurately. Verify changes
+in proportion to their consequences; stop repeating checks once relevant checks
+pass unless new evidence warrants more work. Delegate bounded work when the
+requested workflow calls for independent workers and tools support it. Claim
+independent review only after another reviewer has actually returned findings.
+
+For a requested review, use `00-system/skills/rua-review/SKILL.md`.
+For a studio status extraction, use `00-system/status-extraction.md`.
+For a pickup memo, use `00-system/templates/pickup-memo.md`.
+
 ## Start of a chat
 
 Name the class before loading doctrine.
@@ -53,10 +87,10 @@ Name the class before loading doctrine.
 - **Founder / direction:** `20-studio/founder-context.md`.
 - **Founder todo:** `20-studio/todo.md` and
   `00-system/skills/rua-todo/`. Not `lists.md`.
-- **Other:** ask. Do not invent a class.
+- **Other:** use the stated scope; ask if a material boundary remains unclear.
 
-If the class is unclear, ask. Do not start a sprint document or a
-tool change to invent the job.
+If the class remains unclear and changes the deliverable, ask. Do not start a
+sprint document or a tool change to invent the job.
 
 ## Three rooms
 

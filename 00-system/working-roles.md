@@ -13,7 +13,9 @@ The founder holds the taste and makes the creative calls. Seats do the
 work that surrounds a decision: fetching, digesting, drafting to a decision
 already made, and checking against fixed rules. A seat never decides what is
 good, never rewrites to its own preference, and never invents a fact. When a
-seat is unsure whether something is a taste call, it is: surface it and ask.
+seat works from a founder decision already made, carry it forward and resolve
+routine execution choices from the brief. Ask about an unresolved creative or
+commercial choice only when it materially changes the result.
 
 This holds because the value Rua sells is judgement. A model that guesses at
 judgement produces plausible work that is not Rua's. The founder is the router
