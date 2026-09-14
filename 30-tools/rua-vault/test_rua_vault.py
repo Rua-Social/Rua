@@ -34,6 +34,8 @@ class RuaVaultTests(unittest.TestCase):
         self.payload_b = self.outside / "contoso.md"
         self.payload_a.write_text(PAYLOAD_A, encoding="utf-8")
         self.payload_b.write_text(PAYLOAD_B, encoding="utf-8")
+        self.payload_a.chmod(0o600)
+        self.payload_b.chmod(0o600)
         self.manifest_dir = self.outside / "config"
         self.manifest_dir.mkdir()
         self.manifest = self.manifest_dir / "manifest.json"
@@ -284,6 +286,7 @@ class RuaVaultTests(unittest.TestCase):
     def test_invalid_utf8_is_invalid(self) -> None:
         bad = self.outside / "bad.md"
         bad.write_bytes(b"\xff\xfe")
+        bad.chmod(0o600)
         self._write_manifest(
             entries=[
                 {
@@ -331,6 +334,153 @@ class RuaVaultTests(unittest.TestCase):
         result = self.run_vault("vault", "search", "northwind", env=env)
         self.assertEqual(result.returncode, 3)
         self.assertEqual(result.stdout, "")
+
+    def replace_payload(self, content: bytes) -> None:
+        self.payload_a.write_bytes(content)
+        data = json.loads(self.manifest.read_text())
+        data["entries"][0]["sha256"] = hashlib.sha256(content).hexdigest()
+        self._write_manifest(entries=data["entries"])
+
+    def assert_private_failure(self, result, code) -> None:
+        self.assertEqual(result.returncode, code, result.stderr)
+        self.assertEqual(result.stdout, "")
+        for private in [LABEL_A, str(self.outside), "111 units", "Traceback"]:
+            self.assertNotIn(private, result.stderr)
+
+    def test_large_record_requires_explicit_limit_and_small_output(self) -> None:
+        content = ("é" * 100 + "\n").encode() * 6000
+        self.replace_payload(content)
+        self.assert_private_failure(self.run_vault("vault", "get", REF_A), 4)
+        self.assert_private_failure(self.run_vault("vault", "get", REF_A,
+                                    "--max-bytes", "2097152"), 4)
+        self.assert_private_failure(self.run_vault("vault", "get", REF_A,
+                                    "--lines", "1:2"), 4)
+        sliced = self.run_vault("vault", "get", REF_A, "--max-bytes", "2097152",
+                                "--lines", "2:3", "--json")
+        self.assertEqual(sliced.returncode, 0, sliced.stderr)
+        result = json.loads(sliced.stdout)
+        self.assertEqual(result["content"], ("é" * 100 + "\n") * 2)
+        self.assertEqual(result["sha256"], hashlib.sha256(content).hexdigest())
+        self.assertEqual(result["lines"], {"start": 2, "end": 3})
+
+    def test_slice_checks_hash_of_unreturned_content(self) -> None:
+        self.replace_payload(b"first\nsecond\n")
+        self.payload_a.write_bytes(b"first\nchanged\n")
+        self.assert_private_failure(self.run_vault("vault", "get", REF_A,
+                                    "--lines", "1:1"), 5)
+
+    def test_slice_checks_utf8_of_unreturned_content(self) -> None:
+        self.replace_payload(b"first\n\xff\n")
+        self.assert_private_failure(self.run_vault("vault", "get", REF_A,
+                                    "--lines", "1:1"), 5)
+
+    def test_line_bounds_and_final_unterminated_line(self) -> None:
+        self.replace_payload(b"first\nsecond")
+        result = self.run_vault("vault", "get", REF_A, "--lines", "2:2")
+        self.assertEqual(result.stdout, "second")
+        self.assertEqual(result.returncode, 0)
+        for value in ["0:1", "2:1", "1:3", "1", "-1:2", "a:b", "1:2:3"]:
+            with self.subTest(value=value):
+                self.assert_private_failure(self.run_vault("vault", "get", REF_A,
+                                            "--lines=" + value), 2)
+
+    def test_record_limit_has_hard_ceiling(self) -> None:
+        for value in ["0", "-1", "16777217", "not-a-number"]:
+            with self.subTest(value=value):
+                self.assert_private_failure(self.run_vault("vault", "get", REF_A,
+                                            "--max-bytes", value), 2)
+        self.replace_payload(b"x" * (16777216 + 1))
+        self.assert_private_failure(self.run_vault("vault", "get", REF_A,
+                                    "--max-bytes", "16777216", "--lines", "1:1"), 4)
+        checked = self.run_vault("vault", "check", REF_A, "--json")
+        self.assertEqual(checked.returncode, 4)
+        self.assertEqual(json.loads(checked.stdout)["records"][0]["reason"], "read_limit_exceeded")
+
+    def test_selected_output_has_byte_ceiling(self) -> None:
+        self.replace_payload(("é" * 600000 + "\nsmall\n").encode())
+        result = self.run_vault("vault", "get", REF_A, "--max-bytes", "2097152",
+                                "--lines", "1:1")
+        self.assert_private_failure(result, 4)
+
+    def test_character_slice_retrieves_a_large_single_line_without_splitting_utf8(self) -> None:
+        self.replace_payload(("é" * 600000).encode())
+        result = self.run_vault("vault", "get", REF_A, "--max-bytes", "2097152",
+                                "--chars", "599999:600000", "--json")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        body = json.loads(result.stdout)
+        self.assertEqual(body["content"], "éé")
+        self.assertEqual(body["chars"], {"start": 599999, "end": 600000})
+        self.assertNotIn("lines", body)
+        for args in [("--chars", "600000:600001"), ("--chars", "0:1"),
+                     ("--chars", "1:1", "--lines", "1:1")]:
+            self.assert_private_failure(self.run_vault("vault", "get", REF_A,
+                                        "--max-bytes", "2097152", *args), 2)
+
+    def test_private_payload_permissions_required(self) -> None:
+        for mode in [0o644, 0o640, 0o000]:
+            with self.subTest(mode=mode):
+                self.payload_a.chmod(mode)
+                self.assert_private_failure(self.run_vault("vault", "get", REF_A), 4)
+        self.payload_a.chmod(0o600)
+
+    def test_health_reports_only_refs_status_and_reason(self) -> None:
+        result = self.run_vault("vault", "check", "--json")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout), {"records": [
+            {"ref": REF_A, "status": "ok", "reason": "verified"},
+            {"ref": REF_B, "status": "ok", "reason": "verified"},
+        ]})
+        self.payload_a.unlink()
+        result = self.run_vault("vault", "check", "--json")
+        self.assertEqual(result.returncode, 4)
+        rows = json.loads(result.stdout)["records"]
+        self.assertEqual(rows[0]["reason"], "missing_or_unreadable")
+        self.assertEqual(rows[1]["status"], "ok")
+        for private in [LABEL_A, LABEL_B, str(self.outside), PAYLOAD_A.strip(), "sha256"]:
+            self.assertNotIn(private, result.stdout + result.stderr)
+
+    def test_health_notes_large_record_and_checks_hash(self) -> None:
+        self.replace_payload(b"record\n" * 180000)
+        result = self.run_vault("vault", "check", REF_A, "--json")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["records"], [
+            {"ref": REF_A, "status": "ok", "reason": "requires_explicit_limit_and_slice"}
+        ])
+        with self.payload_a.open("ab") as stream:
+            stream.write(b"changed")
+        result = self.run_vault("vault", "check", REF_A)
+        self.assertEqual(result.returncode, 4)
+        self.assertEqual(result.stdout, f"{REF_A}\terror\trecord_invalid\n")
+
+    def test_health_missing_ref_or_manifest(self) -> None:
+        self.assert_private_failure(self.run_vault("vault", "check", "absent"), 1)
+        self.manifest.chmod(0o644)
+        self.assert_private_failure(self.run_vault("vault", "check"), 3)
+
+    def test_uri_through_symlink_parent_cannot_enter_git(self) -> None:
+        repo = self.root / "repo"
+        repo.mkdir()
+        (repo / ".git").mkdir()
+        payload = repo / "hidden.md"
+        payload.write_text(PAYLOAD_A)
+        payload.chmod(0o600)
+        link = self.outside / "link"
+        link.symlink_to(repo, target_is_directory=True)
+        data = json.loads(self.manifest.read_text())
+        data["entries"][0]["uri"] = (link / "hidden.md").as_uri()
+        self._write_manifest(entries=data["entries"])
+        self.assert_private_failure(self.run_vault("vault", "get", REF_A,
+                                    "--max-bytes", "16777216", "--lines", "1:1"), 4)
+        result = self.run_vault("vault", "check", REF_A, "--json")
+        self.assertEqual(result.returncode, 4)
+        self.assertEqual(json.loads(result.stdout)["records"][0]["reason"], "inside_git")
+
+    def test_bad_uri_is_metadata_safe(self) -> None:
+        for uri in ["file:relative", "file:///some%00file", "file://[broken/", "file:///a?query"]:
+            data = json.loads(self.manifest.read_text())
+            data["entries"][0]["uri"] = uri
+            self._write_manifest(entries=data["entries"])
+            self.assert_private_failure(self.run_vault("vault", "get", REF_A), 4)
 
 
 if __name__ == "__main__":

@@ -79,8 +79,9 @@ second signature.
 ## Issues
 
 GitHub issues are for deferred repo work that is not a founder next-action.
-The founder list is `20-studio/todo.md`, capped at seven by `rua-todo`. A
-full list means close one. Do not park overflow as an issue.
+The complete founder list is `20-studio/todo.md`. `rua-todo` limits the brief
+to seven actions while preserving the rest in that record. Do not close valid
+actions or move them into issues to make room.
 
 If an issue exists for the work, close it from the PR body with `Closes #N`.
 

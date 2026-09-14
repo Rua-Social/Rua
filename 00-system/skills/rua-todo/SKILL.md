@@ -1,57 +1,50 @@
 ---
 name: rua-todo
 description: >
-  Founder open-actions list in this repo. Use when adding, closing,
-  briefing, or answering what is on the list. Trigger on todo, to-do,
-  /todo, /brief, "what's on the list", or any request that would write
-  a task into lists.md, desk.md, a client README, or chat.
+  Maintain or brief the founder's open actions. Use for todo, to-do, /todo,
+  /brief, "what's on the list", or adding and closing a founder action.
 ---
 
-# Founder todo
+# Founder actions
 
-One file. Open actions only.
+`20-studio/todo.md` is the complete open-action record. Closed actions move to
+`20-studio/todo-done.md`. `lists.md` is historical desk diary and ideas, not an
+additional action store. Role ownership lives in `00-system/working-roles.md`.
 
-`20-studio/todo.md`
+## Capture and close
 
-Closed lines go to `20-studio/todo-done.md`. That file is a log.
-It is not the list.
-
-## When this applies
-
-The ask needs what the founder still has to do, or it would create
-a task. Load this instead of writing a bullet into `lists.md`,
-`desk.md`, a client record, or the reply.
-
-`lists.md` is the desk diary (blocked / moving / done, ideas,
-planned notes). It is not the todo.
-
-## The line
+Read the record before changing it. Add a concrete action the founder owns only
+when the request or evidence supports it. Use the existing format:
 
 ```
 - YYYY-MM-DD One concrete action in one sentence.
 ```
 
-After seven days a line is marked `STALE`. Cap is seven open
-lines. A duplicate, a nicety, or a system note is not a line.
+Keep named client details in the external client record; use a non-sensitive
+reference and minimal action wording here. Do not turn ideas, system incidents,
+niceties or speculative work into founder obligations.
 
-The PA writes this file. Other seats read it or `rua-seat pa`.
+The PA owns updates. Other seats route changes to the PA. If no separate PA is
+available, the active coordinator may take that responsibility for the bounded
+update, ensuring there is only one writer. Use the handoff skill when delegating.
 
-## Do
+Close an action only when its completion is supported by the conversation or
+observed result. Move it to the closed log without discarding its wording.
+Mark actions older than seven days `STALE` for review; age does not mean complete.
 
-- Read `20-studio/todo.md` when the ask needs the list.
-- Add only a real next action the founder owns.
-- Close a line by moving it to `todo-done.md` when it landed.
-- On the phone, Hermes `rua-seat`s pa. Do not invent LIST+ or a
-  second list.
+## Brief without losing work
 
-## Do not
+Keep every valid open action in the record. Seven is a presentation limit for a
+focused brief, not a storage cap. Select the most relevant actions for the brief
+and state how many remain; the full list stays available. Never close, drop or
+move a valid action to another system merely to make room.
 
-- Write todos into `lists.md`, `desk.md`, client READMEs, or chat.
-- Put ideas, diary, incidents, or "phone cannot see X" on the todo.
-- Invent work to fill the list.
-- Open a tracker, a database, or a second list file.
+Commands such as `/todo` and `/brief` depend on the active harness. Verify that
+binding before promising a command works. A brief can be composed directly from
+the record and relevant authorized context without inventing a new command.
 
-## Observe
+## One source of truth
 
-`/todo` is the open list. `/brief` is the ranked card from that
-file plus one live client card. Neither reads `lists.md`.
+Avoid competing action lists. A database or tracker may replace the current
+record when an authorized change solves demonstrated friction, preserves existing
+actions and updates readers and writers together. Until then, use this record.

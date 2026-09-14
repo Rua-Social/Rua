@@ -33,12 +33,12 @@ is genuinely justified.
 
 ## How work moves
 
-Work passes through fixed roles: fetch, digest, the founder decides, draft,
-then two independent gates (house style and facts). Labour and rules are
-delegated; taste and decisions are the founder's. Roles are functions any
-model can fill, not products tied to one harness. Read
-`00-system/working-roles.md` before dividing work across seats or standing up
-a new one.
+Carry the request through research, recommendations, execution and proportionate
+review. Agents resolve reversible choices within the brief and bring material
+creative or commercial decisions to the founder when they remain unresolved.
+The active coordinator owns completion, including delegated work and the final
+answer. Role ownership lives in `00-system/working-roles.md`; read it before
+dividing work. Any capable model can fill a role.
 
 ## Working rules
 
@@ -66,8 +66,8 @@ explicit authorization; a lookup or draft request does not provide it.
 Report actions as completed only when a tool result confirms completion. Label
 proposals, attempts, pending work and unknown facts accurately. Verify changes
 in proportion to their consequences; stop repeating checks once relevant checks
-pass unless new evidence warrants more work. Delegate bounded work when the
-requested workflow calls for independent workers and tools support it. Claim
+pass unless new evidence warrants more work. Delegate bounded independent work
+when it can save time or improve quality and tools support it. Claim
 independent review only after another reviewer has actually returned findings.
 
 For a requested review, use `00-system/skills/rua-review/SKILL.md`.
@@ -76,7 +76,8 @@ For a pickup memo, use `00-system/templates/pickup-memo.md`.
 
 ## Start of a chat
 
-Name the class before loading doctrine.
+Infer the class before loading doctrine. Keep internal routing out of the reply
+unless it helps explain a material scope decision.
 
 - **Client job:** load order in `00-system/rewrite-contract.md`.
   Doctrine for a defined sprint is `00-system/skills/rua-shoot-plan/`.
@@ -131,7 +132,7 @@ second in these files.
 
 If you introduce a new Git convention, skill, agent, dependency, test, API,
 or orchestration layer, briefly explain: what it is, why it is needed here,
-and why the alternative would be worse. Skip this for routine filesystem
+and what tradeoff matters for this task. Skip this for routine filesystem
 operations. Only explain when the concept itself is new.
 
 ## Git
