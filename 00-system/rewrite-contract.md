@@ -70,7 +70,16 @@ Do not invent a rate card or a subcontract commercial model in these files.
 4. Doctrine for that job-type only.
 5. A library artefact only if the human asked, or if doctrine does not cover the
    deliverable and the human agrees to open a source.
-6. If a cited path is missing, stop and say so. Do not reconstruct it from another client.
+6. If a cited path is missing, report the gap and pause only the dependent work.
+   Do not reconstruct it from another client.
+
+When consulting precedent, open the original artefact cited by its vault record.
+Select by deliverable type, stage, audience and problem. Compare several relevant
+sources when useful, and identify single examples as such. An instance provides
+factual context; it is not a creative template. Current evidence, approved client
+assets and the brief govern. Recurring styling is historical evidence, not an
+inferred brand rule. A discrepancy alone does not authorize changing a client
+record or expanding the requested doctrine work.
 
 ## Classification applied 14 August 2026
 
@@ -146,8 +155,9 @@ A doctrine draft fails if it contains:
 
 Search-replace on the archived memoir is a failed draft. Write new text.
 
-## What this contract does not authorise
+## Scope and new structure
 
-Agents, orchestration, model routing, a CRM, a marketing directory, a pickup rate card,
-a music-video service line, moving the machine-local library into Git, or installing a
-third-party method (agent roster, `_bmad/`, or equivalent) at the repository root.
+Use the evidence and proportionality principle in `AGENTS.md` for new tools,
+agents, orchestration or storage. This writing contract does not expand the
+user's task or establish new commercial policy. Keep named client knowledge
+external; a new technology does not change that boundary.

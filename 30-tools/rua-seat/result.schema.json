@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "properties": {
+    "status": {"type": "string", "enum": ["completed", "blocked", "refused", "incomplete"]},
+    "summary": {"type": "string"},
+    "findings": {"type": "array", "items": {"type": "string"}},
+    "sources": {"type": "array", "items": {"type": "object", "properties": {"reference": {"type": "string"}, "locator": {"type": "string"}}, "required": ["reference", "locator"], "additionalProperties": false}},
+    "artifacts": {"type": "array", "items": {"type": "string"}},
+    "blockers": {"type": "array", "items": {"type": "string"}}
+  },
+  "required": ["status", "summary", "findings", "sources", "artifacts", "blockers"],
+  "additionalProperties": false
+}

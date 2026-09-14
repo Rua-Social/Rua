@@ -6,11 +6,23 @@ A mention in chat is not a handoff. This command is.
 from __future__ import annotations
 
 import argparse
+import json
 import os
+from pathlib import Path
+import re
+import selectors
 import shlex
 import shutil
+import signal
+import sqlite3
 import subprocess
 import sys
+import time
+import uuid
+
+# Installed as a symlink; import the module next to the actual executable.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from handoff import Ledger, MAX_DEPTH, MAX_OUTPUT, SCHEMA, SCHEMA_PATH, load_context, parse_result
 
 SEATS = ("desk", "pa", "reader", "maker", "checker", "flags")
 EXIT_OK = 0
@@ -35,8 +47,8 @@ def build_command(seat: str, ask: str) -> list[str]:
             raise SystemExit(EXIT_RUN)
         return [hermes, "-p", f"rua-{seat}", "chat", "-q", ask]
 
-    if "{ask}" not in template:
-        print("RUA_SEAT_RUNNER must include {ask}", file=sys.stderr)
+    if "{ask}" not in template or "{seat}" not in template:
+        print("RUA_SEAT_RUNNER must include {ask} and {seat}", file=sys.stderr)
         raise SystemExit(EXIT_INVALID)
     rendered = template.replace("{seat}", seat).replace("{ask}", ASK_TOKEN)
     try:
@@ -44,18 +56,133 @@ def build_command(seat: str, ask: str) -> list[str]:
     except ValueError as exc:
         print(f"Invalid RUA_SEAT_RUNNER: {exc}", file=sys.stderr)
         raise SystemExit(EXIT_INVALID) from exc
-    if ASK_TOKEN not in argv:
+    if argv.count(ASK_TOKEN) != 1:
         print("RUA_SEAT_RUNNER must keep {ask} as its own argument", file=sys.stderr)
         raise SystemExit(EXIT_INVALID)
     return [ask if part == ASK_TOKEN else part for part in argv]
 
 
+def run_bounded(command, env, deadline):
+    """Capture both streams without blocking, with one inherited wall deadline.
+
+    SIGTERM reaches nested rua-seat wrappers, which cancel their own runners.
+    Limits apply to cooperating adapters, not arbitrary hostile local code.
+    """
+    process = subprocess.Popen(command, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               start_new_session=True)
+    streams = {"stdout": bytearray(), "stderr": bytearray()}
+    cancelled = [False]
+    old_handlers = {}
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        old_handlers[sig] = signal.signal(sig, lambda *_: cancelled.__setitem__(0, True))
+    status = None
+    selector = selectors.DefaultSelector()
+    selector.register(process.stdout, selectors.EVENT_READ, "stdout")
+    selector.register(process.stderr, selectors.EVENT_READ, "stderr")
+    try:
+        while selector.get_map() or process.poll() is None:
+            if cancelled[0]:
+                status = "cancelled"
+                break
+            if time.time() >= deadline:
+                status = "timed_out"
+                break
+            for key, _ in selector.select(timeout=min(0.1, max(0, deadline - time.time()))):
+                chunk = os.read(key.fileobj.fileno(), 65536)
+                if not chunk:
+                    selector.unregister(key.fileobj)
+                    continue
+                available = MAX_OUTPUT - sum(len(x) for x in streams.values())
+                streams[key.data].extend(chunk[:available])
+                if len(chunk) > available:
+                    status = "output_limit"
+                    break
+            if status:
+                break
+        if status:
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                pass
+            # A runner may have exited before its children closed the streams.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        process.wait()
+        return status, process.returncode, {key: value.decode("utf-8", errors="replace") for key, value in streams.items()}
+    finally:
+        selector.close()
+        process.stdout.close()
+        process.stderr.close()
+        for sig, handler in old_handlers.items():
+            signal.signal(sig, handler)
+
+
+def emit(record, as_json):
+    if as_json:
+        print(json.dumps(record, ensure_ascii=False))
+    elif record.get("result"):
+        result = record["result"]
+        print(result["summary"])
+        for artifact in result["artifacts"]:
+            print(artifact)
+        for blocker in result["blockers"]:
+            print(f"Pending: {blocker}")
+    elif record["status"] == "returned":
+        print(record.get("stdout", ""), end="")
+    else:
+        print(f"Handoff {record['job_id']}: {record['status']}. {record.get('error') or ''}".strip(), file=sys.stderr)
+    return EXIT_OK if record["status"] in ("returned", "completed") else EXIT_RUN
+
+
+def refresh_running(record, ledger):
+    if record["status"] != "running":
+        return record
+    alive = False
+    try:
+        if record.get("wrapper_pid"):
+            os.kill(record["wrapper_pid"], 0)
+            alive = True
+    except ProcessLookupError:
+        pass
+    if not alive or record["deadline"] < time.time():
+        record["status"] = "unconfirmed"
+        record["error"] = "The recorded runner is unavailable or overdue. Inspect side effects before starting a new job."
+        ledger.finish(record)
+    return record
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="rua seat")
-    parser.add_argument("seat", help="desk, pa, reader, maker, checker, or flags")
+    parser = argparse.ArgumentParser(prog="rua-seat")
+    parser.add_argument("--json", action="store_true", help="return the durable job record")
+    parser.add_argument("--structured", action="store_true", help="require a validated worker result")
+    parser.add_argument("--timeout", type=float, default=600, help="wall seconds, including nested handoffs (default 600)")
+    parser.add_argument("--job-id", help="reuse a stable ID to prevent duplicate execution")
+    parser.add_argument("--show", metavar="JOB_ID", help="read a saved record without running an agent")
+    parser.add_argument("--context", type=Path, help="JSON project/source/decision/authorization context")
+    parser.add_argument("seat", nargs="?", help="desk, pa, reader, maker, checker, or flags")
     parser.add_argument("ask", nargs=argparse.REMAINDER, help="the ask, in quotes")
     args = parser.parse_args(argv)
-    seat = args.seat.strip().lower()
+    if args.show:
+        try:
+            ledger = Ledger()
+            record = ledger.get(args.show)
+            if record is None:
+                ledger.close()
+                raise ValueError("Unknown job ID")
+            record = refresh_running(record, ledger)
+            ledger.close()
+            # A last-seen running record is never promoted to completed.
+            return emit(record, True)
+        except (ValueError, OSError, sqlite3.Error) as exc:
+            print(str(exc), file=sys.stderr)
+            return EXIT_INVALID
+    seat = (args.seat or "").strip().lower()
     if seat.startswith("rua-"):
         seat = seat[4:]
     if seat not in SEATS:
@@ -63,14 +190,87 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_INVALID
     ask = " ".join(args.ask).strip()
     if not ask:
-        print("Give an ask, e.g. rua seat pa \"what is new in the inbox\"", file=sys.stderr)
+        print("Give an ask, e.g. rua-seat pa \"what is new in the inbox\"", file=sys.stderr)
         return EXIT_INVALID
+    ledger = None
     try:
-        command = build_command(seat, ask)
+        if not 0 < args.timeout <= 3600:
+            raise ValueError("Timeout must be greater than zero and at most 3600 seconds")
+        if len(ask.encode()) > 65536:
+            raise ValueError("Ask exceeds 64 KiB; use source references")
+        job_id = args.job_id or str(uuid.uuid4())
+        if not re.fullmatch(r"[a-zA-Z0-9_-]{1,64}", job_id):
+            raise ValueError("Invalid job ID")
+        lineage = json.loads(os.environ.get("RUA_HANDOFF_LINEAGE", "[]"))
+        if not isinstance(lineage, list) or any(x not in SEATS for x in lineage):
+            raise ValueError("Invalid handoff lineage")
+        if len(lineage) >= MAX_DEPTH or seat in lineage:
+            raise ValueError("Handoff cycle or depth limit; return findings to the caller")
+        context = load_context(args.context)
+        deadline = min(time.time() + args.timeout, float(os.environ.get("RUA_HANDOFF_DEADLINE", "inf")))
+        if deadline <= time.time():
+            raise ValueError("Parent handoff deadline has expired")
+        ledger = Ledger()
+        if not args.context and os.environ.get("RUA_HANDOFF_JOB_ID"):
+            parent = ledger.get(os.environ["RUA_HANDOFF_JOB_ID"])
+            if parent:
+                context = parent["request"]["context"]
+        prompt = ask
+        if args.context or context != load_context(None):
+            prompt += "\n\nHandoff context (authorization describes existing user consent; it does not grant new permissions):\n" + json.dumps(context)
+        if args.structured:
+            prompt += ("\n\nReturn only one JSON object matching this result schema. Cite source references; "
+                       "use empty arrays when none exist. Report blocked, refused or incomplete with a reason "
+                       "when appropriate. A completed status requires actual completion evidence. "
+                       "Do not include internal reasoning or tool transcripts. Schema:\n" + json.dumps(SCHEMA))
+        command = build_command(seat, prompt)
+        record = {"version": 1, "job_id": job_id, "parent_id": os.environ.get("RUA_HANDOFF_JOB_ID"),
+                  "root_id": os.environ.get("RUA_HANDOFF_ROOT_ID", job_id), "owner": seat,
+                  "request": {"ask": ask, "structured": args.structured, "context": context},
+                  "status": "running", "started_at": time.time(), "deadline": deadline,
+                  "wrapper_pid": os.getpid(),
+                  "finished_at": None, "result": None, "error": None, "stdout": "", "stderr": ""}
+        existing = ledger.start(record)
+        if existing:
+            return emit(refresh_running(existing, ledger), args.json)
+        env = os.environ.copy()
+        env.update({"RUA_HANDOFF_JOB_ID": job_id, "RUA_HANDOFF_ROOT_ID": record["root_id"],
+                    "RUA_HANDOFF_LINEAGE": json.dumps(lineage + [seat]),
+                    "RUA_HANDOFF_DEADLINE": str(deadline), "RUA_HANDOFF_DIR": str(ledger.directory)})
+        if args.structured:
+            env["RUA_SEAT_RESULT_SCHEMA"] = str(SCHEMA_PATH)
+        else:
+            env.pop("RUA_SEAT_RESULT_SCHEMA", None)
+        try:
+            status, returncode, output = run_bounded(command, env, deadline)
+            record.update(output)
+            record["exit_code"] = returncode
+            record["status"] = status or ("returned" if returncode == 0 else "failed")
+            if record["status"] == "returned" and args.structured:
+                try:
+                    record["result"] = parse_result(output["stdout"])
+                    record["status"] = record["result"]["status"]
+                except (ValueError, TypeError, RecursionError):
+                    record["status"] = "invalid_output"
+                    record["error"] = "Worker did not return a valid structured result; no automatic retry was made."
+        except OSError:
+            record["status"] = "failed"
+            record["error"] = "Runner could not start. Check its executable and configuration."
+        ledger.finish(record)
+        if not args.json:
+            print(f"Job {job_id}; status {record['status']}. Read with rua-seat --show {job_id}.", file=sys.stderr)
+        return emit(record, args.json)
     except SystemExit as exc:
         return int(exc.code)
-    result = subprocess.run(command, check=False)
-    return EXIT_OK if result.returncode == 0 else EXIT_RUN
+    except (ValueError, OSError) as exc:
+        print(str(exc), file=sys.stderr)
+        return EXIT_INVALID
+    except sqlite3.Error:
+        print("Handoff storage is unavailable; check its permissions and database health.", file=sys.stderr)
+        return EXIT_RUN
+    finally:
+        if ledger is not None:
+            ledger.close()
 
 
 if __name__ == "__main__":

@@ -20,12 +20,20 @@ EXIT_VAULT = 3
 EXIT_SOURCE = 4
 EXIT_RECORD = 5
 MAX_BYTES = 1_048_576
+MAX_RECORD_BYTES = 16 * MAX_BYTES
 REF_CHARS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.")
 
 
-def fail(code: int, message: str) -> None:
-    print(message, file=sys.stderr)
-    raise SystemExit(code)
+class VaultError(Exception):
+    def __init__(self, code: int, message: str, reason: str | None = None):
+        self.code = code
+        self.message = message
+        self.reason = reason or message.rstrip(".").lower().replace(" ", "_")
+        super().__init__(message)
+
+
+def fail(code: int, message: str, reason: str | None = None) -> None:
+    raise VaultError(code, message, reason)
 
 
 def default_manifest() -> Path:
@@ -118,8 +126,14 @@ def search_entries(entries: list, query: str) -> list:
 
 
 def file_from_uri(uri: str) -> Path:
-    parsed = urlparse(uri)
-    if parsed.scheme != "file" or parsed.netloc not in ("", "localhost"):
+    try:
+        parsed = urlparse(uri)
+    except ValueError:
+        fail(EXIT_SOURCE, "Source unavailable.", "unsupported_uri")
+    if (parsed.scheme != "file" or parsed.netloc not in ("", "localhost")
+            or parsed.query or parsed.fragment or "\x00" in unquote(parsed.path)):
+        fail(EXIT_SOURCE, "Source unavailable.", "unsupported_uri")
+    if not parsed.path.startswith("/"):
         fail(EXIT_SOURCE, "Source unavailable.")
     path = Path(unquote(parsed.path))
     if os.name == "nt" and path.parts and path.parts[0] == "/":
@@ -127,37 +141,98 @@ def file_from_uri(uri: str) -> Path:
     return path
 
 
-def read_payload(entry: dict) -> bytes:
+def read_payload(entry: dict, max_bytes: int = MAX_BYTES) -> bytes:
     path = file_from_uri(entry["uri"])
     info = lstat_or_none(path)
     if info is None:
-        fail(EXIT_SOURCE, "Source unavailable.")
+        fail(EXIT_SOURCE, "Source unavailable.", "missing_or_unreadable")
     if stat.S_ISLNK(info.st_mode) or path.is_symlink():
-        fail(EXIT_SOURCE, "Source unavailable.")
+        fail(EXIT_SOURCE, "Source unavailable.", "symlink")
     if not stat.S_ISREG(info.st_mode):
-        fail(EXIT_SOURCE, "Source unavailable.")
-    if info.st_size > MAX_BYTES:
-        fail(EXIT_SOURCE, "Source unavailable.")
+        fail(EXIT_SOURCE, "Source unavailable.", "not_regular_file")
+    if info.st_mode & (stat.S_IRWXG | stat.S_IRWXO) or not info.st_mode & stat.S_IRUSR:
+        fail(EXIT_SOURCE, "Source unavailable.", "insecure_or_unreadable_permissions")
+    if info.st_size > max_bytes:
+        fail(EXIT_SOURCE, "Record exceeds read limit. Use --max-bytes and --lines.", "read_limit_exceeded")
     try:
         resolved = path.resolve()
     except OSError:
         fail(EXIT_SOURCE, "Source unavailable.")
     if inside_git(resolved):
-        fail(EXIT_SOURCE, "Source unavailable.")
+        fail(EXIT_SOURCE, "Source unavailable.", "inside_git")
     try:
-        fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+                     | getattr(os, "O_NONBLOCK", 0))
     except OSError:
         fail(EXIT_SOURCE, "Source unavailable.")
     try:
-        data = os.read(fd, MAX_BYTES + 1)
+        opened = os.fstat(fd)
+        if (not stat.S_ISREG(opened.st_mode)
+                or (opened.st_dev, opened.st_ino) != (info.st_dev, info.st_ino)
+                or opened.st_mode & (stat.S_IRWXG | stat.S_IRWXO)
+                or not opened.st_mode & stat.S_IRUSR):
+            fail(EXIT_SOURCE, "Source unavailable.", "source_changed_or_insecure")
+        chunks = []
+        remaining = max_bytes + 1
+        while remaining:
+            chunk = os.read(fd, min(65536, remaining))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        data = b"".join(chunks)
+    except OSError:
+        fail(EXIT_SOURCE, "Source unavailable.", "missing_or_unreadable")
     finally:
         os.close(fd)
-    if len(data) > MAX_BYTES:
-        fail(EXIT_SOURCE, "Source unavailable.")
+    if len(data) > max_bytes:
+        fail(EXIT_SOURCE, "Record exceeds read limit. Use --max-bytes and --lines.", "read_limit_exceeded")
     digest = hashlib.sha256(data).hexdigest()
     if digest != entry["sha256"]:
         fail(EXIT_RECORD, "Record invalid.")
     return data
+
+
+def decode_payload(data: bytes) -> str:
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError:
+        fail(EXIT_RECORD, "Record invalid.", "invalid_utf8")
+
+
+def line_range(value: str) -> tuple[int, int]:
+    try:
+        start, end = (int(part) for part in value.split(":"))
+        if not 1 <= start <= end:
+            raise ValueError
+    except ValueError:
+        fail(EXIT_INVALID, "Invalid command.")
+    return start, end
+
+
+def cmd_check(args: argparse.Namespace) -> None:
+    entries = load_manifest()["entries"]
+    if args.ref:
+        entries = [entry for entry in entries if entry["ref"] == args.ref]
+        if not entries:
+            fail(EXIT_MISSING, "Record missing.")
+    results = []
+    for entry in entries:
+        try:
+            data = read_payload(entry, MAX_RECORD_BYTES)
+            decode_payload(data)
+            reason = "requires_explicit_limit_and_slice" if len(data) > MAX_BYTES else "verified"
+            result = {"ref": entry["ref"], "status": "ok", "reason": reason}
+        except VaultError as error:
+            result = {"ref": entry["ref"], "status": "error", "reason": error.reason}
+        results.append(result)
+    if args.json:
+        print(json.dumps({"records": results}))
+    else:
+        for result in results:
+            print(f"{result['ref']}\t{result['status']}\t{result['reason']}")
+    if any(result["status"] == "error" for result in results):
+        raise VaultError(EXIT_SOURCE, "Vault check found inaccessible records.")
 
 
 def cmd_search(args: argparse.Namespace) -> None:
@@ -176,6 +251,8 @@ def cmd_search(args: argparse.Namespace) -> None:
 
 
 def cmd_get(args: argparse.Namespace) -> None:
+    if not 1 <= args.max_bytes <= MAX_RECORD_BYTES:
+        fail(EXIT_INVALID, "Invalid command.")
     ref = args.ref
     if not ref or any(ch not in REF_CHARS for ch in ref):
         fail(EXIT_INVALID, "Invalid command.")
@@ -183,22 +260,31 @@ def cmd_get(args: argparse.Namespace) -> None:
     found = next((item for item in entries if item["ref"] == ref), None)
     if found is None:
         fail(EXIT_MISSING, "Record missing.")
-    data = read_payload(found)
-    try:
-        text = data.decode("utf-8")
-    except UnicodeDecodeError:
-        fail(EXIT_RECORD, "Record invalid.")
+    data = read_payload(found, args.max_bytes)
+    text = decode_payload(data)
+    if args.lines:
+        start, end = args.lines
+        lines = text.splitlines(keepends=True)
+        if end > len(lines):
+            fail(EXIT_INVALID, "Line range is outside the record.")
+        text = "".join(lines[start - 1:end])
+    elif args.chars:
+        start, end = args.chars
+        if end > len(text):
+            fail(EXIT_INVALID, "Character range is outside the record.")
+        text = text[start - 1:end]
+    if len(text.encode("utf-8")) > MAX_BYTES:
+        fail(EXIT_SOURCE, "Output exceeds 1 MiB. Use a smaller --lines or --chars range.")
     if args.json:
-        print(
-            json.dumps(
-                {
-                    "ref": found["ref"],
-                    "label": found["label"],
-                    "sha256": found["sha256"],
-                    "content": text,
-                }
-            )
-        )
+        result = {
+            "ref": found["ref"], "label": found["label"],
+            "sha256": found["sha256"], "content": text,
+        }
+        if args.lines:
+            result["lines"] = {"start": args.lines[0], "end": args.lines[1]}
+        elif args.chars:
+            result["chars"] = {"start": args.chars[0], "end": args.chars[1]}
+        print(json.dumps(result))
         return
     sys.stdout.write(text)
 
@@ -215,22 +301,38 @@ def build_parser() -> argparse.ArgumentParser:
     vault.error = silent_error
     vault_sub = vault.add_subparsers(dest="action")
     search = vault_sub.add_parser("search")
+    search.error = silent_error
     search.add_argument("--json", action="store_true")
     search.add_argument("query")
     search.set_defaults(func=cmd_search)
     get_cmd = vault_sub.add_parser("get")
+    get_cmd.error = silent_error
     get_cmd.add_argument("--json", action="store_true")
+    get_cmd.add_argument("--max-bytes", type=int, default=MAX_BYTES,
+                         help="verified source read limit, 1 to 16777216 bytes (default: 1048576)")
+    selection = get_cmd.add_mutually_exclusive_group()
+    selection.add_argument("--lines", type=line_range, help="inclusive 1-based START:END, verified before slicing")
+    selection.add_argument("--chars", type=line_range, help="inclusive 1-based Unicode character START:END, for long lines")
     get_cmd.add_argument("ref")
     get_cmd.set_defaults(func=cmd_get)
+    check = vault_sub.add_parser("check", help="verify records; print refs and health only")
+    check.error = silent_error
+    check.add_argument("--json", action="store_true")
+    check.add_argument("ref", nargs="?")
+    check.set_defaults(func=cmd_check)
     return parser
 
 
 def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
-    args = parser.parse_args(argv)
-    if getattr(args, "func", None) is None:
-        fail(EXIT_INVALID, "Invalid command.")
-    args.func(args)
+    try:
+        args = parser.parse_args(argv)
+        if getattr(args, "func", None) is None:
+            fail(EXIT_INVALID, "Invalid command.")
+        args.func(args)
+    except VaultError as error:
+        print(error.message, file=sys.stderr)
+        raise SystemExit(error.code)
 
 
 if __name__ == "__main__":

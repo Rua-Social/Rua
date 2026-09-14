@@ -1,94 +1,79 @@
 # How work moves through Rua
 
-This is the operating workflow for every seat in this repo, whatever model or
-harness it runs on. It is written as roles, not products. A role is a function
-work passes through. Any capable model can fill any role. Nothing here is tied
-to one app, one provider, or one machine.
+Roles describe responsibility. Any capable model or harness can fill them.
+Use only the roles the task needs; an ordinary request can finish in one seat.
 
-## The principle
+## Decisions and execution
 
-Labour and rules can be delegated. Taste and decisions cannot.
+The founder sets direction and retains material creative and commercial choices.
+Agents contribute judgement: research, interpret evidence, recommend angles,
+rank options, explain tradeoffs and produce finished work within the brief.
+Distinguish sourced facts from interpretations and proposals. Never invent facts,
+quotes, consent or approval.
 
-The founder holds the taste and makes the creative calls. Seats do the
-work that surrounds a decision: fetching, digesting, drafting to a decision
-already made, and checking against fixed rules. A seat never decides what is
-good, never rewrites to its own preference, and never invents a fact. When a
-seat works from a founder decision already made, carry it forward and resolve
-routine execution choices from the brief. Ask about an unresolved creative or
-commercial choice only when it materially changes the result.
+Carry forward decisions and authorization from the conversation. Resolve routine,
+reversible choices without another approval round. When an unresolved choice
+materially changes the outcome, prepare the concrete options and continue useful
+independent work while the founder decides. A request to draft can be complete
+when the draft is delivered; publication is a separate action when unauthorized.
 
-This holds because the value Rua sells is judgement. A model that guesses at
-judgement produces plausible work that is not Rua's. The founder is the router
-and the editor, by design, not for lack of automation.
+## Role ownership
 
-## The workflow
+This table is the canonical ownership map. Harness configuration maps these
+roles to available runners and models.
 
-One path covers the whole organisation: client jobs, Rua's own marketing,
-case studies, the website, new services. The activity only changes which
-doctrine and which material load, not the shape of the path.
+| Role | Responsibility |
+| --- | --- |
+| `desk` | Coordinate the request, route bounded tasks, reconcile results and own the final answer. |
+| `pa` | Maintain founder actions and handle administration, inbox and calendar work within authorization. |
+| `reader` | Research sources, extract evidence and offer clearly labelled interpretations or recommendations. |
+| `maker` | Draft, build and revise the requested artefacts or software within the brief. |
+| `checker` | Review wording, structure and house style against the current audience and brief. |
+| `flags` | Verify factual claims and applicable consent or release requirements against actual sources. |
 
-1. **Fetch.** Pull the material and the facts the work needs. Run the
-   deterministic tools (transcription, vault lookups, exports, counts).
-   Track the todo. No judgement. If a record names a path, try it. A
-   mounted volume is in play. Do not announce that a disk or CLI is
-   unavailable until a command you ran failed.
-2. **Digest.** Turn one large source at a time into neutral findings:
-   counts, formats, verbatim lines, what is there, cited to source. Stop
-   before interpreting. "This format appears fourteen times" is a finding.
-   "This is the strongest angle" is a decision, and that is the founder's.
-3. **Decide.** The founder reads the findings and makes the call: the angle,
-   the concept, the offering, what to keep and kill. This step is not
-   delegated.
-4. **Draft.** Produce copy and artefacts to the founder's decision, loading
-   the doctrine for the job class. A draft is raw material for the founder to
-   cut, never a finished piece presented as done. Brainstorming to surface
-   options the founder reacts to belongs here too.
-5. **Gate.** Two independent checks before anything ships, neither of which
-   rewrites:
-   - **House style.** Read the draft cold against the style rules. Flag every
-     machine-writing tell. Hold or pass. The seat that checks style is never
-     the seat that wrote the copy.
-   - **Facts.** Check the draft against the real facts of the job, read from
-     the vault: consent and releases signed, names and brands spelled right,
-     no disavowed or held lines, claims sourced. A missing fact is a hold, not
-     a pass. Silence is not consent.
+The active seat can coordinate as `desk` without launching another coordinator.
+Todo ownership follows `00-system/skills/rua-todo/SKILL.md`. Use deterministic
+software for transcription, search, arithmetic and exports; extra agents are
+useful where independent judgement or separate context improves the result.
 
-## What is a role and what is a tool
+## Delegation and completion
 
-Deterministic work is a tool, not a role. Transcription, vault search, ledger
-arithmetic, and schedule derivation are software, run by the fetch seat. Do
-not stand up a seat for work that has one correct output.
+Delegate independent work when it saves time or improves quality. Give each
+worker the objective, relevant sources, existing decisions, authorized actions,
+owned paths and expected result. Assign one writer per path or isolate changes
+in worktrees. Workers preserve others' edits and surface dependencies.
 
-A new role is earned only when the work genuinely repeats and benefits from
-its own context, its own rules, or a different model. Do not add roles ahead
-of that. This is the same proportionality rule as the rest of this repo.
+The coordinator tracks outstanding work, waits for actual results and resolves
+conflicts in the evidence. A mention of another role is not a completed handoff.
+A timeout or failed run remains incomplete; never present it as review or success.
+Use `00-system/skills/rua-handoff/SKILL.md` and the runner README for mechanics.
 
-## Handoff
+Compose one useful answer from the findings. Preserve important uncertainty and
+source references, but do not paste worker transcripts as the final response.
+Quote exact wording only when it matters to the task.
 
-A mention in a chat is not a handoff. The other role has to actually run
-and return. The founder should not have to say "quote them" or "don't send
-mail". Look-ups are read-only until he says send, book, or delete.
+## Review that fits the consequence
 
-How the run is invoked is harness-specific. On this machine the command is
-`rua-seat <role> "the ask"`. Wait for what they said, then pass it on.
+Check every result against the request. For consequential client or public
+material, use independent style and factual review where those checks apply.
+For routine internal replies and reversible edits, a focused self-review is
+usually enough unless independent review was requested. Software verification
+follows `00-system/skills/rua-ship-gate/SKILL.md`.
 
-Voice and typing will mangle names. Search the vault with the heard
-phrase, the words stuck together, and a distinctive chunk before saying
-there is no record.
+Reviewers cite defects and propose the smallest useful correction. Independent
+review means another reviewer actually inspected the material and returned.
+Agreement is valid; do not manufacture disagreement or repeat a passed check
+without new evidence. Resolve actionable findings and finish the requested work.
+A missing fact holds the claim or dependent action, while unrelated work continues.
 
-## Sovereignty and model-agnosticism
+## Capability and data boundaries
 
-These roles are the law. The mapping of role to model to harness is a
-snapshot, and it lives with the harness, not here. A future seat, including a
-local model, reads this file and can be seated into any role without changing
-the doctrine. If a fix is needed, it belongs in this repo so every seat reads
-it identically, not in one harness's private settings.
+Discover the tools available in the current environment. Verify a named disk or
+CLI before reporting it unavailable. For named client records use `rua vault
+search` then `rua vault get`; voice transcription may require alternate spellings
+or a distinctive chunk. A failed lookup is a gap, not permission to reconstruct
+client facts from another engagement.
 
-## Current instantiation (snapshot, not doctrine)
-
-As of 2026-09-01 the roles are seated in Hermes as five profiles anchored to
-this repo, each reading the repo as its brain and keeping little private
-memory. The current seating (which model runs which role) is recorded with
-the harness, not here, so that re-seating on another model or machine never
-touches this file. If this section and the running fleet disagree, the fleet
-is the current fact and this line is stale. The roles above do not go stale.
+Lookups and drafts do not authorize sending, booking or deleting. Carry explicit
+authorization forward when it exists. Harness bindings and observed availability
+belong with the runner; historical model choices do not constrain current work.

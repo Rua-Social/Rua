@@ -1,42 +1,45 @@
 ---
 name: rua-handoff
 description: >
-  Hand work to another Rua seat and wait for what they said. Use when
-  desk, telegram, or any seat would tag pa, reader, maker, checker, or
-  flags. Trigger on hand off, delegate, ask the PA, ask the reader.
+  Delegate a bounded task to another Rua seat and use its returned result.
+  Trigger on hand off, delegate, ask the PA, or work that benefits from an
+  independent reader, maker, checker or factual reviewer.
 ---
 
 # Handoff
 
-A mention in chat is not a handoff. The other seat has to run and return.
+Read `00-system/working-roles.md` for role ownership. The coordinator keeps
+responsibility for the request and final answer while another worker runs.
 
-On this machine:
+State the objective, relevant sources, accepted decisions, authorized actions,
+owned paths and expected result. Keep client details in the authorized external
+record; share only the context needed for this task. Tell workers about concurrent
+work and give each path one writer, or use isolated worktrees.
 
-```sh
-rua-seat pa "what is new in the inbox"
-rua-seat reader "digest this source, findings only"
-rua-seat maker "draft to this decision"
-rua-seat checker "grade this draft, do not rewrite"
-rua-seat flags "fact-check this draft against the vault"
-rua-seat desk "vault search Dental"
-```
-
-Wait for stdout. Then quote the useful lines to the founder.
-
-If a vault card or the founder names a path (`/Volumes/T7/...`), `ls` it.
-The fetch seat can read that disk when it is mounted. Run the command
-before saying you cannot access it.
-
-If `rua-seat` is missing, the same job is:
+The executable is `rua-seat`. Its binding, supported invocation and handoff
+mechanics are documented in `30-tools/rua-seat/README.md`.
 
 ```sh
-hermes -p rua-pa chat -q "the ask"
+rua-seat reader "research the supplied source and return cited findings"
+rua-seat maker "draft the requested artefact within the agreed brief"
+rua-seat checker "review the draft against the current brief and house style"
 ```
 
-Do not tell the founder you asked someone until that command finished.
+Use the requested role. If the command is unavailable, inspect the README and
+available tools; do not silently substitute another role or assume a particular
+harness is installed. Native collaboration tools may handle bounded delegation
+when available, using the same responsibility and evidence requirements.
 
-PA asks are read-only unless the founder already said send, book, or delete.
+Wait for the actual result before claiming that the handoff or review completed.
+Report a failed or timed-out run accurately. Continue independent work where
+possible. A further attempt needs a reason to expect progress; repeated failure
+should surface the specific gap instead of an unbounded retry loop.
 
-Voice notes mis-hear names. Search the vault with the heard phrase, the
-words stuck together, and a distinctive chunk (plex, eco, dental, fitz)
-before saying there is no record.
+Synthesize useful findings into the final answer, retaining sources and material
+uncertainty. Do not paste raw worker output by default. Reconcile disagreements
+against the evidence; agreement between independent reviewers is valid.
+
+Verify a named disk or path before reporting it unavailable. Client lookup uses
+`rua vault search` then `rua vault get`; try alternate transcriptions when needed.
+Lookup and draft requests do not authorize sending, booking or deleting. Existing
+explicit authorization carries through the handoff.
