@@ -8,6 +8,12 @@ external record. Casual repo search never finds the record.
 Larger registered text records can be read deliberately in sections, and an
 operator can check source health without printing client details.
 
+- `rehash <REF>` recomputes sha256 from the record file and patches the manifest atomically.
+  No-op if the hash is already current. Use after editing a record directly.
+- `tidy <PATH>` scans a directory for versioned file clusters (suffix `-v3`, `_v3`, `-3`, `_3`),
+  prints keep/stale groups, and with `--delete` removes the stale iterations. Dry-run by default.
+  `--json` for machine-readable output.
+
 ## Out of scope
 
 - Bulk migration of remaining client files

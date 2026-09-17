@@ -483,5 +483,136 @@ class RuaVaultTests(unittest.TestCase):
             self.assert_private_failure(self.run_vault("vault", "get", REF_A), 4)
 
 
+class RuaVaultRehashTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.outside = self.root / "outside"
+        self.outside.mkdir()
+        self.payload = self.outside / "northwind.md"
+        self.payload.write_text("original content\n", encoding="utf-8")
+        self.payload.chmod(0o600)
+        self.manifest_dir = self.outside / "config"
+        self.manifest_dir.mkdir()
+        self.manifest_dir.chmod(0o700)
+        self.manifest = self.manifest_dir / "manifest.json"
+        self.sha_original = hashlib.sha256(b"original content\n").hexdigest()
+        self._write_manifest(self.sha_original)
+        self.env = os.environ.copy()
+        self.env["RUA_VAULT_MANIFEST"] = str(self.manifest)
+
+    def _write_manifest(self, sha: str) -> None:
+        data = {
+            "version": 1,
+            "entries": [{
+                "ref": "rec-northwind-context",
+                "label": "Northwind",
+                "aliases": [],
+                "uri": self.payload.resolve().as_uri(),
+                "sha256": sha,
+            }],
+        }
+        self.manifest.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        self.manifest.chmod(0o600)
+
+    def run_cmd(self, *args) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            ["python3", str(SCRIPT), *args],
+            capture_output=True, text=True, env=self.env,
+        )
+
+    def test_rehash_already_current(self) -> None:
+        result = self.run_cmd("vault", "rehash", "rec-northwind-context")
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("already current", result.stdout)
+
+    def test_rehash_updates_stale_sha(self) -> None:
+        # Write new content to the file, manifest still has old SHA.
+        new_content = "updated content\n"
+        self.payload.write_text(new_content, encoding="utf-8")
+        self.payload.chmod(0o600)
+        result = self.run_cmd("vault", "rehash", "rec-northwind-context")
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("updated", result.stdout)
+        # Manifest should now have the new SHA.
+        data = json.loads(self.manifest.read_text())
+        new_sha = hashlib.sha256(new_content.encode()).hexdigest()
+        self.assertEqual(data["entries"][0]["sha256"], new_sha)
+
+    def test_rehash_missing_ref(self) -> None:
+        result = self.run_cmd("vault", "rehash", "rec-does-not-exist")
+        self.assertEqual(result.returncode, 1)
+
+    def test_rehash_invalid_ref_characters(self) -> None:
+        result = self.run_cmd("vault", "rehash", "bad ref!")
+        self.assertEqual(result.returncode, 2)
+
+
+class RuaVaultTidyTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.scan = Path(self.temp.name) / "offload"
+        self.scan.mkdir()
+
+    def _touch(self, *names: str) -> None:
+        for name in names:
+            p = self.scan / name
+            p.write_text("x")
+
+    def run_cmd(self, *args) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            ["python3", str(SCRIPT), *args],
+            capture_output=True, text=True,
+        )
+
+    def test_tidy_no_clusters(self) -> None:
+        self._touch("report.pdf", "notes.md")
+        result = self.run_cmd("vault", "tidy", str(self.scan))
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("No version clusters", result.stdout)
+
+    def test_tidy_identifies_stale_versions(self) -> None:
+        self._touch("doc-v1.pdf", "doc-v2.pdf", "doc-v3.pdf")
+        result = self.run_cmd("vault", "tidy", str(self.scan))
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("keep    doc-v3.pdf", result.stdout)
+        self.assertIn("doc-v1.pdf", result.stdout)
+        self.assertIn("doc-v2.pdf", result.stdout)
+        # Dry-run: files must still be present.
+        self.assertTrue((self.scan / "doc-v1.pdf").exists())
+
+    def test_tidy_delete_removes_stale(self) -> None:
+        self._touch("doc-v1.pdf", "doc-v2.pdf", "doc-v3.pdf")
+        result = self.run_cmd("vault", "tidy", str(self.scan), "--delete")
+        self.assertEqual(result.returncode, 0)
+        self.assertFalse((self.scan / "doc-v1.pdf").exists())
+        self.assertFalse((self.scan / "doc-v2.pdf").exists())
+        self.assertTrue((self.scan / "doc-v3.pdf").exists())
+
+    def test_tidy_json_output(self) -> None:
+        self._touch("brief-v1.html", "brief-v2.html")
+        result = self.run_cmd("vault", "tidy", str(self.scan), "--json")
+        self.assertEqual(result.returncode, 0)
+        data = json.loads(result.stdout)
+        self.assertEqual(len(data["clusters"]), 1)
+        self.assertEqual(data["clusters"][0]["keep"], "brief-v2.html")
+        self.assertEqual(data["clusters"][0]["stale"], ["brief-v1.html"])
+
+    def test_tidy_v_prefix_and_plain_number(self) -> None:
+        self._touch("plan-v3.md", "plan-v4.md", "plan-5.md")
+        result = self.run_cmd("vault", "tidy", str(self.scan), "--json")
+        self.assertEqual(result.returncode, 0)
+        # plan-v3/v4 form one group; plan-5 uses plain number and is separate.
+        data = json.loads(result.stdout)
+        all_stale = [s for c in data["clusters"] for s in c["stale"]]
+        self.assertIn("plan-v3.md", all_stale)
+
+    def test_tidy_invalid_path(self) -> None:
+        result = self.run_cmd("vault", "tidy", "/nonexistent/path")
+        self.assertEqual(result.returncode, 2)
+
+
 if __name__ == "__main__":
     unittest.main()
