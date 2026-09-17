@@ -14,6 +14,8 @@ CLI on this Mac. Founder or any AI seat with the same command.
 | `rua vault get REF` | terminal | Print one verified record |
 | `rua vault get --max-bytes BYTES --lines START:END REF` | terminal | Read a verified section of a larger record |
 | `rua vault check [REF]` | terminal | Check source health without client labels or content |
+| `rua vault rehash REF` | terminal | Recompute sha256 and patch the manifest after editing a record |
+| `rua vault tidy PATH [--delete]` | terminal | Show (and optionally remove) stale versioned files in an offload folder |
 
 ## Voice and tone
 
