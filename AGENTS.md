@@ -81,7 +81,13 @@ unless it helps explain a material scope decision.
 
 - **Client job:** load order in `00-system/rewrite-contract.md`.
   Doctrine for a defined sprint is `00-system/skills/rua-shoot-plan/`.
-  Pickup uses the scope of work. Do not load the sprint skill.
+  A concept push calls `rua-creative-direction` lane A from inside the
+  sprint and returns there. Pickup uses the scope of work. Do not load
+  the sprint skill.
+- **Cinematic film:** `00-system/skills/rua-treatment/`. Treatment, script,
+  storyboard, or visual aid, and only the stage he asked for. A pressure
+  pass calls `rua-creative-direction` lane B from inside this skill and
+  returns here. Do not load the sprint skill to produce it.
 - **Tool / software:** `00-system/skills/rua-ship-gate/`.
 - **Sales:** `20-studio/sales/README.md` and
   `00-system/templates/scope-of-work.md`. No delivery skill.
