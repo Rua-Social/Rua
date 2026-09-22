@@ -23,6 +23,13 @@ If the page is not on disk, say so. Do not rebuild its method from memory.
 `creative-director` starts its own full cycle. Ignore those jumps. The owner
 already chose the stage.
 
+The installed skill trees stay untracked on disk. Do not commit them. A
+path that Git does not list is not a missing install.
+
+Do not copy a client working pack into `30-tools/` to feed this pass. Named
+work stays in the vault and is opened on purpose. A pack left in the tools
+tree becomes the next film's precedent.
+
 ## A. Concepting
 
 `rua-shoot-plan` calls this lane. Findings for this client already exist, or
