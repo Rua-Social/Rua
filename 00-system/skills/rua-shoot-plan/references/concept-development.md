@@ -1,7 +1,9 @@
 # Concept development
 
-Concept types, tier logic, pillar thinking, and the anatomy of a full
-treatment. Used at Stage 3 (greenlight) and Stage 4 (the concepts deck).
+Concept types, tier logic, pillar thinking, and the anatomy of a concept
+page. Used at Stage 3 (greenlight) and Stage 4 (the concepts deck). A page
+here is a sprint concept. A cinematic ad, music video, or short is
+`rua-treatment`, even when this deck calls a page a treatment.
 
 ---
 

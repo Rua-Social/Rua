@@ -103,6 +103,11 @@ Come out with two things: a findings summary, and a rough concept long-list.
 The long-list is working material. Concepts are worked with the client at
 Stage 3.
 
+A push on those ideas, or a critique of concepts already written, calls
+`rua-creative-direction` lane A and returns here. Findings come first. The
+pass does not open the film skill, and it does not run before the findings
+exist unless he explicitly skips the read.
+
 ### Stage 2, Week 0 deck and presentation
 
 The first client touchpoint that carries a document. It shows you have studied
@@ -313,6 +318,8 @@ laws, surplus, page count, or look.
 - `references/reissue-protocol.md`
 - `references/delivery-closeout.md`
 
-There is no creative library in this repository. Do not invent one. Do not
-read `90-archive/skills/rua-shoot-plan-2026-06/` unless the human asks for
-the historical extraction.
+There is no creative library in this repository. Do not invent one. A craft
+pass uses `rua-creative-direction` and returns here. Outside skills are a
+shelf, not a second sprint. Do not read
+`90-archive/skills/rua-shoot-plan-2026-06/` unless the human asks for the
+historical extraction.

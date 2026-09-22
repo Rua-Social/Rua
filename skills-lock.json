@@ -7,6 +7,13 @@
       "skillPath": "skills/brandkit/SKILL.md",
       "computedHash": "b63012f3c3d21197e0185d3e9cc7ec40c589fb10e0b5a32a561739de31aa3f20"
     },
+    "creative-director": {
+      "source": "skills.sh",
+      "sourceUrl": "https://skills.sh/p/nuK9jo3sTCZGB2Ul",
+      "sourceType": "well-known",
+      "computedHash": "b656c37be166f2113b61f8ad2953605efd4e543656871860ea4d672adda09471",
+      "wellKnownDigest": "sha256:8ca984598fa1a28de9dbc5b264be6eeebdf968dd81dc614c22a12a7c9ffd4f97"
+    },
     "design-taste-frontend": {
       "source": "Leonxlnx/taste-skill",
       "sourceType": "github",
@@ -30,6 +37,13 @@
       "sourceType": "github",
       "skillPath": "skills/soft-skill/SKILL.md",
       "computedHash": "7db385e4c5370e5a7fca9704a1361b056e4504ea6a03924bb86f33a4f00b5c73"
+    },
+    "image": {
+      "source": "skills.sh",
+      "sourceUrl": "https://skills.sh/p/nuK9jo3sTCZGB2Ul",
+      "sourceType": "well-known",
+      "computedHash": "9b1f1fb231e2ae2528ae5f9557c32fddd83262e4fe9877d18bf76fd47aa7aabc",
+      "wellKnownDigest": "sha256:7de923850e66262ad3712695545cfde6b41251fe7ad7d63fa1f23f01c1e5b9e9"
     },
     "image-to-code": {
       "source": "Leonxlnx/taste-skill",
@@ -72,6 +86,13 @@
       "sourceType": "github",
       "skillPath": "skills/stitch-skill/SKILL.md",
       "computedHash": "13322f38406cd3abf16ba45e35bdc9b18002d0153a79b4612b97aefc65d5a335"
+    },
+    "video": {
+      "source": "skills.sh",
+      "sourceUrl": "https://skills.sh/p/nuK9jo3sTCZGB2Ul",
+      "sourceType": "well-known",
+      "computedHash": "2fa94f67d6896f04fd900d2c07edde2c7ffa1cbba898cfe04db4436490b56640",
+      "wellKnownDigest": "sha256:25c2801a08c3feed74bf951f88a09dd432dd5993bd1b8badd14c6a70da5f2cf2"
     }
   }
 }
