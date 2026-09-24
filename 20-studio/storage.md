@@ -2,6 +2,8 @@
 
 Decided 20 August 2026. Live edit on the Mac. Archive on the old tower.
 Do not cut from the tower. Do not fill the Studio SSD. T7s are capture only.
+A working location the instance record names for a current client deliverable
+stays that location. This note does not move it.
 
 ## Flow
 

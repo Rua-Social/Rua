@@ -15,8 +15,12 @@ or combine. Treatment development is separate from `rua-shoot-plan` and has no
 dependency on it.
 
 Load the engagement through the vault. Keep named people, places, evidence and
-approvals in the instance record. Follow `00-system/communication.md` and the
-room boundaries in `00-system/rewrite-contract.md`.
+approvals in the instance record. The current treatment is the file the
+instance file index names. A refinement follows Current file in `AGENTS.md`:
+write into that working location, rewrite the index, keep the previous file
+off the current list, and update every form the index lists for this film
+together. Follow `00-system/communication.md` and the room boundaries in
+`00-system/rewrite-contract.md`.
 
 ## Working rule
 
@@ -26,9 +30,12 @@ aid is so the client can see the film he means. Discussion comes before a
 client-facing document. Build a deck, PDF, board, or other artefact only after
 he asks for it.
 
-A request names one stage. A treatment stays prose. A script, a storyboard, or
-a visual aid waits until he asks for that stage. A visual aid can be asked for
-beside any stage. It shows the film as it stands. It does not invent a new one.
+A request names one stage. A treatment stays prose until a client-facing
+package is asked for. When the file index already lists that package with the
+prose, a refinement updates every listed form in the same pass. A script, a
+storyboard, or a visual aid waits until he asks for that stage. A visual aid
+can be asked for beside any stage. It shows the film as it stands. It does
+not invent a new one.
 
 The prose shape is in `references/stage-templates.md`. The script, storyboard,
 and visual-aid shapes are written with him on the first real use of each.

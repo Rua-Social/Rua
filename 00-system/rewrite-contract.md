@@ -67,6 +67,7 @@ Do not invent a rate card or a subcontract commercial model in these files.
 1. What was sold, and has the payment gate been passed?
 2. Job-type.
 3. This client's instance record, if `rua vault search` finds it.
+   Its file index names the current file. Follow Current file in `AGENTS.md`.
 4. Doctrine for that job-type only.
 5. A library artefact only if the human asked, or if doctrine does not cover the
    deliverable and the human agrees to open a source.

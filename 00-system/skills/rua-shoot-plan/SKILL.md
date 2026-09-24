@@ -149,7 +149,8 @@ Build the concepts deck. Read `references/concept-development.md` and
 The concepts deck is the single source of truth for the sprint. One page per
 concept, a copy bank with no gaps, a change log before sign-off.
 
-Multiple dated iterations are normal. The latest dated file is canonical.
+Multiple dated iterations are normal. The current file is the one the
+instance file index names. Follow Current file in `AGENTS.md`.
 Iteration can happen async.
 
 ### Stage 5, Pre-production and the reissue loop
@@ -166,7 +167,7 @@ before the schedule goes out.
 
 ### Stage 6, Schedule and shot list
 
-Use the latest approved concepts deck. When the human requests schedule-only
+Use the concepts deck the instance file index names as current. When the human requests schedule-only
 hygiene without a new deck, skip Stage 4 and use the last approved concepts plus
 the current brief. Record the sources and any authorized changes in the schedule
 change log. Do not invent missing creative decisions; ask only about details that
@@ -279,9 +280,15 @@ updated. This exception does not authorize new creative decisions.
 
 ## Versioning, change log, concept numbering
 
-**Versioning.** Ship a new dated file. Do not overwrite. Pattern:
+**Versioning.** Follow Current file in `AGENTS.md`. The current file is the
+one the instance file index names. A refinement writes the new current set
+into the working location that index already names, rewrites the index so it
+names that set, and keeps the previous file. The previous file is no longer
+listed as current. Forms the index lists together for one deliverable move
+together. A refinement does not create a new offload folder for that
+deliverable. Pattern:
 `[client]_[doctype]_[mmmYYYY]` or `[client]_[doctype]_[ddmmyy]` for same-month
-reissues. The latest dated file is canonical.
+reissues. Stage 7b still writes the SRT set to the vault offload for this job.
 
 **Change log.** Every concepts deck and schedule carries one near the end,
 before sign-off. Date, concept number or numbers, one line on what changed
