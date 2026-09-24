@@ -13,6 +13,9 @@ operator can check source health without printing client details.
 - `tidy <PATH>` scans a directory for versioned file clusters (suffix `-v3`, `_v3`, `-3`, `_3`),
   prints keep/stale groups, and with `--delete` removes the stale iterations. Dry-run by default.
   `--json` for machine-readable output.
+- `current <REF>` reads one verified record, parses its single `current` block, and exits 0
+  only when every listed file is in the named working directory and that directory has no
+  unlisted `.html`, `.pdf`, `.md`, or `.txt` file. Failure reports a reason code and no path.
 
 ## Out of scope
 

@@ -268,6 +268,118 @@ def write_manifest_atomic(path: Path, data: dict) -> None:
                 pass
 
 
+CURRENT_FENCE = re.compile(r"```current\n(.*?)```", re.DOTALL)
+DELIVERABLE_SUFFIXES = {".html", ".pdf", ".md", ".txt"}
+DELIVERABLE_NAME = re.compile(r"[a-z0-9][a-z0-9-]*")
+
+
+def parse_current_block(text: str) -> dict:
+    matches = CURRENT_FENCE.findall(text)
+    if len(matches) != 1:
+        reason = "current_block_missing" if not matches else "current_block_invalid"
+        fail(EXIT_RECORD, "Record invalid.", reason)
+    working = earlier = None
+    deliverables: list[tuple[str, list[str]]] = []
+    for raw in matches[0].splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        if line.startswith("working: "):
+            if working is not None:
+                fail(EXIT_RECORD, "Record invalid.", "current_block_invalid")
+            working = line[len("working: "):].strip()
+        elif line.startswith("earlier: "):
+            if earlier is not None:
+                fail(EXIT_RECORD, "Record invalid.", "current_block_invalid")
+            earlier = line[len("earlier: "):].strip()
+        elif line.startswith("deliverable: "):
+            parts = [part.strip() for part in line[len("deliverable: "):].split(" | ")]
+            if len(parts) < 2 or DELIVERABLE_NAME.fullmatch(parts[0]) is None or any(not part for part in parts):
+                fail(EXIT_RECORD, "Record invalid.", "current_block_invalid")
+            deliverables.append((parts[0], parts[1:]))
+        else:
+            fail(EXIT_RECORD, "Record invalid.", "current_block_invalid")
+    if not working or not earlier or not deliverables:
+        fail(EXIT_RECORD, "Record invalid.", "current_block_invalid")
+    return {"working": working, "earlier": earlier, "deliverables": deliverables}
+
+
+def _real_dir(path: Path, missing_reason: str) -> Path:
+    info = lstat_or_none(path)
+    if info is None or stat.S_ISLNK(info.st_mode) or path.is_symlink() or not stat.S_ISDIR(info.st_mode):
+        fail(EXIT_SOURCE, "Current files disagree.", missing_reason)
+    try:
+        return path.resolve()
+    except OSError:
+        fail(EXIT_SOURCE, "Current files disagree.", missing_reason)
+
+
+def agree_current(parsed: dict) -> str | None:
+    """Return a reason code when the working set and the block disagree."""
+    working = _real_dir(Path(parsed["working"]), "working_missing")
+    _real_dir(Path(parsed["earlier"]), "earlier_missing")
+    listed: set[Path] = set()
+    for _name, paths in parsed["deliverables"]:
+        for raw in paths:
+            path = Path(raw)
+            info = lstat_or_none(path)
+            if info is None or stat.S_ISLNK(info.st_mode) or path.is_symlink() or not stat.S_ISREG(info.st_mode):
+                return "missing_current_file"
+            try:
+                resolved = path.resolve()
+            except OSError:
+                return "missing_current_file"
+            if inside_git(resolved):
+                return "inside_git"
+            if resolved.parent != working:
+                return "outside_working"
+            if resolved in listed:
+                return "duplicate_current_file"
+            listed.add(resolved)
+    try:
+        children = list(working.iterdir())
+    except OSError:
+        return "working_missing"
+    for child in children:
+        if child.name.startswith("."):
+            continue
+        info = lstat_or_none(child)
+        if info is None or not stat.S_ISREG(info.st_mode) or stat.S_ISLNK(info.st_mode):
+            continue
+        if child.suffix.lower() not in DELIVERABLE_SUFFIXES:
+            continue
+        try:
+            resolved = child.resolve()
+        except OSError:
+            return "unlisted_in_working"
+        if resolved not in listed:
+            return "unlisted_in_working"
+    return None
+
+
+def cmd_current(args: argparse.Namespace) -> None:
+    ref = args.ref
+    if not ref or any(ch not in REF_CHARS for ch in ref):
+        fail(EXIT_INVALID, "Invalid command.")
+    entries = load_manifest()["entries"]
+    entry = next((item for item in entries if item["ref"] == ref), None)
+    if entry is None:
+        fail(EXIT_MISSING, "Record missing.")
+    text = decode_payload(read_payload(entry, MAX_RECORD_BYTES))
+    parsed = parse_current_block(text)
+    reason = agree_current(parsed)
+    if reason:
+        if args.json:
+            print(json.dumps({"ref": ref, "status": "error", "reason": reason}))
+        else:
+            print(f"{ref}\terror\t{reason}")
+        fail(EXIT_SOURCE, "Current files disagree.", reason)
+    if args.json:
+        print(json.dumps({"ref": ref, "status": "ok", "reason": "agree"}))
+    else:
+        print(f"{ref}\tok\tagree")
+
+
 def version_key(stem: str) -> tuple[str, int] | None:
     """
     Return (base, version_number) if stem ends with a version suffix
@@ -498,6 +610,11 @@ def build_parser() -> argparse.ArgumentParser:
     tidy.add_argument("--delete", action="store_true", help="delete stale versions (dry-run by default)")
     tidy.add_argument("--json", action="store_true")
     tidy.set_defaults(func=cmd_tidy)
+    current = vault_sub.add_parser("current", help="check that the current-file block matches the working location")
+    current.error = silent_error
+    current.add_argument("--json", action="store_true")
+    current.add_argument("ref")
+    current.set_defaults(func=cmd_current)
     return parser
 
 
