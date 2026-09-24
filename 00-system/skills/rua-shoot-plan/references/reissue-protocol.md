@@ -43,7 +43,8 @@ material unresolved creative choice; continue with settled logistics.
 3. Concepts deck reissue. Follow Current file in `AGENTS.md`. Write the new
    dated set into the working location the instance file index already names,
    rewrite the index, and keep the previous file. It is no longer listed as
-   current. The reissue is current because the index names it.
+   current. Move it out of the working location into the earlier-versions
+   place. The reissue is current because the index names it.
 4. Schedule reissue. Rebuild from the new concepts deck, folding in
    logistics.
 5. Shot list update. Rebuild from the new schedule.

@@ -123,7 +123,7 @@ How to write doctrine: `00-system/rewrite-contract.md`.
 
 When the engagement's instance record has a file index, that index names the current file. Offload is scratch. Scratch and an older dated copy are not current when the index names a different file.
 
-A refinement or update writes the new current version into the working location that index already names. Rewrite the file index so it names the new version. Keep the previous current file and take it off the current list. A new offload folder is not the working location for that deliverable.
+A refinement or update writes the new current version into the working location that index already names. Rewrite the file index so it names the new version. Keep the previous current file and take it off the current list. Move that previous set out of the working location and keep it on the same job. If the instance record names a place for earlier versions, use that place. Otherwise use one earlier-versions folder outside the working location. The working location then holds only the files the index lists as current. A new offload folder is not the working location for that deliverable.
 
 When the index lists more than one form of the same deliverable as current, update those forms together.
 
