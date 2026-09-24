@@ -38,6 +38,8 @@ class CurrentFileRuleTests(unittest.TestCase):
         self.assertIn("more than one form of the same deliverable", rule)
         self.assertIn("update those forms together", rule)
         self.assertIn("capture-only note", rule)
+        self.assertIn("`rua vault current REF`", rule)
+        self.assertIn("pass is not finished", rule)
 
     def test_deck_and_treatment_follow_the_same_rule(self) -> None:
         self.assertNotIn("latest dated file is canonical", SHOOT)
@@ -52,6 +54,10 @@ class CurrentFileRuleTests(unittest.TestCase):
         self.assertIn("earlier-versions folder outside the working location", versioning)
         self.assertIn("move together", versioning)
         self.assertIn("does not create a new offload folder", versioning)
+        self.assertIn("`rua vault current REF`", versioning)
+        self.assertIn("pass is not finished", versioning)
+        self.assertIn("`rua vault current REF`", TREATMENT)
+        self.assertIn("pass is not finished", TREATMENT)
         self.assertIn("Current file in `AGENTS.md`", TREATMENT)
         self.assertIn("every form the index lists", TREATMENT)
         self.assertIn("off the current list", TREATMENT)

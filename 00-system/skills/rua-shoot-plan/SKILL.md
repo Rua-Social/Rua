@@ -288,7 +288,9 @@ listed as current. Move it out of the working location. If the instance
 record names a place for earlier versions, use that place. Otherwise use one
 earlier-versions folder outside the working location. Forms the index lists
 together for one deliverable move together. A refinement does not create a new offload folder for that
-deliverable. Pattern:
+deliverable. Before the pass is finished, run `rua vault current REF`.
+Exit 0 means the working location and the `current` block agree. Any other
+exit means the pass is not finished. Pattern:
 `[client]_[doctype]_[mmmYYYY]` or `[client]_[doctype]_[ddmmyy]` for same-month
 reissues. Stage 7b still writes the SRT set to the vault offload for this job.
 

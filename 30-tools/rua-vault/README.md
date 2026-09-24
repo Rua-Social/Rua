@@ -11,6 +11,7 @@ rua vault get [--json] REF
 rua vault get [--json] --max-bytes BYTES --lines START:END REF
 rua vault get [--json] --max-bytes BYTES --chars START:END REF
 rua vault check [--json] [REF]
+rua vault current [--json] REF
 ```
 
 `search` matches labels and aliases in the **external** manifest only.
@@ -32,6 +33,12 @@ paths, content, or hashes. `ok / verified` means ordinary retrieval works;
 sections. Missing, insecure, Git-resident, oversized, corrupt, or invalid UTF-8
 sources are errors. A check of multiple records continues after a failed record.
 This is an explicit health operation, not a discovery command for client names.
+
+`current` reads one verified record and its single `current` block. Exit 0
+prints `ref`, `ok`, `agree` when every listed file is in the named working
+directory and that directory holds no other `.html`, `.pdf`, `.md`, or `.txt`
+file. A mismatch prints `ref`, `error`, and a reason code, with no path, and
+exits 4. A missing or unreadable block exits 5. `--json` uses the same fields.
 
 Exit codes remain 0 success, 1 missing record, 2 invalid command, 3 unavailable
 manifest, 4 unavailable source or output too large, 5 invalid record. A health

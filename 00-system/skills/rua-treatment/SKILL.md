@@ -20,7 +20,9 @@ instance file index names. A refinement follows Current file in `AGENTS.md`:
 write into that working location, rewrite the index, keep the previous file
 off the current list, move it out of the working location into the
 earlier-versions place, and update every form the index lists for this film
-together. Follow `00-system/communication.md` and the room boundaries in
+together. Before the pass is finished, run `rua vault current REF`.
+Exit 0 means the working location and the `current` block agree. Any other
+exit means the pass is not finished. Follow `00-system/communication.md` and the room boundaries in
 `00-system/rewrite-contract.md`.
 
 ## Working rule

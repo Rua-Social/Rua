@@ -16,6 +16,7 @@ CLI on this Mac. Founder or any AI seat with the same command.
 | `rua vault check [REF]` | terminal | Check source health without client labels or content |
 | `rua vault rehash REF` | terminal | Recompute sha256 and patch the manifest after editing a record |
 | `rua vault tidy PATH [--delete]` | terminal | Show (and optionally remove) stale versioned files in an offload folder |
+| `rua vault current REF` | terminal | Exit 0 when the record's `current` block and the working directory name the same deliverable files |
 
 ## Voice and tone
 
@@ -41,7 +42,10 @@ CLI on this Mac. Founder or any AI seat with the same command.
 | Range outside the record | stderr: Line range is outside the record. exit 2 | |
 | Healthy record | ref, ok, verified | |
 | Healthy large record | ref, ok, requires_explicit_limit_and_slice | |
-| Failed health check | ref, error, reason code; stderr: Vault check found inaccessible records. exit 4 | |
+| Failed health check | ref, error, reason code; stderr: Vault check found inaccessible records. exit 4 |
+| Current files agree | ref, ok, agree | |
+| Current files disagree | ref, error, reason code; stderr: Current files disagree. exit 4. No path | |
+| Current block missing | stderr: Record invalid. exit 5. No path | |
 
 ## Interaction primitives
 

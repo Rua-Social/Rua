@@ -614,5 +614,97 @@ class RuaVaultTidyTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
 
 
+class CurrentAgreeTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.job = self.root / "job"
+        self.working = self.job / "working"
+        self.earlier = self.job / "earlier"
+        self.working.mkdir(parents=True)
+        self.earlier.mkdir()
+        (self.working / "stills").mkdir()
+        self.html = self.working / "deck.html"
+        self.pdf = self.working / "deck.pdf"
+        self.html.write_text("deck", encoding="utf-8")
+        self.pdf.write_text("pdf", encoding="utf-8")
+        (self.working / "note.jpg").write_text("img", encoding="utf-8")
+        self.record = self.root / "record.md"
+        self.record.write_text(self._record(), encoding="utf-8")
+        self.record.chmod(0o600)
+        self.manifest_dir = self.root / "config"
+        self.manifest_dir.mkdir()
+        self.manifest = self.manifest_dir / "manifest.json"
+        payload = self.record.read_text(encoding="utf-8")
+        self.manifest.write_text(json.dumps({
+            "version": 1,
+            "entries": [{
+                "ref": "rec-sample",
+                "label": "Sample",
+                "aliases": [],
+                "uri": self.record.resolve().as_uri(),
+                "sha256": hashlib.sha256(payload.encode()).hexdigest(),
+            }],
+        }), encoding="utf-8")
+        os.chmod(self.manifest_dir, 0o700)
+        os.chmod(self.manifest, 0o600)
+        self.env = os.environ.copy()
+        self.env["RUA_VAULT_MANIFEST"] = str(self.manifest)
+
+    def _record(self, extra: str = "") -> str:
+        return (
+            "Notes.\n\n```current\n"
+            f"working: {self.working}\n"
+            f"earlier: {self.earlier}\n"
+            f"deliverable: deck | {self.html} | {self.pdf}\n"
+            "```\n"
+            + extra
+        )
+
+    def _rewrite(self, text: str) -> None:
+        self.record.write_text(text, encoding="utf-8")
+        self.record.chmod(0o600)
+        data = json.loads(self.manifest.read_text(encoding="utf-8"))
+        data["entries"][0]["sha256"] = hashlib.sha256(text.encode()).hexdigest()
+        self.manifest.write_text(json.dumps(data), encoding="utf-8")
+        os.chmod(self.manifest, 0o600)
+
+    def run_current(self) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [str(SCRIPT), "vault", "current", "rec-sample"],
+            text=True, capture_output=True, env=self.env, check=False,
+        )
+
+    def test_agree_when_working_matches_the_block(self) -> None:
+        result = self.run_current()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "rec-sample\tok\tagree")
+
+    def test_unlisted_deliverable_in_working_disagrees(self) -> None:
+        stray = self.working / "old-deck.html"
+        stray.write_text("old", encoding="utf-8")
+        result = self.run_current()
+        self.assertEqual(result.returncode, 4)
+        self.assertIn("unlisted_in_working", result.stdout)
+        self.assertIn("Current files disagree.", result.stderr)
+        self.assertNotIn(str(stray), result.stdout)
+        self.assertNotIn(str(stray), result.stderr)
+
+    def test_missing_listed_file_disagrees(self) -> None:
+        self.pdf.unlink()
+        result = self.run_current()
+        self.assertEqual(result.returncode, 4)
+        self.assertIn("missing_current_file", result.stdout)
+        self.assertNotIn(self.pdf.name, result.stderr)
+
+    def test_missing_block_is_an_invalid_record(self) -> None:
+        self._rewrite("No block here.\n")
+        result = self.run_current()
+        self.assertEqual(result.returncode, 5)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("Record invalid.", result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

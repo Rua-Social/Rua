@@ -129,6 +129,8 @@ When the index lists more than one form of the same deliverable as current, upda
 
 The working location named in the instance record is where that deliverable is written. The capture-only note in `20-studio/storage.md` does not move it.
 
+The file index carries one `current` block. Before an update pass is finished, run `rua vault current REF`. Exit 0 means the working location and that block name the same files. Any other exit means the pass is not finished.
+
 ## Founder and business intent
 
 Before work on business direction, commercial model, positioning, growth,
