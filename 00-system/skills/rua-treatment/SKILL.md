@@ -18,7 +18,8 @@ Load the engagement through the vault. Keep named people, places, evidence and
 approvals in the instance record. The current treatment is the file the
 instance file index names. A refinement follows Current file in `AGENTS.md`:
 write into that working location, rewrite the index, keep the previous file
-off the current list, and update every form the index lists for this film
+off the current list, move it out of the working location into the
+earlier-versions place, and update every form the index lists for this film
 together. Follow `00-system/communication.md` and the room boundaries in
 `00-system/rewrite-contract.md`.
 

@@ -284,8 +284,10 @@ updated. This exception does not authorize new creative decisions.
 one the instance file index names. A refinement writes the new current set
 into the working location that index already names, rewrites the index so it
 names that set, and keeps the previous file. The previous file is no longer
-listed as current. Forms the index lists together for one deliverable move
-together. A refinement does not create a new offload folder for that
+listed as current. Move it out of the working location. If the instance
+record names a place for earlier versions, use that place. Otherwise use one
+earlier-versions folder outside the working location. Forms the index lists
+together for one deliverable move together. A refinement does not create a new offload folder for that
 deliverable. Pattern:
 `[client]_[doctype]_[mmmYYYY]` or `[client]_[doctype]_[ddmmyy]` for same-month
 reissues. Stage 7b still writes the SRT set to the vault offload for this job.
