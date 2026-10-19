@@ -13,6 +13,7 @@ What exists today:
 - `transcribe/` — shoot dialogue footage to transcripts for the edit-guide chat.
 - `rua-vault/` — deliberate retrieval of one external client record.
 - `rua-seat/` — run one other seat and print what they said. A mention is not a handoff.
+- `rua-motion/` — local motion graphics studio. Renders branded overlays and title cards for Final Cut.
 
 Changes to a tool, or a new tool, run `00-system/skills/rua-ship-gate/`.
 A human session earns `EXPERIENCE.md`. Pixels Rua owns earn

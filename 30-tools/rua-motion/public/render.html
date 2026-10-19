@@ -1,0 +1,4 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Composition renderer</title><style>html,body{margin:0;background:transparent;overflow:hidden}#composition{position:absolute;inset:0}</style></head><body><div id="composition"></div><script type="module">
+import {compose} from './composition.js';
+const q=new URLSearchParams(location.search);try{const data=await fetch('/api/render-data/'+q.get('token')).then(r=>{if(!r.ok)throw Error('Render data missing');return r.json()});window.composition=await compose(document.querySelector('#composition'),data.project,data.graphic,{assetBase:`/assets/${data.project.id}/`});window.seek=window.composition.seek;window.inspect=window.composition.inspect;window.READY=true;}catch(e){window.RENDER_ERROR=e.message;}
+</script></body></html>
