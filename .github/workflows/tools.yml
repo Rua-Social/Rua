@@ -27,6 +27,7 @@ jobs:
           - rua-desk
           - rua-vault
           - rua-seat
+          - rua-motion
     defaults:
       run:
         working-directory: 30-tools/${{ matrix.tool }}

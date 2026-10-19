@@ -1,0 +1,2 @@
+import {newGraphic} from '../public/model.js';
+export const fixture=()=>({version:1,id:'test-project',name:'Test project',output:{width:1920,height:1080,fps:'25'},brand:{name:'Test palette',colors:{accent:'#80452F',secondary:'#A07550',highlight:'#DDBE8A',alert:'#AC4030',surface:'#EFE9DC',text:'#FFFFFF',ink:'#242724',muted:'#BFBEB0'},font:{family:'Test font',files:[{path:'brand/test.ttf',weight:400,style:'normal'}]}},graphics:[newGraphic('chapter')],transcript:[]});

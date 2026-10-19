@@ -1,0 +1,7 @@
+node_modules/
+reference/
+.DS_Store
+.runtime/
+coverage/
+*.log
+HANDOFF.md
