@@ -47,6 +47,15 @@ See [AGENTS.md](AGENTS.md) for the rule on when each of these gets created.
 See [00-system/rewrite-contract.md](00-system/rewrite-contract.md) for how
 doctrine is written.
 
+## Resume a storyboard
+
+Start with `rua vault search <client>` and `rua vault get <record-ref>`.
+The record names the current HTML, editable project manifest, source media and
+earlier versions. The editor code and its build/import workflow are in
+[30-tools/storyboard](30-tools/storyboard/README.md). Browser autosave is not a
+disk save: export a complete project and import it into the named project before
+finishing an editing session.
+
 ## Status
 
 This is a starting schema, not fixed architecture. Structure grows from real

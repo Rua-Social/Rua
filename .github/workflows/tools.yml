@@ -28,6 +28,7 @@ jobs:
           - rua-vault
           - rua-seat
           - rua-motion
+          - storyboard
     defaults:
       run:
         working-directory: 30-tools/${{ matrix.tool }}
@@ -70,5 +71,14 @@ jobs:
           npm test --if-present
 
       - name: No recognised project
-        if: steps.detect.outputs.kind == 'none'
+        if: steps.detect.outputs.kind == 'none' && matrix.tool != 'storyboard'
         run: echo "No pyproject.toml, requirements.txt or package.json. Nothing to check."
+
+      - name: Check storyboard build and project recovery
+        if: matrix.tool == 'storyboard'
+        run: |
+          python3 -m unittest discover -p 'test_*.py'
+          node test_reset.js
+          node --check src/app.js
+          node --check src/video-engine.js
+          node --check src/video-export.js

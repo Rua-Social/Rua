@@ -14,6 +14,7 @@ What exists today:
 - `rua-vault/` — deliberate retrieval of one external client record.
 - `rua-seat/` — run one other seat and print what they said. A mention is not a handoff.
 - `rua-motion/` — local motion graphics studio. Renders branded overlays and title cards for Final Cut.
+- [`storyboard/`](storyboard/README.md) — editable timed boards, portable project saves and video export. Source code lives here; project data and media are located through the engagement's vault record.
 
 Changes to a tool, or a new tool, run `00-system/skills/rua-ship-gate/`.
 A human session earns `EXPERIENCE.md`. Pixels Rua owns earn

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#18392f">
+  <title>Director’s storyboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="video-export.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to storyboard</a>
+  <header class="masthead">
+    <a class="wordmark" id="brand-home" href="#board" aria-label="Storyboard home">RUA<span id="brand-strapline">DIRECTOR’S STORYBOARD</span></a>
+    <nav class="view-nav" aria-label="Workspace views">
+      <button class="nav-button active" data-view="board" aria-current="page">Storyboard</button>
+      <button class="nav-button" data-view="notes">Director’s notes <span class="decision-count"></span></button>
+      <button class="nav-button" data-view="workflow">Next steps</button>
+    </nav>
+    <div class="studio-signature" id="studio-signature">RUA<span id="studio-byline">DIRECTOR’S WORKSPACE</span></div>
+  </header>
+
+  <main id="main">
+    <section class="hero" aria-labelledby="film-title">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="tiny-star">✳</span> <span id="project-eyebrow">STORYBOARD</span> <span class="eyebrow-divider">/</span> DIRECTOR’S WORKSPACE</div>
+        <h1 id="film-title">Storyboard</h1>
+        <p class="hero-deck" id="hero-deck"></p>
+        <div class="hero-meta"><span class="outline-pill" id="version-label">ROUGH STORYBOARD V1</span><span>Proposed staging</span><span id="music-status">Music pending</span></div>
+      </div>
+      <aside class="board-summary" aria-label="Storyboard overview">
+        <div class="summary-top"><span>THE FILM, ON PAPER</span><span class="edition">01</span></div>
+        <div class="summary-stats">
+          <div><strong id="total-runtime">—</strong><span>proposed runtime</span></div>
+          <div><strong id="shot-count">—</strong><span>storyboard panels</span></div>
+        </div>
+        <div class="summary-bottom"><span id="format-label">16:9 master</span><span class="warm-dot"></span></div>
+        <p class="summary-note" id="runtime-note">Timing is provisional until the track is chosen.</p>
+      </aside>
+    </section>
+
+    <div class="workspace-toolbar">
+      <div class="save-state" role="status" aria-live="polite"><span class="save-dot"></span><span id="save-label">Saved on this browser</span></div>
+      <div class="toolbar-actions">
+        <button class="button quiet" id="import-button"><span aria-hidden="true">↥</span> Import</button>
+        <div class="export-menu-wrap">
+          <button class="button quiet" id="export-button" aria-haspopup="true" aria-expanded="false"><span aria-hidden="true">↧</span> Export <span class="chevron">⌄</span></button>
+          <div class="export-menu" id="export-menu" hidden>
+            <button id="export-project">Save complete project <small>One editable HTML · board, images, music & settings</small></button>
+            <button id="export-video">Video with music <small>Dimensions, quality & soundtrack mix</small></button>
+            <button id="export-json">Editable backup <small>JSON · includes your uploaded frames</small></button>
+            <button id="export-html">Shareable presentation <small>HTML review copy · without music</small></button>
+            <button id="print-button">Print / save as PDF <small>Four panels per page</small></button>
+          </div>
+        </div>
+        <button class="button primary" id="present-button"><span aria-hidden="true">▷</span> Present board</button>
+      </div>
+    </div>
+    <div class="notice" id="storage-warning" role="alert" hidden></div>
+    <div class="notice" id="audio-warning" role="alert" hidden></div>
+    <div class="notice" id="source-warning" role="status" hidden></div>
+
+    <section id="board-view" class="workspace-view" aria-label="Storyboard">
+      <div class="section-heading"><div><div class="eyebrow small">THE STORY ARC</div><h2 id="arc-heading">The film, panel by panel.</h2></div><span class="microcopy">Select a panel to edit the direction.</span></div>
+      <div class="arc-timeline" id="arc-timeline" aria-label="Sequence durations"></div>
+      <div class="board-controls">
+        <div class="sequence-filters" id="sequence-filters" aria-label="Filter by sequence"></div>
+        <div class="secondary-controls">
+          <label class="visually-hidden" for="status-filter">Filter by status</label>
+          <select id="status-filter"><option value="all">All statuses</option><option>Proposed</option><option>Needs decision</option><option>Approved</option></select>
+          <button class="button add-button" id="add-shot"><span aria-hidden="true">+</span> Add panel</button>
+        </div>
+      </div>
+      <div class="filter-summary" id="filter-summary" aria-live="polite"></div>
+      <div class="storyboard-grid" id="storyboard-grid"></div>
+      <div class="empty-state" id="empty-state" hidden><h3>No panels in this view.</h3><p>Try another sequence or status, or add a new panel.</p><button class="button primary" id="clear-filters">Show all panels</button></div>
+      <div class="board-footnote"><span class="tiny-star">✳</span><p>Illustrative storyboard frames. Composition, blocking and timings are proposals for discussion. Actual locations and performances will shape the shooting board.</p><button class="text-button" data-view="notes">Read the director’s notes <span aria-hidden="true">↗</span></button></div>
+    </section>
+
+    <section id="notes-view" class="workspace-view text-view" aria-label="Director’s notes" hidden>
+      <div class="section-heading"><div><div class="eyebrow small">INTENT & OPEN QUESTIONS</div><h2>The direction behind the frames.</h2></div></div>
+      <div class="notes-lead"><div class="margin-label">WORKING BASIS</div><div><p id="project-summary"></p><p class="small-copy">A rough storyboard tests the visual narrative, screen direction and emotional rhythm. These are illustrative frames and proposed setups. It becomes a timed board when durations are assigned; the timed preview here has no music until you attach a local track. The next production document is a recce-informed shooting board and shot list.</p></div></div>
+      <div class="principle-grid" id="principle-grid" hidden></div>
+      <div class="notes-section"><div class="section-heading"><div><div class="eyebrow small">TO RESOLVE TOGETHER</div><h2>Director’s decisions</h2></div><span class="microcopy">Editable working notes · saved locally</span></div><div id="decisions-list" class="decisions-list"></div></div>
+      <div class="notes-section two-column-notes"><div><div class="eyebrow small">SOURCE & RESEARCH</div><h2>Reference desk</h2><div id="references-list" class="reference-list"></div><p class="small-copy">References inform visual language and process. They are not cleared footage or music. No stock clips or music are bundled with this board.</p></div><div><div class="eyebrow small">ON SET, IN PLAIN ENGLISH</div><h2>A short glossary</h2><dl id="glossary-list" class="glossary-list"></dl></div></div>
+    </section>
+
+    <section id="workflow-view" class="workspace-view text-view" aria-label="Next steps" hidden>
+      <div class="section-heading"><div><div class="eyebrow small">FROM TREATMENT TO SHOOT</div><h2>Make the next decisions visible.</h2></div></div>
+      <p class="workflow-intro" id="workflow-intro">Work through the staging, record decisions, then test the timing against the chosen track.</p>
+      <ol id="workflow-list" class="workflow-list"></ol>
+      <div class="handover-note"><span class="tiny-star">✳</span><div><h3>Working with this board</h3><p>Open any panel to change the direction or duration, add notes, and replace its frame. Use “Present board” to walk through the story. Export a JSON backup to continue editing elsewhere, or a single HTML presentation to send for review. Edits stay in this browser; the exported file is a snapshot.</p><p>In presentation: <kbd>←</kbd> <kbd>→</kbd> move panels, <kbd>Space</kbd> plays or pauses, <kbd>Esc</kbd> closes. A local audio file can accompany the timed preview and video export. Use Export → Video with music to set the picture format and soundtrack mix. Use Export → Save complete project to carry your board, images, music and settings together in one HTML file. Save a new complete project after further changes; browser autosave does not rewrite the downloaded file. Review-only HTML and JSON backups exclude music.</p></div></div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div><strong id="footer-brand">RUA</strong><span id="footer-title">STORYBOARD</span></div><p id="project-footer">Director’s working storyboard · Rua</p><button id="reset-board" class="text-button">Restore original board</button></footer>
+
+  <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
+  <aside id="shot-drawer" class="shot-drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden>
+    <div class="drawer-top"><span class="eyebrow small" id="drawer-id">PANEL S01</span><button class="icon-button close-button" id="close-drawer" aria-label="Close panel editor">×</button></div>
+    <div id="drawer-frame" class="frame drawer-frame" role="img"></div>
+    <div class="frame-actions"><button class="text-button" id="replace-frame">↥ Replace frame</button><button class="text-button" id="restore-frame" hidden>Use original frame</button><span>JPG, PNG or WebP</span></div>
+    <div class="drawer-content">
+      <h2 id="drawer-title">Edit panel</h2>
+      <form id="shot-form" autocomplete="off">
+        <label>Panel title<input id="edit-title" name="title" maxlength="180"></label>
+        <div class="form-row"><label>Sequence<select id="edit-sequence" name="sequence"></select></label><label>Duration <span class="field-hint">seconds</span><input id="edit-duration" name="duration" type="number" min="0.2" max="600" step="0.1" inputmode="decimal"></label></div>
+        <div class="form-row"><label>Status<select id="edit-status" name="status"><option>Proposed</option><option>Needs decision</option><option>Approved</option></select></label><label>Priority<select id="edit-priority" name="priority"><option>Essential</option><option>Optional</option></select></label></div>
+        <label>Framing / shot size<input id="edit-framing" name="framing" placeholder="e.g. Close-up · eye level" maxlength="500"></label>
+        <label>Action & blocking<textarea id="edit-action" name="action" rows="4"></textarea></label>
+        <label>Camera direction<textarea id="edit-camera" name="camera" rows="3"></textarea></label>
+        <label>Sound / dialogue / music<textarea id="edit-sound" name="sound" rows="3"></textarea></label>
+        <label>Transition / edit<textarea id="edit-transition" name="transition" rows="2"></textarea></label>
+        <label>Continuity<textarea id="edit-continuity" name="continuity" rows="2"></textarea></label>
+        <label>Open decision<textarea id="edit-decision" name="decision" rows="3"></textarea></label>
+        <label>On-screen title <span class="field-hint">optional</span><input id="edit-endTitle" name="endTitle" maxlength="180" placeholder="Film title"></label>
+        <label>On-screen subtitle <span class="field-hint">optional</span><input id="edit-endSubtitle" name="endSubtitle" maxlength="180" placeholder="Closing line"></label>
+        <label>Your notes<textarea id="edit-notes" name="notes" rows="4" placeholder="Recce notes, performance notes, feedback…"></textarea></label>
+        <div class="provenance-note"><span class="eyebrow small">SOURCE BASIS</span><p id="edit-provenance"></p></div>
+      </form>
+      <div class="reorder-block"><span>Position in the film</span><div><button class="button quiet" id="move-earlier">← Earlier</button><button class="button quiet" id="move-later">Later →</button></div></div>
+      <div class="drawer-bottom-actions"><button class="button quiet" id="duplicate-shot">Duplicate panel</button><button class="text-button danger" id="delete-shot">Delete panel</button></div>
+    </div>
+    <div class="drawer-bottom-bar"><span id="drawer-save-label">Changes save automatically</span><button class="button primary" id="done-editing">Done</button></div>
+  </aside>
+
+  <div id="presentation" class="presentation" role="dialog" aria-modal="true" aria-labelledby="present-title" hidden>
+    <header class="presentation-header"><div class="presentation-brand" id="presentation-brand">RUA <span id="presentation-film-title">STORYBOARD</span></div><div><span class="presentation-mode-label" id="presentation-version">ROUGH STORYBOARD</span><button id="present-export-video" class="button presentation-play">Export video</button><button id="close-presentation" class="icon-button" aria-label="Close presentation">×</button></div></header>
+    <div class="presentation-stage"><div id="present-frame" class="frame present-frame" role="img"></div><button id="present-prev" class="presentation-arrow prev" aria-label="Previous panel">‹</button><button id="present-next" class="presentation-arrow next" aria-label="Next panel">›</button><div class="present-frame-label" id="present-frame-label"></div></div>
+    <div class="presentation-caption"><div class="presentation-title"><div class="eyebrow small" id="present-sequence"></div><h2 id="present-title"></h2><div id="present-framing" class="present-framing"></div></div><div class="presentation-direction"><span>ACTION</span><p id="present-action"></p></div><div class="presentation-sound"><span>SOUND</span><p id="present-sound"></p></div></div>
+    <div class="presentation-controls"><div class="play-controls"><button id="play-preview" class="button presentation-play">▶ Play</button><span id="present-counter"></span><span id="present-time"></span></div><div class="present-progress" id="present-progress" role="progressbar" aria-label="Storyboard preview progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div><div class="audio-controls"><button id="load-audio" class="text-button">＋ Temp audio</button><button id="clear-audio" class="text-button" hidden>Remove audio</button><label class="audio-start-label" for="audio-start">Audio starts at <input id="audio-start" type="number" min="0" max="600" step="0.1" value="3" inputmode="decimal" aria-describedby="audio-start-hint"> sec</label><span id="audio-start-hint" class="sr-only">Seconds from the start of the board. The track starts at this point using the source trim, level and fades set in Video export.</span><span id="audio-label">Timed board preview — music not attached</span></div></div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <input type="file" id="json-input" accept=".json,application/json" hidden>
+  <input type="file" id="frame-input" accept="image/jpeg,image/png,image/webp" hidden>
+  <input type="file" id="audio-input" accept="audio/*" hidden>
+  <div class="print-board" id="print-board"></div>
+  <script src="storyboard-data.js"></script>
+  <script src="assets-data.js"></script>
+  <script src="video-engine.js"></script>
+  <script src="video-export.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

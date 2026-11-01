@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import re
 import stat
+import subprocess
 import sys
 import tempfile
 import unicodedata
@@ -577,6 +578,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="rua")
     parser.error = silent_error
     sub = parser.add_subparsers(dest="group")
+    sub.add_parser("storyboard", help="check, build, or import an external storyboard project")
     vault = sub.add_parser("vault")
     vault.error = silent_error
     vault_sub = vault.add_subparsers(dest="action")
@@ -619,6 +621,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> None:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "storyboard":
+        tool = Path(__file__).resolve().parent.parent / "storyboard" / "storyboard.py"
+        raise SystemExit(subprocess.run([sys.executable, str(tool), *argv[1:]], check=False).returncode)
     parser = build_parser()
     try:
         args = parser.parse_args(argv)
