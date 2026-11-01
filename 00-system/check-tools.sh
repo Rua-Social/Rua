@@ -11,4 +11,7 @@ echo "check-tools: rua-vault" >&2
 python3 -m unittest discover -s "$root/30-tools/rua-vault" -p 'test_*.py'
 echo "check-tools: rua-seat" >&2
 python3 -m unittest discover -s "$root/30-tools/rua-seat" -p 'test_*.py'
+echo "check-tools: storyboard" >&2
+python3 -m unittest discover -s "$root/30-tools/storyboard" -p 'test_*.py'
+node "$root/30-tools/storyboard/test_reset.js"
 echo "check-tools: ok" >&2
