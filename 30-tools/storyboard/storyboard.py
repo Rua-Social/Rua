@@ -130,11 +130,13 @@ def validate_board(board):
             raise ProjectError(f"Board {key} must be a list with at most 200 entries.")
 
 
-def load_project(project_path: str | Path):
+def load_project(project_path: str | Path, *, manifest=MISSING, board=MISSING):
+    """Load and validate a project, or proposed changes before they replace disk data."""
     path = Path(project_path).expanduser().resolve()
     if path.is_dir():
         path /= "project.json"
-    manifest = read_json(path)
+    if manifest is MISSING:
+        manifest = read_json(path)
     if not isinstance(manifest, dict) or manifest.get("version") != 1:
         raise ProjectError("Project manifest must contain version: 1.")
     if not isinstance(manifest.get("storageKey"), str) or not manifest["storageKey"].strip():
@@ -151,7 +153,8 @@ def load_project(project_path: str | Path):
     if config.get("runtimeMin", 0) > config.get("runtimeMax", 150000):
         raise ProjectError("Project runtimeMin exceeds runtimeMax.")
     board_path = member(path.parent, manifest.get("board"), "board")
-    board = read_json(board_path)
+    if board is MISSING:
+        board = read_json(board_path)
     validate_board(board)
     assets = manifest.get("assets", {})
     if not isinstance(assets, dict) or any(not isinstance(k, str) for k in assets):
@@ -198,26 +201,53 @@ def backup_name(path: Path, directory: Path) -> Path:
     return directory / f"{path.stem}-{stamp}-{uuid.uuid4().hex[:6]}{path.suffix if path.is_file() else ''}"
 
 
-def build(project_path: str | Path, output: str | Path | None = None, *, source=SOURCE):
-    path, manifest, board, assets, audio = load_project(project_path)
-    destination = output if output is not None else manifest.get("output")
-    if not isinstance(destination, (str, Path)) or not str(destination).strip():
-        raise ProjectError("Supply --output or an output path in project.json.")
-    destination = Path(destination).expanduser()
-    if not destination.is_absolute():
-        destination = (path.parent / destination) if output is None else (Path.cwd() / destination)
-    destination = destination.resolve()
-    if destination.suffix.lower() != ".html":
-        raise ProjectError("Build output must have an .html extension.")
-    if destination.is_relative_to(path.parent) or destination.is_relative_to(Path(source).resolve()):
-        raise ProjectError("Build output must be outside the project source folder and editor source folder.")
+def slug(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:48] or "version"
+
+
+def read_versions(project_dir: Path) -> list:
+    path = project_dir / "versions.json"
+    if not path.exists():
+        return []
+    data = read_json(path)
+    entries = data.get("versions") if isinstance(data, dict) else None
+    if not isinstance(entries, list) or any(not isinstance(e, dict) or not isinstance(e.get("n"), int) for e in entries):
+        raise ProjectError(f"{path} must contain a versions list with numbered entries.")
+    return entries
+
+
+def versions_for_page(entries: list) -> list:
+    # Only the newest entry is the current file; an earlier entry without a kept file has no link.
+    page = []
+    for index, entry in enumerate(entries):
+        item = {"n": entry["n"], "label": entry.get("label", ""), "date": str(entry.get("builtAt", ""))[:10]}
+        if index == len(entries) - 1:
+            item["current"] = True
+        elif entry.get("file"):
+            item["href"] = Path(entry["file"]).as_uri()
+        page.append(item)
+    return page
+
+
+# Browser bookkeeping that never changes what the board is.
+VOLATILE_KEYS = ("sourceRevision", "savedAt", "exportedAt", "edited", "keptAt")
+
+
+def source_revision(board, assets, audio, config) -> str:
+    revision_board = {key: value for key, value in board.items() if key not in VOLATILE_KEYS}
+    return hashlib.sha256(json_text({"board": revision_board, "assets": assets, "audio": audio, "config": config}).encode()).hexdigest()
+
+
+def render_page(manifest, board, assets, audio, versions, *, source=SOURCE, studio=None) -> str:
+    """Assemble the single-file editor page. `studio` is set only when served by `storyboard open`."""
     source = Path(source)
     html = (source / "index.html").read_text(encoding="utf-8")
-    config = copy.deepcopy(manifest.get("config", {}))
-    revision_board = {key: value for key, value in board.items() if key not in ("sourceRevision", "savedAt", "exportedAt")}
-    board["sourceRevision"] = hashlib.sha256(json_text({"board": revision_board, "assets": assets, "audio": audio, "config": config}).encode()).hexdigest()
+    values = [("STORYBOARD_STORAGE_KEY", manifest["storageKey"]), ("STORYBOARD_CONFIG", copy.deepcopy(manifest.get("config", {}))),
+              ("STORYBOARD_DATA", board), ("STORYBOARD_AUDIO", audio), ("STORYBOARD_VERSIONS", versions)]
+    if studio is not None:
+        values.append(("STORYBOARD_STUDIO", studio))
     replacements = {
-        '<script src="storyboard-data.js"></script>': '<script>' + ''.join(f"window.{key}={embedded_json(value)};" for key, value in [("STORYBOARD_STORAGE_KEY", manifest["storageKey"]), ("STORYBOARD_CONFIG", config), ("STORYBOARD_DATA", board), ("STORYBOARD_AUDIO", audio)]) + '</script>',
+        '<script src="storyboard-data.js"></script>': '<script>' + ''.join(f"window.{key}={embedded_json(value)};" for key, value in values) + '</script>',
         '<script src="assets-data.js"></script>': '<script>window.STORYBOARD_ASSETS=' + embedded_json(assets) + ';</script>',
     }
     for name in ("styles", "video-export"):
@@ -230,19 +260,94 @@ def build(project_path: str | Path, output: str | Path | None = None, *, source=
         if html.count(marker) != 1:
             raise ProjectError(f"Editor template must contain exactly one {marker}")
         html = html.replace(marker, replacement)
+    return html
+
+
+def output_path(path: Path, manifest) -> Path | None:
+    value = manifest.get("output")
+    if not isinstance(value, str) or not value.strip():
+        return None
+    destination = Path(value).expanduser()
+    return (destination if destination.is_absolute() else path.parent / destination).resolve()
+
+
+def free_name(path: Path) -> Path:
+    candidate, count = path, 2
+    while candidate.exists():
+        candidate = path.with_name(f"{path.stem}-{count}{path.suffix}")
+        count += 1
+    return candidate
+
+
+def build(project_path: str | Path, output: str | Path | None = None, *, source=SOURCE, label: str | None = None):
+    path, manifest, board, assets, audio = load_project(project_path)
+    destination = output if output is not None else manifest.get("output")
+    if not isinstance(destination, (str, Path)) or not str(destination).strip():
+        raise ProjectError("Supply --output or an output path in project.json.")
+    destination = Path(destination).expanduser()
+    if not destination.is_absolute():
+        destination = (path.parent / destination) if output is None else (Path.cwd() / destination)
+    destination = destination.resolve()
+    if destination.suffix.lower() != ".html":
+        raise ProjectError("Build output must have an .html extension.")
+    if destination.is_relative_to(path.parent) or destination.is_relative_to(Path(source).resolve()):
+        raise ProjectError("Build output must be outside the project source folder and editor source folder.")
+    config = copy.deepcopy(manifest.get("config", {}))
+    for key in VOLATILE_KEYS:
+        board.pop(key, None)
+    board["sourceRevision"] = source_revision(board, assets, audio, config)
+    # Versions are tracked for the project's own output, including --output naming that same file.
+    tracked = output is None or destination == output_path(path, manifest)
+    entries = copy.deepcopy(read_versions(path.parent)) if tracked else []
+    last = entries[-1] if entries else None
+    new_version = tracked and (last is None or last.get("sourceRevision") != board["sourceRevision"])
+    archive_dir = (path.parent / manifest["earlier"]).resolve() if isinstance(manifest.get("earlier"), str) and manifest["earlier"] else destination.parent / "earlier"
+    archive_target = None
+    if new_version:
+        prefix = slug(str(config.get("exportPrefix") or path.parent.name))
+        if last is None and destination.is_file():
+            stamp = datetime.fromtimestamp(destination.stat().st_mtime, timezone.utc)
+            last = {"n": 1, "label": "Earlier build", "builtAt": stamp.isoformat(timespec="seconds"), "sourceRevision": None}
+            entries.append(last)
+        if last is not None and destination.is_file():
+            archive_target = free_name(archive_dir / f"{str(last.get('builtAt', ''))[:10]}_{prefix}-v{last['n']:02d}-{slug(last.get('label', ''))}.html")
+            last["file"] = str(archive_target)
+        entries.append({"n": (last["n"] + 1) if last else 1, "label": label or "Untitled",
+                        "builtAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                        "sourceRevision": board["sourceRevision"], "panels": len(board["shots"]),
+                        "seconds": sum(s["duration"] for s in board["shots"]), "music": audio["name"] if audio else None})
+    elif tracked and label:
+        last["label"] = label
+    html = render_page(manifest, board, assets, audio, versions_for_page(entries) if tracked else None, source=source)
     archive = None
     if destination.exists():
         if not destination.is_file():
             raise ProjectError(f"Output is not a file: {destination}")
         if destination.read_bytes() == html.encode("utf-8"):
             return destination, None, summary(board, audio) + " / output already current"
-        earlier = manifest.get("earlier")
-        archive_dir = (path.parent / earlier).resolve() if isinstance(earlier, str) and earlier else destination.parent / "earlier"
+        # Every replaced output is archived. A new version gets its numbered name; a rebuild of the
+        # same board (editor or label change only) still keeps the previous HTML under a dated name.
         archive_dir.mkdir(parents=True, exist_ok=True)
-        archive = backup_name(destination, archive_dir)
+        archive = archive_target or backup_name(destination, archive_dir)
         shutil.copy2(destination, archive)
     atomic_write(destination, html.encode("utf-8"))
-    return destination, archive, summary(board, audio)
+    report = summary(board, audio)
+    if tracked:
+        atomic_write(path.parent / "versions.json", json_text({"versions": entries}).encode("utf-8"))
+        report += f" / version {entries[-1]['n']}: {entries[-1].get('label', '')}"
+    return destination, archive, report
+
+
+def list_versions(project_path) -> str:
+    path, _, _, _, _ = load_project(project_path)
+    entries = read_versions(path.parent)
+    if not entries:
+        return "No versions recorded yet. The next build starts the list."
+    lines = []
+    for entry in reversed(entries):
+        where = "current file" if entry is entries[-1] else entry.get("file") or "file not kept"
+        lines.append(f"v{entry['n']:<3} {str(entry.get('builtAt', ''))[:16].replace('T', ' ')}  {entry.get('label', '')}\n      {where}")
+    return "\n".join(lines)
 
 
 class ScriptReader(HTMLParser):
@@ -277,7 +382,7 @@ def parse_snapshot(snapshot_path: str | Path):
     parser = ScriptReader()
     parser.feed(raw)
     assignments = {}
-    pattern = re.compile(r"window\.(STORYBOARD_(?:STORAGE_KEY|CONFIG|DATA|ASSETS|AUDIO))\s*=\s*")
+    pattern = re.compile(r"window\.(STORYBOARD_(?:STORAGE_KEY|CONFIG|DATA|ASSETS|AUDIO|VERSIONS))\s*=\s*")
     decoder = json.JSONDecoder()
     for script in parser.scripts:
         rest = script.strip()
@@ -386,22 +491,53 @@ def main(argv=None):
     check_cmd.add_argument("project", help="external project.json or project directory")
     build_cmd = sub.add_parser("build", help="build a standalone HTML; back up an existing output")
     build_cmd.add_argument("project")
-    build_cmd.add_argument("--output", help="override project.output")
+    build_cmd.add_argument("--output", help="override project.output (a review copy; not recorded as a version)")
+    build_cmd.add_argument("--label", help="name this version, for example \"wreath added\"")
     import_cmd = sub.add_parser("import", help="save a browser export back into the disk project with a backup")
     import_cmd.add_argument("snapshot", help="complete-project HTML or JSON export")
     import_cmd.add_argument("--project", required=True)
     import_cmd.add_argument("--expected-panels", type=int, help="refuse an unexpected panel count")
     import_cmd.add_argument("--clear-audio", action="store_true", help="explicitly remove the project's soundtrack")
+    save_cmd = sub.add_parser("save", help="import a browser export, then build it as a new named version")
+    save_cmd.add_argument("snapshot", help="complete-project HTML or JSON export")
+    save_cmd.add_argument("--project", required=True)
+    save_cmd.add_argument("--label", required=True, help="name this version")
+    save_cmd.add_argument("--expected-panels", type=int, help="refuse an unexpected panel count")
+    versions_cmd = sub.add_parser("versions", help="list the project's numbered versions and where each file is")
+    versions_cmd.add_argument("project")
+    open_cmd = sub.add_parser("open", help="open the Storyboard app in the browser; edits save to the project on disk")
+    open_cmd.add_argument("project", nargs="?", help="project.json to open (omit for the home page)")
+    serve_cmd = sub.add_parser("serve", help="run the Storyboard app server in this terminal")
+    serve_cmd.add_argument("--port", type=int, default=None)
     args = parser.parse_args(argv)
+    if args.command in ("open", "serve"):
+        import studio
+        try:
+            if args.command == "serve":
+                studio.serve(args.port or studio.PORT)
+            else:
+                print(f"Storyboard is open at {studio.open_studio(args.project)}")
+            return 0
+        except (ProjectError, studio.sb.ProjectError) as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 1
     try:
         if args.command == "check":
             path, _, board, _, audio = load_project(args.project)
             print(f"Verified {path}\n{summary(board, audio)}")
         elif args.command == "build":
-            path, backup, report = build(args.project, args.output)
+            path, backup, report = build(args.project, args.output, label=args.label)
             print(f"Built {path}\n{report}")
             if backup:
                 print(f"Previous output: {backup}")
+        elif args.command == "versions":
+            print(list_versions(args.project))
+        elif args.command == "save":
+            backup, report = import_snapshot(args.snapshot, args.project, expected_panels=args.expected_panels)
+            path, previous, built = build(args.project, label=args.label)
+            print(f"Imported {Path(args.snapshot).name}\n{report}\nPrevious project: {backup}\nBuilt {path}\n{built}")
+            if previous:
+                print(f"Previous output: {previous}")
         else:
             backup, report = import_snapshot(args.snapshot, args.project, clear_audio=args.clear_audio, expected_panels=args.expected_panels)
             print(f"Imported into {Path(args.project).resolve()}\n{report}\nPrevious project: {backup}\nRun build to update the standalone HTML.")

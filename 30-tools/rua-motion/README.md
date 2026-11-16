@@ -12,7 +12,8 @@ cd ~/Rua/30-tools/rua-motion
 npm run dev
 ```
 
-Open **http://127.0.0.1:4317**. Or double-click `Start Rua Motion.command`.
+Open **http://127.0.0.1:4317**. Or open the **Rua Motion** app (made by
+`30-tools/install-apps.sh`), or double-click `Start Rua Motion.command`.
 The studio needs Node 22+, ffmpeg and its bundled Puppeteer Chromium. On this
 Mac those dependencies are installed. For a fresh checkout:
 

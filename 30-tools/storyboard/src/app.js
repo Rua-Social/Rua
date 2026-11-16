@@ -42,6 +42,13 @@
   let saveTimer = null;
   let saveChain = Promise.resolve();
   let saveRevision = 0;
+  // Studio mode: the page was opened by `storyboard open`, so the project on disk is the record.
+  const STUDIO = window.STORYBOARD_STUDIO || null;
+  let studioRev = STUDIO ? STUDIO.rev : '';
+  let studioQueue = Promise.resolve();
+  let studioDirty = false, studioBlocked = false, studioSaveFailed = false;
+  let studioTransition = false, pendingEdits = 0;
+  let studioAudioDirty = false, studioAudioPending = 0, studioAudioRevision = 0;
   let toastTimer = null;
   let presentIndex = 0;
   let playing = false;
@@ -111,17 +118,208 @@
       } catch { resolve(null); }
     });
   }
-  async function dbRead() {
-    if(!db) return null;
-    return new Promise((resolve)=>{try{const req=db.transaction('boards','readonly').objectStore('boards').get(STORAGE_KEY);req.onsuccess=()=>resolve(req.result || null);req.onerror=()=>resolve(null);}catch{resolve(null);}});
+  function dbRequest(mode,run){
+    if(!db) return Promise.resolve(null);
+    return new Promise((resolve)=>{try{const tx=db.transaction('boards',mode);const req=run(tx.objectStore('boards'));if(mode==='readwrite'){tx.oncomplete=()=>resolve(true);tx.onerror=tx.onabort=()=>resolve(false);}else{req.onsuccess=()=>resolve(req.result ?? null);req.onerror=()=>resolve(null);}}catch{resolve(mode==='readwrite'?false:null);}});
   }
-  async function dbWrite(value) {
-    if(!db) return false;
-    return new Promise((resolve)=>{try{const tx=db.transaction('boards','readwrite');tx.objectStore('boards').put(value,STORAGE_KEY);tx.oncomplete=()=>resolve(true);tx.onerror=()=>resolve(false);tx.onabort=()=>resolve(false);}catch{resolve(false);}});
+  const dbGet=key=>dbRequest('readonly',store=>store.get(key));
+  const dbKeys=async()=>(await dbRequest('readonly',store=>store.getAllKeys()))||[];
+  const dbPut=(value,key)=>dbRequest('readwrite',store=>store.put(value,key));
+  const dbDelete=key=>dbRequest('readwrite',store=>store.delete(key));
+  const dbRead=()=>dbGet(STORAGE_KEY);
+  const dbWrite=value=>dbPut(value,STORAGE_KEY);
+  const KEPT_PREFIX=STORAGE_KEY+':kept:';
+  // A browser save from another file version never hides this file's board. Edited saves are kept aside instead.
+  function startupChoice(saved,fileRevision){
+    if(!saved) return {load:null,keep:false};
+    if(!fileRevision||saved.sourceRevision===fileRevision) return {load:saved,keep:false};
+    return {load:null,keep:saved.edited!==false};
+  }
+  // Each kept copy gets its own key, so a second set of edits on the same file version never replaces the first.
+  async function keepCopy(saved){
+    const key=KEPT_PREFIX+(saved.sourceRevision||'unknown')+':'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
+    const audio=await dbGet(STORAGE_KEY+':audio');
+    if(!await dbPut({...saved,keptAt:Date.now()},key)) return false;
+    if(audio) await dbPut(audio,key+':audio');
+    return true;
+  }
+  async function keptCopies(){
+    const list=[];
+    for(const key of await keptKeys()){
+      const value=await dbGet(key);if(value)list.push({key,value});
+    }
+    return list.sort((a,b)=>(b.value.keptAt||0)-(a.value.keptAt||0));
+  }
+  async function keptKeys(){
+    return (await dbKeys()).filter(key=>typeof key==='string'&&key.startsWith(KEPT_PREFIX)&&!key.endsWith(':audio'));
+  }
+  async function renderKeptCopies(){
+    const count=(await keptKeys()).length;
+    $('kept-notice').hidden=!count;
+    if(count)$('kept-text').textContent=`This page opened the board saved in this file. Edits you made in this browser on ${count===1?'an earlier version are':count+' earlier versions are'} kept aside.`;
+  }
+  async function openKeptCopy(){
+    const [latest]=await keptCopies();
+    if(!latest){await renderKeptCopies();return;}
+    let candidate;
+    try{candidate=validateImport(latest.value);}catch(error){toast('Those earlier edits could not be opened: '+error.message,8000);return;}
+    // Edits made on this page since it opened are kept aside too before they are replaced.
+    if(state.edited!==false&&!await keepCopy({...state,savedAt:Date.now()})){toast('Your current edits could not be kept aside, so the earlier edits were not opened.',8000);return;}
+    const keptAudio=await dbGet(latest.key+':audio');
+    // Adopting this file's revision makes the opened edits the page's own save, so a reload keeps them.
+    delete candidate.keptAt;candidate.sourceRevision=initial.sourceRevision;candidate.edited=true;candidate.savedAt=Date.now();
+    if(!await dbWrite(candidate)){toast('Browser storage could not save the earlier edits, so they were not opened.',8000);return;}
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(candidate));}catch{}
+    state=candidate;sequenceFilter='all';statusFilter='all';renderAll();scheduleSave();
+    if(keptAudio&&!keptAudio.removed&&keptAudio.blob){try{await attachAudio(keptAudio.blob,keptAudio.name);}catch{toast('The earlier soundtrack could not be restored. Choose the track again.',8000);}}
+    else if(keptAudio?.removed)await clearAudio();
+    await dbDelete(latest.key);await dbDelete(latest.key+':audio');
+    await renderKeptCopies();
+    toast('Showing your earlier browser edits. Use Export → Save complete project to keep them.',8000);
+  }
+  async function downloadKeptCopies(){
+    const list=await keptCopies();
+    if(!list.length){toast('There are no earlier browser edits to download.');return;}
+    download(JSON.stringify({exportedAt:new Date().toISOString(),note:'Earlier browser edits of this storyboard. Soundtracks are not included.',copies:list.map(c=>({key:c.key,board:c.value}))},null,2),'application/json',`${exportPrefix}-Earlier-Browser-Edits-${new Date().toISOString().slice(0,10)}.json`);
+  }
+  // Old copies: this file's kept edits, and saves of this film under an older storage key.
+  // Complete-project files get their own '-shared-' key and stay live, as do any file's kept edits.
+  function isOldCopy(key,value){
+    if(typeof key!=='string'||key===STORAGE_KEY||key.endsWith(':audio'))return false;
+    if(key.startsWith(KEPT_PREFIX))return true;
+    if(key.includes(':kept:')||/-shared-\d+/.test(key))return false;
+    return !!value&&value.title===initial.title;
+  }
+  async function clearOldCopies(){
+    if(!db){toast('This browser has no saved copies to clear.');return;}
+    const old=[];
+    for(const key of await dbKeys()){if(typeof key!=='string'||key===STORAGE_KEY||key.endsWith(':audio'))continue;const value=await dbGet(key);if(isOldCopy(key,value))old.push({key,value});}
+    if(!old.length){toast('No old browser copies of this board were found.');return;}
+    if(!window.confirm(`Clear ${old.length} old browser ${old.length===1?'copy':'copies'} of this board? A backup file downloads first. The board in this file is not affected.`))return;
+    download(JSON.stringify({exportedAt:new Date().toISOString(),note:'Old browser copies of this storyboard. Soundtracks are not included.',copies:old.map(o=>({key:o.key,board:o.value}))},null,2),'application/json',`${exportPrefix}-Old-Browser-Copies-${new Date().toISOString().slice(0,10)}.json`);
+    for(const {key} of old){await dbDelete(key);await dbDelete(key+':audio');if(!key.includes(':'))try{localStorage.removeItem(key);}catch{}}
+    await renderKeptCopies();
+    toast(`Cleared ${old.length} old browser ${old.length===1?'copy':'copies'}. A backup was downloaded.`,7000);
+  }
+  function renderVersions(){
+    const versions=Array.isArray(window.STORYBOARD_VERSIONS)?window.STORYBOARD_VERSIONS:[];
+    const picker=$('version-picker');if(!picker)return;
+    picker.hidden=!versions.length;if(!versions.length)return;
+    const current=versions.find(v=>v.current)||versions[versions.length-1];
+    $('version-summary').textContent=`Version ${current.n} · ${current.label}`;
+    $('version-list').innerHTML=versions.slice().reverse().map(v=>v.current||!v.href?`<li><strong>v${esc(String(v.n))} · ${esc(v.label)}</strong><span>${esc(v.date)}${v.current?' · this file':''}</span></li>`:`<li><a href="${esc(v.href)}">v${esc(String(v.n))} · ${esc(v.label)}</a><span>${esc(v.date)}</span></li>`).join('');
+  }
+  // ---- studio: every request goes through one queue so the project revision stays in step ----
+  function studioRequest(method,action,body,headers={}){
+    const run=async()=>{
+      let response;
+      try{response=await fetch(STUDIO.api+'/'+action,{method,body,headers:{'X-Storyboard':'1','X-Storyboard-Rev':studioRev,...headers}});}
+      catch{const error=new Error('Storyboard is not running. Your work on this page is still here: open Storyboard again, or use Export → Editable backup.');error.status=0;throw error;}
+      let data={};try{data=await response.json();}catch{}
+      if(!response.ok){const error=new Error(data.error||`The project could not be updated (${response.status}).`);error.status=response.status;if(error.status===409){studioBlocked=true;showStorageWarning(error.message);}throw error;}
+      if(data.rev)studioRev=data.rev;
+      return data;
+    };
+    const result=studioQueue.then(run,run);
+    studioQueue=result.catch(()=>{});
+    return result;
+  }
+  async function studioFlush(){
+    clearTimeout(saveTimer);
+    if(!studioDirty||studioBlocked)return !studioBlocked;
+    const revision=saveRevision;
+    try{
+      await studioRequest('PUT','board',JSON.stringify(state),{'Content-Type':'application/json'});
+      studioSaveFailed=false;
+      if(revision===saveRevision){studioDirty=false;studioSaveLabel();}
+      $('storage-warning').hidden=true;
+      return true;
+    }catch(error){
+      studioSaveFailed=true;
+      if(error.status===409)studioBlocked=true;
+      setSaveLabel('Not saved',true);$('drawer-save-label').textContent='Not saved: see the message above the board';
+      showStorageWarning(error.message);
+      return false;
+    }
+  }
+  function studioSaveLabel(){
+    if(studioBlocked||studioSaveFailed){setSaveLabel('Not saved',true);return;}
+    if(studioAudioDirty){setSaveLabel(studioAudioPending?'Saving music…':'Music not saved',true);return;}
+    setSaveLabel(studioDirty?'Saving…':'Saved to project · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),studioDirty);
+  }
+  function pendingEdit(run){
+    return async(...args)=>{
+      if(STUDIO&&studioTransition)return;
+      pendingEdits++;
+      try{return await run(...args);}finally{pendingEdits--;}
+    };
+  }
+  function studioCanTransition(){
+    if(studioTransition)return false;
+    if(activeModal==='export'){toast('Close video export before saving or restoring a version.',7000);return false;}
+    if(pendingEdits){toast('Let the current image, music or backup import finish, then try again.',7000);return false;}
+    return true;
+  }
+  function lockStudio(locked){
+    studioTransition=locked;document.body.inert=locked;
+    document.body.setAttribute('aria-busy',String(locked));
+  }
+  async function studioPrepareTransition(){
+    await audioSaveChain;
+    if(studioAudioDirty){toast('The music change has not saved. Choose the track again or save a complete project from Export before continuing.',9000);return false;}
+    if(!await studioFlush()){toast('The latest changes could not be written to the project. See the message above the board.',8000);return false;}
+    return true;
+  }
+  async function studioSaveVersion(){
+    if(!studioCanTransition())return;
+    const label=window.prompt('Name this version, for example “wreath added”:','');
+    if(label===null)return;
+    if(!label.trim()){toast('A version needs a short name.');return;}
+    lockStudio(true);
+    try{
+      if(!await studioPrepareTransition())return;
+      setSaveLabel('Saving version…',true);
+      const result=await studioRequest('POST','version',JSON.stringify({label}),{'Content-Type':'application/json'});
+      toast(result.report.replace(/^.* \/ (version .*)$/,'Saved $1. The shareable file is updated.'),7000);
+      await renderStudioVersions();
+    }catch(error){toast('Version not saved: '+error.message,9000);}
+    finally{lockStudio(false);studioSaveLabel();}
+  }
+  async function studioRestore(request,description){
+    if(!studioCanTransition())return;
+    if(!window.confirm(`Go back to ${description}? What you have now is kept first as an automatic save, so you can return to it.`))return;
+    lockStudio(true);
+    let reloading=false;
+    try{
+      if(!await studioPrepareTransition())return;
+      setSaveLabel('Restoring…',true);
+      await studioRequest('POST','restore',JSON.stringify(request),{'Content-Type':'application/json'});
+      studioDirty=false;reloading=true;location.reload();
+    }catch(error){toast('Restore stopped: '+error.message,9000);}
+    finally{if(!reloading){lockStudio(false);studioSaveLabel();}}
+  }
+  async function renderStudioVersions(){
+    const picker=$('version-picker');picker.hidden=false;
+    let history;
+    try{history=await studioRequest('GET','history');}catch(error){$('version-summary').textContent='Versions';$('version-list').innerHTML=`<li><span>${esc(error.message)}</span></li>`;return;}
+    const current=history.versions.find(v=>v.current);
+    $('version-summary').textContent=current?`Version ${current.n} · ${current.label}`:'No versions yet';
+    const button=(attrs,label)=>`<button class="text-button" ${attrs}>${label}</button>`;
+    const rows=[`<li class="version-action">${button('data-studio-save','Save version…')}<span>⌘S · updates the shareable file</span></li>`];
+    rows.push('<li class="version-heading"><span>Versions</span></li>');
+    if(!history.versions.length)rows.push('<li><span>None yet. Save version names the first one.</span></li>');
+    for(const v of history.versions)rows.push(`<li><strong>v${esc(String(v.n))} · ${esc(v.label)}</strong><span>${esc(v.date)}${v.current?' · latest':''} ${v.restorable?button(`data-studio-version="${esc(String(v.n))}" data-label="${esc('v'+v.n+' · '+v.label)}"`,v.current?'Revert':'Restore'):''}</span></li>`);
+    rows.push('<li class="version-heading"><span>Automatic saves</span></li>');
+    if(!history.autosaves.length)rows.push('<li><span>Taken every 10 minutes while you edit.</span></li>');
+    for(const a of history.autosaves)rows.push(`<li><strong>${esc(a.date)}</strong><span>${esc(String(a.panels))} panels ${button(`data-studio-autosave="${esc(a.name)}" data-label="${esc('the automatic save from '+a.date)}"`,'Restore')}</span></li>`);
+    rows.push(`<li class="version-action"><a href="${esc(STUDIO.home)}">All projects</a></li>`);
+    $('version-list').innerHTML=rows.join('');
   }
   function showStorageWarning(message) {$('storage-warning').textContent=message;$('storage-warning').hidden=false;}
-  function setSaveLabel(message,unsaved=false){$('save-label').textContent=message;document.querySelector('.save-state').classList.toggle('unsaved',unsaved);$('drawer-save-label').textContent=unsaved?'Saving changes…':'Changes saved on this browser';}
-  function scheduleSave() {
+  function setSaveLabel(message,unsaved=false){$('save-label').textContent=message;document.querySelector('.save-state').classList.toggle('unsaved',unsaved);$('drawer-save-label').textContent=unsaved?'Saving changes…':(STUDIO?'Changes saved to the project':'Changes saved on this browser');}
+  function scheduleSave(edited=true) {
+    state.edited=edited;
+    if(STUDIO){saveRevision++;studioDirty=true;studioSaveFailed=false;studioSaveLabel();clearTimeout(saveTimer);saveTimer=setTimeout(studioFlush,700);return;}
     saveRevision++;
     setSaveLabel('Saving changes…',true);
     clearTimeout(saveTimer);
@@ -339,19 +537,20 @@
   }
   function updateAudioLabel(saved=true){
     $('clear-audio').hidden=!tempAudioBlob;
-    $('audio-label').textContent=tempAudioBlob?`Temp track: ${tempAudioName} · ${saved?'saved on this browser':'attached for this session'} · included in video export`:'Timed board preview — music not attached';
+    $('audio-label').textContent=tempAudioBlob?`Temp track: ${tempAudioName} · ${saved?(STUDIO?'saved in the project':'saved on this browser'):'attached for this session'} · included in video export`:'Timed board preview — music not attached';
     $('load-audio').textContent=tempAudioBlob?'Change audio':'＋ Temp audio';
     if($('music-status'))$('music-status').textContent=tempAudioBlob?'Temp music attached':'Music pending';
   }
   function showAudioWarning(message=''){$('audio-warning').textContent=message;$('audio-warning').hidden=!message;}
   function persistAudio(value){
-    audioSaveChain=audioSaveChain.then(()=>new Promise(resolve=>{
-      if(!db){resolve(false);return;}
-      try{const tx=db.transaction('boards','readwrite');const store=tx.objectStore('boards');
-        store.put(value||{removed:true},STORAGE_KEY+':audio');
-        tx.oncomplete=()=>resolve(true);tx.onerror=()=>resolve(false);tx.onabort=()=>resolve(false);
-      }catch{resolve(false);}
-    }));
+    if(STUDIO){
+      const revision=++studioAudioRevision;
+      studioAudioDirty=true;studioAudioPending++;studioSaveLabel();
+      const request=value&&value.blob?studioRequest('PUT','audio?name='+encodeURIComponent(value.name||'Soundtrack'),value.blob):studioRequest('DELETE','audio');
+      audioSaveChain=request.then(()=>{if(revision===studioAudioRevision){studioAudioDirty=false;showAudioWarning();}return true;},error=>{if(revision===studioAudioRevision)showAudioWarning('The music change was not saved to the project: '+error.message);return false;}).finally(()=>{studioAudioPending--;studioSaveLabel();});
+      return audioSaveChain;
+    }
+    audioSaveChain=audioSaveChain.then(()=>dbPut(value||{removed:true},STORAGE_KEY+':audio'));
     return audioSaveChain;
   }
   async function attachAudio(blob,name,persist=true){
@@ -363,7 +562,7 @@
     updateAudioLabel(!persist);
     if(persist){
       const ok=await persistAudio({blob,name:tempAudioName});
-      if(tempAudioBlob===blob){updateAudioLabel(ok);showAudioWarning(ok?'':'This track is attached for this session, but browser storage could not keep it. Save a complete project before closing this page.');}
+      if(tempAudioBlob===blob){updateAudioLabel(ok);if(!STUDIO)showAudioWarning(ok?'':'This track is attached for this session, but browser storage could not keep it. Save a complete project before closing this page.');}
       return ok;
     }
     return true;
@@ -371,7 +570,7 @@
   async function clearAudio(){
     releaseAudio();updateAudioLabel();$('audio-input').value='';
     const removed=await persistAudio(null);
-    showAudioWarning(removed?'':'The track was removed for this session, but browser storage could not save its removal. Save a complete project before closing; the old track may return when you reopen this file.');
+    if(!STUDIO)showAudioWarning(removed?'':'The track was removed for this session, but browser storage could not save its removal. Save a complete project before closing; the old track may return when you reopen this file.');
     return removed;
   }
   function embeddedAudioBlob(value){
@@ -381,8 +580,9 @@
     for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
     return new Blob([bytes],{type:match[1]||'application/octet-stream'});
   }
-  async function restoreAudio(){
-    const stored=db?await new Promise(resolve=>{try{const req=db.transaction('boards','readonly').objectStore('boards').get(STORAGE_KEY+':audio');req.onsuccess=()=>resolve(req.result);req.onerror=()=>resolve(null);}catch{resolve(null);}}):null;
+  async function restoreAudio(fromFile=false){
+    if(fromFile){try{if(window.STORYBOARD_AUDIO?.data)await attachAudio(embeddedAudioBlob(window.STORYBOARD_AUDIO.data),window.STORYBOARD_AUDIO.name,true);else await clearAudio();}catch{toast('The file’s soundtrack could not be loaded. Choose the track again.');}return;}
+    const stored=await dbGet(STORAGE_KEY+':audio');
     if(stored?.removed)return;
     try{
       if(stored?.blob instanceof Blob)await attachAudio(stored.blob,stored.name,false);
@@ -394,7 +594,7 @@
     videoExport=window.StoryboardVideoExport.init({
       getBoard:()=>clone(state),assets:ASSETS,
       getAudio:()=>tempAudioBlob?{blob:tempAudioBlob,name:tempAudioName}:null,
-      setAudio:(blob,name)=>attachAudio(blob,name),clearAudio,
+      setAudio:pendingEdit((blob,name)=>attachAudio(blob,name)),clearAudio:pendingEdit(clearAudio),
       getSettings:()=>({...clone(state.videoExportSettings||{}),audio:{...clone(state.videoExportSettings?.audio||{}),offset:state.audioStartSeconds}}),
       saveSettings:(settings)=>{state.videoExportSettings=clone(settings);state.audioStartSeconds=Math.max(0,Number(settings.audio?.offset)||0);$('audio-start').value=state.audioStartSeconds;scheduleSave();},
       pausePresentation:pausePreview,
@@ -430,10 +630,10 @@
       root.querySelector('#video-export-dialog')?.remove();
       const clonedBody=root.querySelector('body');clonedBody.style.overflow='';
       root.querySelectorAll('[inert]').forEach(node=>node.removeAttribute('inert'));
-      ['shot-drawer','drawer-backdrop','presentation','toast','storage-warning','audio-warning','source-warning','export-menu'].forEach(id=>{const el=root.querySelector('#'+id);if(el)el.hidden=true;});
+      ['shot-drawer','drawer-backdrop','presentation','toast','storage-warning','audio-warning','source-warning','kept-notice','export-menu'].forEach(id=>{const el=root.querySelector('#'+id);if(el)el.hidden=true;});
       root.querySelector('#storyboard-grid').innerHTML='';root.querySelector('#print-board').innerHTML='';
       root.querySelector('#export-html').disabled=false;root.querySelector('#export-project').disabled=false;root.querySelector('#export-button').setAttribute('aria-expanded','false');
-      root.querySelector('#reset-board').disabled=false;
+      root.querySelector('#reset-board').disabled=false;for(const id of ['reset-board','clear-copies'])root.querySelector('#'+id).hidden=false;
       root.querySelector('#clear-audio').hidden=true;root.querySelector('#audio-label').textContent='Timed board preview — music not attached';root.querySelector('#load-audio').textContent='＋ Temp audio';
       const payload=document.createElement('script');payload.textContent=`window.STORYBOARD_CONFIG=${embeddedJSON(CONFIG)};window.STORYBOARD_STORAGE_KEY=${embeddedJSON((slug(exportPrefix)||'storyboard')+'-shared-'+Date.now()+'-'+Math.random().toString(36).slice(2,8))};window.STORYBOARD_DATA=${embeddedJSON(snapshot)};window.STORYBOARD_ASSETS=${embeddedJSON(assets)};window.STORYBOARD_AUDIO=${embeddedJSON(bundledAudio)};`;
       clonedBody.appendChild(payload);
@@ -460,7 +660,7 @@
         showAudioWarning('Restore stopped because browser storage could not save the file’s music state. Your previous board and music remain here, and a complete-project backup was downloaded.');
         toast('Restore stopped. Your previous board and music were kept.',8000);return;
       }
-      state=clone(initial);sequenceFilter='all';statusFilter='all';renderAll();scheduleSave();
+      state=clone(initial);sequenceFilter='all';statusFilter='all';renderAll();scheduleSave(false);
       toast('File board and music restored. Your previous project was downloaded as a complete HTML backup.',8000);
     }catch(error){showAudioWarning('Restore stopped: '+error.message);toast('Restore stopped. Your current project has not been replaced.',8000);}
     finally{resetInProgress=false;$('reset-board').disabled=false;lockBackground(false);}
@@ -503,21 +703,23 @@
   $('edit-duration').addEventListener('blur',event=>{const shot=state.shots.find(s=>s.id===editingId);if(shot)event.target.value=shot.duration;});
   $('move-earlier').addEventListener('click',()=>moveShot(-1));$('move-later').addEventListener('click',()=>moveShot(1));$('duplicate-shot').addEventListener('click',duplicateShot);$('delete-shot').addEventListener('click',deleteShot);
   $('replace-frame').addEventListener('click',()=>$('frame-input').click());
-  $('frame-input').addEventListener('change',async event=>{const file=event.target.files[0];const id=editingId;if(!file||!id)return;try{const data=await processImage(file);const shot=state.shots.find(s=>s.id===id);if(!shot)return;shot.customImage=data;shot.customImageName=file.name;if(editingId===id){setFrame($('drawer-frame'),shot);$('restore-frame').hidden=false;}renderCards();scheduleSave();toast('Frame replaced. Export a JSON backup to keep a portable copy.');}catch(error){toast(error.message,6000);}finally{event.target.value='';}});
+  $('frame-input').addEventListener('change',pendingEdit(async event=>{const file=event.target.files[0];const id=editingId;if(!file||!id)return;try{const data=await processImage(file);const shot=state.shots.find(s=>s.id===id);if(!shot)return;shot.customImage=data;shot.customImageName=file.name;if(editingId===id){setFrame($('drawer-frame'),shot);$('restore-frame').hidden=false;}renderCards();scheduleSave();toast('Frame replaced. Export a JSON backup to keep a portable copy.');}catch(error){toast(error.message,6000);}finally{event.target.value='';}}));
   $('restore-frame').addEventListener('click',()=>{const shot=state.shots.find(s=>s.id===editingId);if(!shot)return;delete shot.customImage;delete shot.customImageName;setFrame($('drawer-frame'),shot);$('restore-frame').hidden=true;renderCards();scheduleSave();});
   $('decisions-list').addEventListener('change',event=>{if(event.target.dataset.decisionIndex!==undefined){state.decisions[Number(event.target.dataset.decisionIndex)].status=event.target.value;renderSummary();scheduleSave();}});
   $('decisions-list').addEventListener('input',event=>{if(event.target.dataset.decisionNote!==undefined){state.decisions[Number(event.target.dataset.decisionNote)].notes=event.target.value;scheduleSave();}});
   $('present-button').addEventListener('click',openPresentation);$('close-presentation').addEventListener('click',closePresentation);$('present-prev').addEventListener('click',()=>setPresentationIndex(presentIndex-1));$('present-next').addEventListener('click',()=>setPresentationIndex(presentIndex+1));$('play-preview').addEventListener('click',()=>playing?pausePreview():playPreview());
-  $('load-audio').addEventListener('click',()=>$('audio-input').click());$('clear-audio').addEventListener('click',clearAudio);
-  $('audio-input').addEventListener('change',async event=>{
+  $('load-audio').addEventListener('click',()=>$('audio-input').click());$('clear-audio').addEventListener('click',pendingEdit(async()=>{await clearAudio();scheduleSave();}));
+  $('audio-input').addEventListener('change',pendingEdit(async event=>{
     const file=event.target.files[0];if(!file)return;
     if(!file.type.startsWith('audio/')&&!/\.(mp3|m4a|wav|aac|aif|aiff|ogg|flac)$/i.test(file.name)){toast('Choose an audio file such as MP3, WAV or M4A.');return;}
-    try{await attachAudio(file,file.name);if(state.videoExportSettings?.audio){state.videoExportSettings.audio.trimIn=0;state.videoExportSettings.audio.trimOut=null;state.videoExportSettings.audio.enabled=true;scheduleSave();}toast(`Temp audio attached locally. It starts at ${mmss(state.audioStartSeconds)} of the board.`);}catch(error){toast(error.message,6000);}finally{event.target.value='';}
-  });
+    try{await attachAudio(file,file.name);if(state.videoExportSettings?.audio){state.videoExportSettings.audio.trimIn=0;state.videoExportSettings.audio.trimOut=null;state.videoExportSettings.audio.enabled=true;}scheduleSave();toast(`Temp audio attached locally. It starts at ${mmss(state.audioStartSeconds)} of the board.`);}catch(error){toast(error.message,6000);}finally{event.target.value='';}
+  }));
   $('audio-start').addEventListener('change',event=>{const value=Number(event.target.value);if(!event.target.value||!Number.isFinite(value)||value<0||value>600){event.target.value=state.audioStartSeconds;return;}state.audioStartSeconds=Math.round(value*10)/10;if(state.videoExportSettings?.audio)state.videoExportSettings.audio.offset=state.audioStartSeconds;event.target.value=state.audioStartSeconds;audioPlaybackFailed=false;syncAudio();scheduleSave();});
   window.addEventListener('resize',fitPresentationFrame);
   document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing)pausePreview();});
   document.addEventListener('keydown',event=>{
+    if(STUDIO&&studioTransition){event.preventDefault();return;}
+    if(STUDIO&&(event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='s'){event.preventDefault();studioSaveVersion();return;}
     if(activeModal==='export')return;
     if(event.key==='Escape'){if(activeModal==='drawer')closeDrawer();else if(activeModal==='presentation')closePresentation();else{$('export-menu').hidden=true;$('export-button').setAttribute('aria-expanded','false');}return;}
     if(activeModal==='presentation' && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){if(event.key==='ArrowRight'){event.preventDefault();setPresentationIndex(presentIndex+1);}else if(event.key==='ArrowLeft'){event.preventDefault();setPresentationIndex(presentIndex-1);}else if(event.key===' '){event.preventDefault();playing?pausePreview():playPreview();}}
@@ -528,19 +730,46 @@
   $('export-project').addEventListener('click',()=>{$('export-menu').hidden=true;exportHTML(true);});
   $('export-json').addEventListener('click',()=>{$('export-menu').hidden=true;exportJSON();});$('export-html').addEventListener('click',()=>{$('export-menu').hidden=true;exportHTML();});$('print-button').addEventListener('click',()=>{$('export-menu').hidden=true;renderPrintBoard();window.print();});
   $('import-button').addEventListener('click',()=>$('json-input').click());
-  $('json-input').addEventListener('change',async event=>{const file=event.target.files[0];if(!file)return;try{if(file.size>100*1024*1024)throw new Error('The backup is too large. Please choose a file smaller than 100 MB.');const candidate=validateImport(JSON.parse(await file.text()));exportJSON();state=candidate;sequenceFilter='all';statusFilter='all';renderAll();scheduleSave();toast(`Imported ${state.shots.length} panels. Your previous edited board was backed up if needed.`,6000);}catch(error){toast('Import stopped: '+error.message,8000);}finally{event.target.value='';}});
+  $('json-input').addEventListener('change',pendingEdit(async event=>{const file=event.target.files[0];if(!file)return;try{if(file.size>100*1024*1024)throw new Error('The backup is too large. Please choose a file smaller than 100 MB.');const candidate=validateImport(JSON.parse(await file.text()));exportJSON();state=candidate;sequenceFilter='all';statusFilter='all';renderAll();scheduleSave();toast(`Imported ${state.shots.length} panels. Your previous edited board was backed up if needed.`,6000);}catch(error){toast('Import stopped: '+error.message,8000);}finally{event.target.value='';}}));
   $('reset-board').addEventListener('click',restoreOriginalBoard);
+  $('clear-copies').addEventListener('click',clearOldCopies);
+  $('kept-open').addEventListener('click',openKeptCopy);
+  $('kept-download').addEventListener('click',downloadKeptCopies);
+  $('kept-clear').addEventListener('click',clearOldCopies);
   window.addEventListener('beforeprint',renderPrintBoard);
-  window.addEventListener('beforeunload',()=>{try{state.savedAt=Date.now();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch{}});
+  $('version-list').addEventListener('click',event=>{
+    if(!STUDIO)return;
+    const target=event.target.closest('button');if(!target)return;
+    if(target.hasAttribute('data-studio-save'))studioSaveVersion();
+    else if(target.dataset.studioVersion)studioRestore({version:Number(target.dataset.studioVersion)},target.dataset.label);
+    else if(target.dataset.studioAutosave)studioRestore({autosave:target.dataset.studioAutosave},target.dataset.label);
+  });
+  window.addEventListener('beforeunload',event=>{
+    if(STUDIO){if(studioDirty||studioAudioDirty||pendingEdits){if(studioDirty&&!studioBlocked)studioFlush();event.preventDefault();event.returnValue='';}return;}
+    try{state.savedAt=Date.now();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch{}
+  });
+
+  if(STUDIO){
+    for(const id of ['clear-copies','reset-board','kept-notice'])$(id).hidden=true;
+    db=await openDatabase();
+    renderAll();setView('board');setSaveLabel('Saved to project');
+    if(window.STORYBOARD_AUDIO?.data){try{await attachAudio(embeddedAudioBlob(window.STORYBOARD_AUDIO.data),window.STORYBOARD_AUDIO.name,false);}catch{toast('The project’s soundtrack could not be loaded.');}}
+    initializeVideoExport();
+    await renderStudioVersions();
+    return;
+  }
 
   db=await openDatabase();
   let local=null;try{const saved=localStorage.getItem(STORAGE_KEY);if(saved)local=JSON.parse(saved);}catch{}
   const indexed=await dbRead();
   const saved=[local,indexed].filter(Boolean).sort((a,b)=>(b.savedAt||0)-(a.savedAt||0))[0];
-  if(saved){try{state=validateImport(saved);}catch{showStorageWarning('A previous browser save could not be read. The original board is loaded; import a JSON backup if you have one.');}}
-  renderAll();setView('board');
-  await restoreAudio();
+  let choice=startupChoice(saved,initial.sourceRevision);
+  if(choice.keep&&!await keepCopy(saved))choice={load:saved,keep:false};
+  if(choice.load){try{state=validateImport(choice.load);}catch{showStorageWarning('A previous browser save could not be read. The original board is loaded; import a JSON backup if you have one.');}}
+  renderAll();setView('board');renderVersions();
+  await restoreAudio(!!saved&&!choice.load);
   initializeVideoExport();
   if(!state.shots.length)showStorageWarning('The storyboard data has not loaded yet. Keep storyboard-data.js alongside this page, or import an editable backup.');
-  if(!saved) scheduleSave();
+  if(!choice.load) scheduleSave(false);
+  await renderKeptCopies();
 })();
