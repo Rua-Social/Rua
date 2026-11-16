@@ -1,10 +1,6 @@
 # Lists
 
-Desk diary. Not the founder todo.
-
-Open actions live in `20-studio/todo.md`. Closed actions in
-`todo-done.md`. Do not put todos here. Named-client notes live
-in the vault.
+Desk diary. Named-client notes live in the vault.
 
 - **Desk** is the conductor diary: blocked work, what it is moving, what it
   finished.
@@ -31,7 +27,6 @@ Do not design the fix from Telegram.
 - 18 Aug — phone confusion locked: instance and todo first. Google sentence only when those files are silent. Named send is a desk ask. `DESK_RULES` + EXPERIENCE Flow 3b.
 - 18 Aug — founder: phone reports what the desk files already know. Google miss is not a reason to withhold the pocket card. Locked.
 - 17 Aug — desk-bridge fail-closed on Google. Bot reloaded. Model roster in `desk.md`: live `haiku`, `sonnet`, `opus`, `gemini-3-flash-preview`, `gpt-5.6-luna`. Not `kimi-code`, not `gemini-2.5-flash`, not `gpt-5.6-sol`.
-- 18 Aug — founder todo split out of this file into `20-studio/todo.md`. This file is the desk diary. `/brief` and `/todo` no longer read it.
 - 18 Aug — desk-bridge CoS slice: ranked `/brief` and append-only `LIST+` write-back after a desk ask. Morning push still parked. Google still fail-closed.
 - 18 Aug — repeated the 17 Aug Kimi cage on the Telegram CoS panel: `kimi_run` + `kimi-k3` for a short review. Timed out. Cheap `kimi` finished. Logged in `20-studio/desk.md`. Do not do it a third time.
 - 18 Aug — resolved the phone stall: owner lock, streamed first/idle/total deadlines, durable queue/outbox recovery, and asynchronous delivery are installed and live. The 17 Aug 451.8s timeout remains the incident record; no live ask was run during this deploy.
@@ -45,10 +40,6 @@ Do not design the fix from Telegram.
   separate list for him.
 
 ## Founder
-
-### Do
-
-Moved 18 Aug to `20-studio/todo.md`. Do not put open actions back here.
 
 ### Ideas
 

@@ -92,8 +92,6 @@ unless it helps explain a material scope decision.
 - **Sales:** `20-studio/sales/README.md` and
   `00-system/templates/scope-of-work.md`. No delivery skill.
 - **Founder / direction:** `20-studio/founder-context.md`.
-- **Founder todo:** `20-studio/todo.md` and
-  `00-system/skills/rua-todo/`. Not `lists.md`.
 - **Other:** use the stated scope; ask if a material boundary remains unclear.
 
 If the class remains unclear and changes the deliverable, ask. Do not start a
@@ -127,7 +125,7 @@ A refinement or update writes the new current version into the working location 
 
 When the index lists more than one form of the same deliverable as current, update those forms together.
 
-The working location named in the instance record is where that deliverable is written. The capture-only note in `20-studio/storage.md` does not move it.
+The working location named in the instance record is where that deliverable is written.
 
 The file index carries one `current` block. Before an update pass is finished, run `rua vault current REF`. Exit 0 means the working location and that block name the same files. Any other exit means the pass is not finished.
 

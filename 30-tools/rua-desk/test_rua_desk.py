@@ -147,12 +147,12 @@ class RuaDeskTests(unittest.TestCase):
 
     def test_doctor_passes_with_agents_and_symlinks(self) -> None:
         (self.repo / "AGENTS.md").write_text("# test\n", encoding="utf-8")
-        skills = self.repo / "00-system" / "skills" / "rua-todo"
+        skills = self.repo / "00-system" / "skills" / "rua-git-flow"
         skills.mkdir(parents=True)
         (skills / "SKILL.md").write_text("# skill\n", encoding="utf-8")
         grok = self.repo / ".grok" / "skills"
         grok.mkdir(parents=True)
-        (grok / "rua-todo").symlink_to("../../00-system/skills/rua-todo")
+        (grok / "rua-git-flow").symlink_to("../../00-system/skills/rua-git-flow")
         # Point hooksPath at a path inside the temp repo without touching user gitconfig globally:
         # doctor reads git config for the repo; set local config in the temp repo.
         subprocess.run(
@@ -176,7 +176,7 @@ class RuaDeskTests(unittest.TestCase):
         result = self.run_desk("doctor")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("PASS  AGENTS.md present", result.stdout)
-        self.assertIn("PASS  symlink rua-todo", result.stdout)
+        self.assertIn("PASS  symlink rua-git-flow", result.stdout)
         self.assertIn("Doctor ok", result.stdout)
 
     def test_doctor_fails_without_agents(self) -> None:

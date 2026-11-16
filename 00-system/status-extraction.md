@@ -1,8 +1,8 @@
 # Studio status extraction
 
 Use for a factual account of Rua's present work, decisions or outstanding items.
-Start with the scope and date requested. Read the relevant studio records;
-`20-studio/todo.md` holds founder next-actions. Retrieve named engagement facts
+Start with the scope and date requested. Read the relevant studio records.
+Retrieve named engagement facts
 through `rua vault search` and `rua vault get`. Current Workspace facts require
 a live lookup under `AGENTS.md`.
 

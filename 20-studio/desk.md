@@ -42,7 +42,7 @@ Changing this document does not deploy or reconfigure the live phone runtime.
 
 Treat a transcribed voice note as the ask. Infer whether it requests an action,
 an idea capture, brainstorming, intake or a lookup. Do not turn every thought
-into a todo. Follow the action-record rules in `00-system/skills/rua-todo/`.
+into an action.
 
 Apply `00-system/communication.md`. Keep file-hunting, role routing and internal
 process off-screen. Send a short result: what happened, where the useful output

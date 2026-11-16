@@ -7,7 +7,6 @@ ROOT = Path(__file__).resolve().parents[1]
 AGENTS = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
 SHOOT = (ROOT / "00-system/skills/rua-shoot-plan/SKILL.md").read_text(encoding="utf-8")
 TREATMENT = (ROOT / "00-system/skills/rua-treatment/SKILL.md").read_text(encoding="utf-8")
-STORAGE = (ROOT / "20-studio/storage.md").read_text(encoding="utf-8")
 CONTRACT = (ROOT / "00-system/rewrite-contract.md").read_text(encoding="utf-8")
 REISSUE = (
     ROOT / "00-system/skills/rua-shoot-plan/references/reissue-protocol.md"
@@ -37,7 +36,6 @@ class CurrentFileRuleTests(unittest.TestCase):
         self.assertIn("holds only the files the index lists as current", rule)
         self.assertIn("more than one form of the same deliverable", rule)
         self.assertIn("update those forms together", rule)
-        self.assertIn("capture-only note", rule)
         self.assertIn("`rua vault current REF`", rule)
         self.assertIn("pass is not finished", rule)
 
@@ -68,10 +66,6 @@ class CurrentFileRuleTests(unittest.TestCase):
         self.assertIn("because the index names it", REISSUE)
         self.assertIn("keep the previous file", REISSUE)
         self.assertIn("Move it out of the working location", REISSUE)
-
-    def test_storage_note_does_not_move_a_recorded_working_location(self) -> None:
-        self.assertIn("working location the instance record names", STORAGE)
-        self.assertIn("does not move it", STORAGE)
 
 
 if __name__ == "__main__":

@@ -32,7 +32,7 @@ roles to available runners and models.
 | `flags` | Verify factual claims and applicable consent or release requirements against actual sources. |
 
 The active seat can coordinate as `desk` without launching another coordinator.
-Todo ownership follows `00-system/skills/rua-todo/SKILL.md`. Use deterministic
+Use deterministic
 software for transcription, search, arithmetic and exports; extra agents are
 useful where independent judgement or separate context improves the result.
 
