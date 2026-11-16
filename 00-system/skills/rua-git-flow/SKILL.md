@@ -40,7 +40,7 @@ A branch and a PR are required when the change:
 That last one matters most. A model can produce a correct-looking fifteen-file
 change in one turn. The PR is where that gets read before it becomes history.
 
-Direct to `main` is fine for: a typo, a README line, a todo line, a date. If
+Direct to `main` is fine for: a typo, a README line, a date. If
 you are unsure, branch. The cost of an unnecessary branch is thirty seconds.
 
 ## Branch names
@@ -50,7 +50,7 @@ you are unsure, branch. The cost of an unnecessary branch is thirty seconds.
 `feat/`, `fix/`, `docs/`, `chore/`, `refactor/`.
 
 Slug is two to four words, hyphenated, describing the change and not the file.
-`fix/desk-bridge-timeout`, not `fix/update-py`.
+`fix/storyboard-export-audio`, not `fix/update-py`.
 
 ## Commits
 
@@ -78,10 +78,7 @@ second signature.
 
 ## Issues
 
-GitHub issues are for deferred repo work that is not a founder next-action.
-The complete founder list is `20-studio/todo.md`. `rua-todo` limits the brief
-to seven actions while preserving the rest in that record. Do not close valid
-actions or move them into issues to make room.
+GitHub issues are for deferred repo work.
 
 If an issue exists for the work, close it from the PR body with `Closes #N`.
 

@@ -24,9 +24,7 @@ jobs:
         tool:
           - animation-renderer
           - html-to-pdf
-          - rua-desk
           - rua-vault
-          - rua-seat
           - rua-motion
           - storyboard
     defaults:

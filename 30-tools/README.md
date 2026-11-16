@@ -9,10 +9,8 @@ What exists today:
 
 - `animation-renderer/` — one job's outro render.
 - `html-to-pdf/` — print an HTML deck to A4 PDF with local Chrome.
-- `rua-desk/` — engine-neutral terminal front door for the Rua repository.
 - `transcribe/` — shoot dialogue footage to transcripts for the edit-guide chat.
 - `rua-vault/` — deliberate retrieval of one external client record.
-- `rua-seat/` — run one other seat and print what they said. A mention is not a handoff.
 - `rua-motion/` — local motion graphics studio. Renders branded overlays and title cards for Final Cut.
 - [`storyboard/`](storyboard/README.md) — editable timed boards, portable project saves and video export. Source code lives here; project data and media are located through the engagement's vault record.
 

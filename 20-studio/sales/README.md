@@ -109,8 +109,7 @@ commercial choices for the founder. Apply `00-system/communication.md`.
 
 When a sales team loop is explicitly requested, divide bounded work among
 available workers: evidence and buyer fit, messaging and sequence, then review
-of objections and unsupported claims. Use `00-system/working-roles.md` for
-handoffs. Run a revision against returned findings. Stop when the requested
+of objections and unsupported claims. Run a revision against returned findings. Stop when the requested
 outputs are coherent and supported, or when a specific missing fact or founder
 decision prevents completion. Report that dependency instead of cycling without
 new evidence. If workers are unavailable, disclose that and do the supported

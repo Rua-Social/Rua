@@ -86,9 +86,8 @@ Sort every concrete beat before the draft comes back.
 A picture/sound script, a cast note, and a recommendation are separate asks.
 They do not ride along with the prose.
 
-On a pass the founder may send onward, `flags` checks the Agreed list against
-the source before the draft is treated as ready. Role ownership is in
-`00-system/working-roles.md`.
+On a pass the founder may send onward, check the Agreed list against the
+source before the draft is treated as ready.
 
 When he asks to pressure this film, call `rua-creative-direction` lane B,
 take the pass, and continue here. Do not follow an outside router into a new

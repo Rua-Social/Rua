@@ -10,4 +10,3 @@ If this is not a client job, name the class using `AGENTS.md` (Start of
 a chat) and load only that class's doctrine.
 
 This file is a harness adapter. It is not a second rulebook.
-The studio desk, if you need it, is `20-studio/desk.md`.
