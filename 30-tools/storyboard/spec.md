@@ -64,3 +64,7 @@ Run the README checks and build a real external project. Verify panel count,
 runtime and media hashes against its source. Open a separate browser test
 project, edit/reload/export, then import that export and rebuild it. Check that
 the engagement's current-file block agrees with the installed working folder.
+
+## Per-panel sound effects (16 November 2026)
+
+Goal: hear spot effects (a door, footsteps) against the timed board without touching the soundtrack. One optional effect per panel: `sfxPath` on disk, embedded as `sfx` in a page, with `sfxName`, `sfxLevel` (0 to 1), and `sfxIn` and `sfxOut` (start and stop points in seconds into the file; an older `sfxSeconds` length is still read). It starts at the panel's start in the presentation preview, the exporter preview and the exported video. The soundtrack, its offset and its mix settings are unchanged. Verification: `test_panel_sound_effect_round_trips_between_page_and_project`, plus attaching, playing and exporting an effect in a browser.

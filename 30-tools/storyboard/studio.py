@@ -201,6 +201,9 @@ def disk_board(root: Path, board) -> dict:
         if isinstance(shot, dict) and shot.get("customImage"):
             shot.pop("customImagePath", None)
             shot["customImagePath"] = store_media(root, shot.pop("customImage"), sb.IMAGE_TYPES, "assets/imported", f"Panel {shot.get('id')} image")
+        if isinstance(shot, dict) and shot.get("sfx"):
+            shot.pop("sfxPath", None)
+            shot["sfxPath"] = store_media(root, shot.pop("sfx"), sb.AUDIO_TYPES, "audio/sfx", f"Panel {shot.get('id')} sound effect")
     sb.validate_board(board)
     return board
 

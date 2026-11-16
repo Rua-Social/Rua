@@ -157,6 +157,16 @@ requires a complete-project export.
 
 The four original contact sheets use eight panels each (`imageIndex` 0–31).
 Additional panels can use replacement images or no image (`imageIndex: -1`).
+
+### Sound effects
+
+A panel can carry one sound effect, separate from the soundtrack. In the panel
+editor, **Add effect** attaches an audio file (MP3, WAV, M4A, AAC or OGG, under 8 MB), with a
+volume and start and stop points that trim the file. The effect starts when its panel starts in the
+timed preview and in the video export, and can run on over later panels unless
+a stop point is set. Panels with an effect show a ♪ on their card. The preview inside the video exporter plays them too. On disk the panel holds `sfxPath` (a file under `audio/sfx/`),
+`sfxName`, `sfxLevel` (0 to 1), `sfxIn` and `sfxOut` (seconds into the file); a built page embeds the file
+as `sfx`.
 Video export uses the browser's available encoders and runs in real time.
 It is a review animatic, with browser-dependent codec support.
 

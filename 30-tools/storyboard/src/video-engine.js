@@ -99,6 +99,20 @@
     const sourceList=shots.map(shot=>{const source=imageSource(shot,assets||{});if(source&&!imagePromises.has(source.url))imagePromises.set(source.url,loadImage(source.url));return source;});
     const images=new Map();
     let audioBuffer=null;
+    // Per-panel sound effects, decoded once and mixed in at each panel's start.
+    const sfxBuffers=new Map();
+    const decodeSfx=async()=>{
+      const list=shots.map((shot,index)=>[index,shot.sfx]).filter(([,data])=>typeof data==='string'&&data.startsWith('data:audio/'));
+      if(!list.length||!AudioContextClass)return;
+      let context;
+      try{
+        const Offline=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+        context=Offline?new Offline(2,1,48000):new AudioContextClass();
+        for(const [index,data] of list){
+          try{const bytes=Uint8Array.from(atob(data.slice(data.indexOf(',')+1)),char=>char.charCodeAt(0));sfxBuffers.set(index,await context.decodeAudioData(bytes.buffer));}catch{}
+        }
+      }finally{if(context?.close)await context.close().catch(()=>{});}
+    };
     const decode=async()=>{
       if(!audioBlob)return;
       if(!AudioContextClass)throw new Error('This browser cannot decode the music. Try a current desktop browser, or export without music.');
@@ -110,7 +124,7 @@
       }catch(error){throw new Error('This browser could not read the music file. Try an MP3, WAV or AAC file, or export without music.');}
       finally{if(context?.close)await context.close().catch(()=>{});}
     };
-    await Promise.all([decode(),...Array.from(imagePromises,async([url,promise])=>images.set(url,await promise))]);
+    await Promise.all([decode(),decodeSfx(),...Array.from(imagePromises,async([url,promise])=>images.set(url,await promise))]);
     const starts=[];let sum=0;for(const shot of shots){starts.push(sum);sum+=shot.duration;}
     let disposed=false,activeExport=null;
     function draw(canvas,time,settings={}){
@@ -172,9 +186,12 @@
       const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;draw(canvas,0,settings);
       let stream=canvas.captureStream(0),videoTrack=stream.getVideoTracks()[0];
       if(!videoTrack?.requestFrame){stream.getTracks().forEach(track=>track.stop());stream=canvas.captureStream(fps);videoTrack=stream.getVideoTracks()[0];}
+      const effectSources=[];
       let context=null,source=null,silence=null,gain=null,destination=null,recorder=null,raf=0,stopTimer=0,stopGuard=0,settled=false,failed=null;
       const range=audioRange(settings.audio,audioBuffer?.duration||0,duration);
-      const withAudio=Boolean(settings.audio?.enabled&&audioBuffer&&range.duration>0);
+      const withMusic=Boolean(settings.audio?.enabled&&audioBuffer&&range.duration>0);
+      const effects=Array.from(sfxBuffers,([index,buffer])=>({buffer,at:starts[index],level:shots[index].sfxLevel==null?1:clamp(number(shots[index].sfxLevel,1),0,1),from:Math.max(0,number(shots[index].sfxIn,0)),to:number(shots[index].sfxOut,0)}));
+      const withAudio=withMusic||effects.length>0;
       let cancelled;
       const cancelPromise=new Promise((resolve,reject)=>{cancelled=reject;});
       // Consume the cancellation promise immediately; race below may attach a little later.
@@ -183,6 +200,7 @@
         cancelAnimationFrame(raf);clearTimeout(stopTimer);clearTimeout(stopGuard);
         document.removeEventListener('visibilitychange',onVisibility);options.signal?.removeEventListener('abort',onAbort);
         if(context)context.removeEventListener('statechange',onContextState);
+        effectSources.forEach(node=>{try{node.stop();}catch{}try{node.disconnect();}catch{}});
         try{source?.stop();}catch{}try{silence?.stop();}catch{}try{source?.disconnect();silence?.disconnect();gain?.disconnect();destination?.disconnect();}catch{}
         stream.getTracks().forEach(track=>track.stop());
         if(context&&context.state!=='closed')context.close().catch(()=>{});
@@ -210,7 +228,7 @@
           destination=context.createMediaStreamDestination();gain=context.createGain();gain.connect(destination);
           // Keep the audio graph active through any silent tail after the selected music.
           silence=context.createConstantSource();silence.offset.value=0;silence.connect(destination);silence.start();
-          source=context.createBufferSource();source.buffer=audioBuffer;source.connect(gain);
+          if(withMusic){source=context.createBufferSource();source.buffer=audioBuffer;source.connect(gain);}
           destination.stream.getAudioTracks().forEach(track=>stream.addTrack(track));
           context.addEventListener('statechange',onContextState);
         }
@@ -234,12 +252,19 @@
             if(failed)return;
             const startTime=performance.now(),audioClockStart=context?.currentTime;let lastFrame=-1,lastReport=-1;
             const elapsedTime=now=>Math.max(0,withAudio?context.currentTime-audioClockStart:(now-startTime)/1000);
-            if(withAudio){
+            if(withMusic){
               const begin=audioClockStart,end=begin+range.offset+range.duration,level=range.gain,start=begin+range.offset;
               gain.gain.setValueAtTime(range.fadeIn?0:level,start);
               if(range.fadeIn)gain.gain.linearRampToValueAtTime(level,start+range.fadeIn);
               if(range.fadeOut){gain.gain.setValueAtTime(level,end-range.fadeOut);gain.gain.linearRampToValueAtTime(0,end);}
               source.start(start,range.trimIn,range.duration);
+            }
+            if(withAudio)for(const effect of effects){
+              const span=Math.min((effect.to>effect.from?Math.min(effect.to,effect.buffer.duration):effect.buffer.duration)-effect.from,duration-effect.at);
+              if(span<=0)continue;
+              const node=context.createBufferSource(),level=context.createGain();
+              node.buffer=effect.buffer;level.gain.value=effect.level;node.connect(level);level.connect(destination);
+              node.start(audioClockStart+effect.at,effect.from,span);effectSources.push(node);
             }
             videoTrack?.requestFrame?.();
             report(0);
