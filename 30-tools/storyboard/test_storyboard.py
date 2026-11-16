@@ -151,6 +151,86 @@ class ProjectTests(unittest.TestCase):
             sb.import_snapshot(snapshot, renamed)
         self.assertEqual(sb.read_json(renamed / 'board.json'), self.board)
 
+    def test_versions_are_numbered_named_and_listed_in_the_page(self):
+        out, _, report = sb.build(self.root, label='First cut')
+        self.assertIn('version 1: First cut', report)
+        first = out.read_bytes()
+        self.board['shots'][0]['title'] = 'The door shuts'
+        self.write_source()
+        _, archive, report = sb.build(self.root, label='Wreath added')
+        self.assertIn('version 2: Wreath added', report)
+        self.assertEqual(archive.parent, self.base / 'earlier')
+        self.assertRegex(archive.name, r'^\d{4}-\d{2}-\d{2}_project-v01-first-cut\.html$')
+        self.assertEqual(archive.read_bytes(), first)
+        entries = sb.read_versions(self.root)
+        self.assertEqual([(e['n'], e['label']) for e in entries], [(1, 'First cut'), (2, 'Wreath added')])
+        self.assertEqual(entries[0]['file'], str(archive))
+        self.assertNotIn('file', entries[1])
+        page = sb.parse_snapshot(out)  # the embedded versions list must not break import
+        self.assertEqual(page[0]['shots'][0]['title'], 'The door shuts')
+        html = out.read_text()
+        self.assertIn(archive.as_uri(), html)
+        self.assertIn('"current":true', html)
+        listing = sb.list_versions(self.root)
+        self.assertLess(listing.index('Wreath added'), listing.index('First cut'))
+
+    def test_same_board_rebuild_relabels_without_a_new_version(self):
+        sb.build(self.root, label='Draft')
+        _, archive, report = sb.build(self.root, label='Draft for Kasia')
+        self.assertIn('version 1: Draft for Kasia', report)
+        entries = sb.read_versions(self.root)
+        self.assertEqual(len(entries), 1)
+        self.assertNotIn('file', entries[0])
+        # The replaced HTML is still kept, so an editor change can never destroy the last good file.
+        self.assertTrue(archive.is_file())
+        self.assertEqual(list((self.base).glob('earlier/*')), [archive])
+
+    def test_existing_output_without_versions_becomes_version_one(self):
+        out = self.base / 'working' / 'board.html'
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text('<!doctype html><title>built before versions existed</title>')
+        self.board['shots'][0]['duration'] = 5
+        self.write_source()
+        _, archive, report = sb.build(self.root, label='Tracked')
+        self.assertRegex(archive.name, r'project-v01-earlier-build\.html$')
+        self.assertIn('version 2: Tracked', report)
+
+    def test_review_copy_elsewhere_is_not_a_version_but_the_tracked_path_is(self):
+        sb.build(self.root, output=self.base / 'review' / 'board.html')
+        self.assertFalse((self.root / 'versions.json').exists(), 'Review builds are not versions')
+        _, _, report = sb.build(self.root, output=self.base / 'working' / 'board.html', label='Same file')
+        self.assertIn('version 1: Same file', report)
+        self.assertIn('STORYBOARD_VERSIONS=[', (self.base / 'working' / 'board.html').read_text())
+
+    def test_browser_bookkeeping_does_not_make_a_new_version(self):
+        sb.build(self.root, label='First')
+        board = sb.read_json(self.root / 'board.json')
+        board.update(edited=True, keptAt=123, savedAt=456)
+        (self.root / 'board.json').write_text(sb.json_text(board))
+        _, archive, report = sb.build(self.root)
+        self.assertIn('output already current', report)
+        self.assertIsNone(archive)
+        self.assertEqual(len(sb.read_versions(self.root)), 1)
+
+    def test_missing_output_never_leaves_two_current_versions(self):
+        out, _, _ = sb.build(self.root, label='First')
+        out.unlink()
+        self.board['shots'][0]['duration'] = 5
+        self.write_source()
+        sb.build(self.root, label='Second')
+        page = sb.versions_for_page(sb.read_versions(self.root))
+        self.assertEqual([v['n'] for v in page if v.get('current')], [2])
+        self.assertNotIn('href', page[0])
+
+    def test_save_imports_an_export_and_records_a_version(self):
+        sb.build(self.root, label='Before')
+        edited = copy.deepcopy(self.board)
+        edited['shots'][0]['title'] = 'Edited in the browser'
+        self.assertEqual(sb.main(['save', str(self.snapshot(edited)), '--project', str(self.root), '--label', 'Browser edits']), 0)
+        entries = sb.read_versions(self.root)
+        self.assertEqual(entries[-1]['label'], 'Browser edits')
+        self.assertEqual(sb.read_json(self.root / 'board.json')['shots'][0]['title'], 'Edited in the browser')
+
     def test_revision_tracks_branding_not_save_timestamp(self):
         out, _, _ = sb.build(self.root)
         first = sb.parse_snapshot(out)[0]['sourceRevision']
