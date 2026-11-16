@@ -73,6 +73,23 @@ class ProjectTests(unittest.TestCase):
             sb.build(self.root)
         self.assertEqual(out.read_bytes(), original)
 
+    def test_panel_sound_effect_round_trips_between_page_and_project(self):
+        effect = b'RIFF-test-effect'
+        edited = copy.deepcopy(self.board)
+        edited['shots'][0].update(sfx='data:audio/wav;base64,' + base64.b64encode(effect).decode(), sfxName='door.wav', sfxLevel=.5, sfxIn=.5, sfxOut=2)
+        sb.import_snapshot(self.snapshot(edited, None), self.root, expected_panels=1)
+        on_disk = sb.read_json(self.root / 'board.json')['shots'][0]
+        self.assertNotIn('sfx', on_disk)
+        self.assertEqual((self.root / on_disk['sfxPath']).read_bytes(), effect)
+        _, _, embedded, _, _ = sb.load_project(self.root)
+        self.assertTrue(embedded['shots'][0]['sfx'].startswith('data:audio/'))
+        self.assertEqual(embedded['shots'][0]['sfxName'], 'door.wav')
+        for bad in ({'sfxLevel': 2}, {'sfxSeconds': 0}, {'sfxOut': .4}, {'sfxPath': 'audio/missing.wav'}):
+            broken = sb.read_json(self.root / 'board.json')
+            broken['shots'][0].update(bad)
+            with self.assertRaises(sb.ProjectError):
+                sb.load_project(self.root, board=broken)
+
     def test_import_recovers_frames_music_settings_and_keeps_backup(self):
         edited = copy.deepcopy(self.board)
         edited['shots'][0]['title'] = 'Édit </script> preserved'

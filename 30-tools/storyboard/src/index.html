@@ -114,6 +114,7 @@
         <label>Action & blocking<textarea id="edit-action" name="action" rows="4"></textarea></label>
         <label>Camera direction<textarea id="edit-camera" name="camera" rows="3"></textarea></label>
         <label>Sound / dialogue / music<textarea id="edit-sound" name="sound" rows="3"></textarea></label>
+        <div class="sfx-block"><div class="sfx-head"><span>Sound effect</span><span id="sfx-name" class="sfx-name">None attached</span></div><div class="sfx-actions"><button type="button" class="text-button" id="attach-sfx">＋ Add effect</button><button type="button" class="text-button" id="play-sfx" hidden>▶ Play</button><button type="button" class="text-button" id="remove-sfx" hidden>Remove</button></div><div id="sfx-fields" hidden><div class="form-row"><label>Start point <span class="field-hint">sec into the file</span><input id="edit-sfxIn" type="number" min="0" max="3600" step="0.1" inputmode="decimal" placeholder="0"></label><label>Stop point <span class="field-hint">sec · blank = end of file</span><input id="edit-sfxOut" type="number" min="0.1" max="3600" step="0.1" inputmode="decimal"></label></div><label class="sfx-volume">Volume <span id="sfx-level-output">100%</span><input id="edit-sfxLevel" type="range" min="0" max="100" step="5"></label></div></div>
         <label>Transition / edit<textarea id="edit-transition" name="transition" rows="2"></textarea></label>
         <label>Continuity<textarea id="edit-continuity" name="continuity" rows="2"></textarea></label>
         <label>Open decision<textarea id="edit-decision" name="decision" rows="3"></textarea></label>
@@ -138,6 +139,7 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <input type="file" id="json-input" accept=".json,application/json" hidden>
   <input type="file" id="frame-input" accept="image/jpeg,image/png,image/webp" hidden>
+  <input type="file" id="sfx-input" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac" hidden>
   <input type="file" id="audio-input" accept="audio/*" hidden>
   <div class="print-board" id="print-board"></div>
   <script src="storyboard-data.js"></script>

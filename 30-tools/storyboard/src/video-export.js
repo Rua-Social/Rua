@@ -223,10 +223,31 @@
         $('ve-preview-panel').textContent = shot ? `${shot.id || index + 1} · ${shot.title || 'Untitled panel'}` : 'Current board';
       }
 
+      // Panel sound effects in the preview: each starts with its panel, trimmed to its start and stop points.
+      const fxPlayers = new Map();
+      function stopEffects() { for (const player of fxPlayers.values()) player.pause(); fxPlayers.clear(); }
+      function effectsAt(time) {
+        if (!board) return;
+        let cursor = 0;
+        board.shots.forEach((shot, index) => {
+          const at = cursor; cursor += finite(shot.duration, 3);
+          if (!shot.sfx) return;
+          const from = Math.max(0, finite(shot.sfxIn)), to = finite(shot.sfxOut), local = time - at;
+          const active = playing && local >= 0 && (to > from ? local < to - from : true);
+          let player = fxPlayers.get(index);
+          if (active && !player) {
+            player = new Audio(shot.sfx); player.volume = shot.sfxLevel == null ? 1 : bound(finite(shot.sfxLevel, 1), 0, 1);
+            fxPlayers.set(index, player);
+            const begin = () => { if (fxPlayers.get(index) !== player) return; try { player.currentTime = from + Math.max(0, local); } catch {} player.play().catch(() => {}); };
+            if (player.readyState >= 1) begin(); else player.addEventListener('loadedmetadata', begin, { once: true });
+          } else if (!active && player) { player.pause(); fxPlayers.delete(index); }
+        });
+      }
+
       function stopPreview() {
         playing = false;
         cancelAnimationFrame(playFrame);
-        previewAudio?.pause();
+        previewAudio?.pause(); stopEffects();
         $('ve-play').textContent = '▶';
         $('ve-play').setAttribute('aria-label', 'Play export preview');
       }
@@ -251,7 +272,7 @@
       function previewTick() {
         if (!playing || !project) return;
         playTime = Math.min(project.duration, (performance.now() - playOrigin) / 1000);
-        drawPreview(); audioAt(playTime); drawWaveform();
+        drawPreview(); audioAt(playTime); effectsAt(playTime); drawWaveform();
         if (playTime >= project.duration) { stopPreview(); return; }
         playFrame = requestAnimationFrame(previewTick);
       }

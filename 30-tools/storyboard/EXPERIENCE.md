@@ -33,3 +33,7 @@ back into the project as a named version.
 
 The command line reports panel count, duration, soundtrack status and backup
 locations. Invalid source or missing media stops the operation.
+
+## Sound effects on a panel
+
+Actual from 16 November 2026. In the panel editor, under Sound, the director adds one effect to the panel, plays it, sets its volume and its start and stop points so there is no lead-in or tail, or removes it. Play in Present board and the effect starts with its panel, over the music. Panels with an effect show a ♪ on the card. He knows it worked when he hears it in the preview and in the exported video. The preview inside the video exporter plays the effects as well.

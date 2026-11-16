@@ -125,6 +125,23 @@ def validate_board(board):
             raise ProjectError(f"Panel {ident} has both customImage and customImagePath; keep only one.")
         if shot.get("customImage"):
             decode_data_url(shot["customImage"], IMAGE_TYPES, f"Panel {ident} image")
+        # A panel can carry one sound effect: embedded in a page (sfx) or a file in the project (sfxPath).
+        if shot.get("sfx") and shot.get("sfxPath"):
+            raise ProjectError(f"Panel {ident} has both sfx and sfxPath; keep only one.")
+        if shot.get("sfx"):
+            decode_data_url(shot["sfx"], AUDIO_TYPES, f"Panel {ident} sound effect")
+        if shot.get("sfxName") is not None and (not isinstance(shot["sfxName"], str) or len(shot["sfxName"]) > 300):
+            raise ProjectError(f"Panel {ident} has an invalid sound effect name.")
+        if shot.get("sfxLevel") is not None:
+            positive_number(shot["sfxLevel"], f"Panel {ident} sound effect level", lower=0, upper=1)
+        if shot.get("sfxSeconds") is not None:  # earlier form of sfxOut, still accepted
+            positive_number(shot["sfxSeconds"], f"Panel {ident} sound effect length", lower=.1, upper=600)
+        if shot.get("sfxIn") is not None:
+            positive_number(shot["sfxIn"], f"Panel {ident} sound effect start point", lower=0, upper=3600)
+        if shot.get("sfxOut") is not None:
+            positive_number(shot["sfxOut"], f"Panel {ident} sound effect stop point", lower=.05, upper=3600)
+            if shot["sfxOut"] <= (shot.get("sfxIn") or 0):
+                raise ProjectError(f"Panel {ident} sound effect must stop after it starts.")
     for key in ("decisions", "references", "workflow", "glossary"):
         if key in board and (not isinstance(board[key], list) or len(board[key]) > 200):
             raise ProjectError(f"Board {key} must be a list with at most 200 entries.")
@@ -164,6 +181,8 @@ def load_project(project_path: str | Path, *, manifest=MISSING, board=MISSING):
     for shot in embedded_board["shots"]:
         if shot.get("customImagePath"):
             shot["customImage"] = data_url(member(path.parent, shot.pop("customImagePath"), f"panel {shot['id']} image"), IMAGE_TYPES, f"panel {shot['id']} image")
+        if shot.get("sfxPath"):
+            shot["sfx"] = data_url(member(path.parent, shot.pop("sfxPath"), f"panel {shot['id']} sound effect"), AUDIO_TYPES, f"panel {shot['id']} sound effect")
         if not shot.get("customImage") and shot.get("imageIndex", -1) >= 0:
             key = "board-" + chr(ord("a") + shot["imageIndex"] // 8)
             if key not in assets:
@@ -453,6 +472,10 @@ def import_snapshot(snapshot_path, project_path, *, clear_audio=False, expected_
                 raise ProjectError("Browser snapshots must embed replacement images, not reference local paths.")
             if shot.get("customImage"):
                 shot["customImagePath"] = write_media(staging, shot.pop("customImage"), IMAGE_TYPES, "assets/imported", f"Panel {shot['id']} image")
+            if shot.get("sfxPath"):
+                raise ProjectError("Browser snapshots must embed sound effects, not reference local paths.")
+            if shot.get("sfx"):
+                shot["sfxPath"] = write_media(staging, shot.pop("sfx"), AUDIO_TYPES, "audio/sfx", f"Panel {shot['id']} sound effect")
         if clear_audio:
             updated["audio"] = None
             audio_note = "music cleared by --clear-audio"

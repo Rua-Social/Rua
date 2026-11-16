@@ -78,7 +78,7 @@
     result.sequences = Array.isArray(result.sequences) ? result.sequences : [];
     result.sequences = result.sequences.map((seq, i) => ({...seq,id:text(seq.id || String.fromCharCode(65+i)),title:text(seq.title || 'Sequence'),description:text(seq.description)}));
     if (!result.sequences.length) result.sequences = clone(fallback.sequences);
-    result.shots = (Array.isArray(result.shots) ? result.shots : []).map((shot, i) => ({...shot,id:text(shot.id || `S${String(i+1).padStart(2,'0')}`),sequence:text(shot.sequence || result.sequences[0].id),title:text(shot.title || 'Untitled panel'),duration:Number.isFinite(Number(shot.duration)) && Number(shot.duration)>0 ? Number(shot.duration) : 2,framing:text(shot.framing),action:text(shot.action),camera:text(shot.camera),sound:text(shot.sound),transition:text(shot.transition),continuity:text(shot.continuity),decision:text(shot.decision),provenance:text(shot.provenance),notes:text(shot.notes),endTitle:text(shot.endTitle),endSubtitle:text(shot.endSubtitle),status:STATUSES.includes(shot.status) ? shot.status : 'Proposed',priority:shot.priority==='Optional' ? 'Optional':'Essential',imageIndex:Number.isInteger(shot.imageIndex) ? shot.imageIndex : -1}));
+    result.shots = (Array.isArray(result.shots) ? result.shots : []).map(shot=>{if(shot&&shot.sfxSeconds!=null){const length=Number(shot.sfxSeconds);const copy={...shot};delete copy.sfxSeconds;if(copy.sfxOut==null&&Number.isFinite(length)&&length>0)copy.sfxOut=Math.round(((Number(copy.sfxIn)||0)+length)*10)/10;return copy;}return shot;}).map((shot, i) => ({...shot,id:text(shot.id || `S${String(i+1).padStart(2,'0')}`),sequence:text(shot.sequence || result.sequences[0].id),title:text(shot.title || 'Untitled panel'),duration:Number.isFinite(Number(shot.duration)) && Number(shot.duration)>0 ? Number(shot.duration) : 2,framing:text(shot.framing),action:text(shot.action),camera:text(shot.camera),sound:text(shot.sound),transition:text(shot.transition),continuity:text(shot.continuity),decision:text(shot.decision),provenance:text(shot.provenance),notes:text(shot.notes),endTitle:text(shot.endTitle),endSubtitle:text(shot.endSubtitle),status:STATUSES.includes(shot.status) ? shot.status : 'Proposed',priority:shot.priority==='Optional' ? 'Optional':'Essential',imageIndex:Number.isInteger(shot.imageIndex) ? shot.imageIndex : -1}));
     for (const key of ['decisions','references','workflow','glossary']) if (!Array.isArray(result[key])) result[key]=[];
     result.decisions=result.decisions.map(d=>({...d,sourceStatus:text(d.sourceStatus || (!['Open','In discussion','Agreed','Resolved','Approved'].includes(d.status) ? d.status : ''))}));
     result.schemaVersion=1;
@@ -100,6 +100,7 @@
       if(!seqIds.has(shot.sequence)) throw new Error(`Panel ${shot.id} refers to an unknown sequence.`);
       if(!Number.isFinite(Number(shot.duration)) || Number(shot.duration)<.2 || Number(shot.duration)>600) throw new Error(`Panel ${shot.id} needs a duration between 0.2 and 600 seconds.`);
       if(shot.customImage && !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(shot.customImage)) throw new Error(`Panel ${shot.id} has an unsupported image. Use JPG, PNG or WebP.`);
+      if(shot.sfx && !/^data:audio\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+$/i.test(shot.sfx)) throw new Error(`Panel ${shot.id} has an unsupported sound effect. Use MP3 or WAV.`);
       for(const key of ['title','framing','action','camera','sound','transition','continuity','decision','provenance','notes','endTitle','endSubtitle']) if(shot[key]!=null && (typeof shot[key]!=='string' || shot[key].length>30000)) throw new Error(`Panel ${shot.id} has an invalid ${key} field.`);
     }
     for (const key of ['decisions','references','workflow','glossary']) if(candidate[key] && (!Array.isArray(candidate[key]) || candidate[key].length>200)) throw new Error(`The ${key} list is not valid.`);
@@ -426,7 +427,7 @@
     $('empty-state').hidden=shots.length>0;
     $('storyboard-grid').innerHTML=shots.map(shot=>{
       const position=state.shots.findIndex(s=>s.id===shot.id);const start=before(position);const seq=sequence(shot.sequence);
-      return `<article class="shot-card" tabindex="0" role="button" data-shot-id="${esc(shot.id)}" aria-label="Edit ${esc(shot.id)}: ${esc(shot.title)}, ${durationLabel(shot.duration)}, ${esc(shot.status)}" style="--seq-color:${seqColor(shot.sequence)}"><div class="shot-card-head"><span class="shot-id"><span class="sequence-dot"></span>${esc(shot.id)}</span><span>${esc(seq.id)} · ${esc(seq.title)}</span><span class="shot-position">${String(position+1).padStart(2,'0')}</span></div>${shot.notes?'<div class="shot-note-mark">NOTE ADDED</div>':''}<div class="${frameClasses(shot)}" role="img" aria-label="${esc(frameDescription(shot))}" style="${esc(frameStyle(shot))}">${frameOverlay(shot)}${shot.priority==='Optional'?'<span class="frame-badge">OPTIONAL BEAT</span>':''}</div><div class="shot-body"><div class="shot-framing">${esc(shot.framing||'Framing to decide')}</div><h3>${esc(shot.title)}</h3><p class="shot-action">${esc(shot.action||'Add the action and blocking for this panel.')}</p><div class="shot-footer"><span class="shot-time">${mmss(start)}–${mmss(start+shot.duration)}<span class="shot-duration">${durationLabel(shot.duration)}</span></span><span class="status-pill ${slug(shot.status)}">${esc(shot.status)}</span></div></div></article>`;
+      return `<article class="shot-card" tabindex="0" role="button" data-shot-id="${esc(shot.id)}" aria-label="Edit ${esc(shot.id)}: ${esc(shot.title)}, ${durationLabel(shot.duration)}, ${esc(shot.status)}" style="--seq-color:${seqColor(shot.sequence)}"><div class="shot-card-head"><span class="shot-id"><span class="sequence-dot"></span>${esc(shot.id)}</span><span>${esc(seq.id)} · ${esc(seq.title)}</span><span class="shot-position">${String(position+1).padStart(2,'0')}</span></div>${shot.notes?'<div class="shot-note-mark">NOTE ADDED</div>':''}<div class="${frameClasses(shot)}" role="img" aria-label="${esc(frameDescription(shot))}" style="${esc(frameStyle(shot))}">${frameOverlay(shot)}${shot.priority==='Optional'?'<span class="frame-badge">OPTIONAL BEAT</span>':''}</div><div class="shot-body"><div class="shot-framing">${esc(shot.framing||'Framing to decide')}</div><h3>${esc(shot.title)}</h3><p class="shot-action">${esc(shot.action||'Add the action and blocking for this panel.')}</p><div class="shot-footer"><span class="shot-time">${mmss(start)}–${mmss(start+shot.duration)}<span class="shot-duration">${durationLabel(shot.duration)}</span>${shot.sfx?'<span class="sfx-mark" title="Sound effect attached">♪</span>':''}</span><span class="status-pill ${slug(shot.status)}">${esc(shot.status)}</span></div></div></article>`;
     }).join('');
   }
   function renderNotes(){
@@ -456,14 +457,37 @@
     $('edit-sequence').innerHTML=state.sequences.map(seq=>`<option value="${esc(seq.id)}">${esc(seq.id+' · '+seq.title)}</option>`).join('');
     for(const key of ['title','sequence','duration','status','priority','framing','action','camera','sound','transition','continuity','decision','notes','endTitle','endSubtitle'])$('edit-'+key).value=shot[key]??'';
     $('edit-provenance').textContent=shot.provenance || 'Added by the director in this working board.';
-    $('restore-frame').hidden=!shot.customImage;
+    $('restore-frame').hidden=!shot.customImage;renderSfx(shot);
     updateMoveButtons();
+  }
+  // One sound effect per panel. It starts with the panel in the timed preview and the video export.
+  const sfxPlayers=new Set();
+  function sfxLevel(shot){const value=Number(shot?.sfxLevel);return shot?.sfxLevel!=null&&Number.isFinite(value)?Math.max(0,Math.min(1,value)):1;}
+  function stopSfx(){for(const player of sfxPlayers)player.pause();sfxPlayers.clear();}
+  function playSfx(shot){
+    if(!shot?.sfx)return;
+    const player=new Audio(shot.sfx);player.volume=sfxLevel(shot);sfxPlayers.add(player);
+    const done=()=>{player.pause();sfxPlayers.delete(player);};
+    player.addEventListener('ended',done);
+    // Start and stop points trim the file, so a long effect has no lead-in or tail.
+    const start=Math.max(0,Number(shot.sfxIn)||0),stop=Number(shot.sfxOut);
+    if(Number.isFinite(stop)&&stop>start)player.addEventListener('timeupdate',()=>{if(player.currentTime>=stop)done();});
+    const begin=()=>{if(!sfxPlayers.has(player))return;if(start>0)try{player.currentTime=start;}catch{}player.play().catch(()=>sfxPlayers.delete(player));};
+    if(player.readyState>=1)begin();else player.addEventListener('loadedmetadata',begin,{once:true});
+  }
+  function renderSfx(shot){
+    const has=!!shot.sfx;
+    $('sfx-name').textContent=has?(shot.sfxName||'Effect attached'):'None attached';
+    $('attach-sfx').textContent=has?'Change effect':'＋ Add effect';
+    $('play-sfx').hidden=!has;$('remove-sfx').hidden=!has;$('sfx-fields').hidden=!has;
+    $('edit-sfxLevel').value=Math.round(sfxLevel(shot)*100);$('sfx-level-output').textContent=Math.round(sfxLevel(shot)*100)+'%';
+    $('edit-sfxIn').value=has&&shot.sfxIn?shot.sfxIn:'';$('edit-sfxOut').value=has&&shot.sfxOut!=null?shot.sfxOut:'';
   }
   function updateMoveButtons(){const index=state.shots.findIndex(s=>s.id===editingId);$('move-earlier').disabled=index<=0;$('move-later').disabled=index>=state.shots.length-1;}
   function closeDrawer(){
     if(activeModal!=='drawer')return;
     const closingId=editingId;
-    $('shot-drawer').hidden=true;$('drawer-backdrop').hidden=true;editingId=null;activeModal=null;lockBackground(false);
+    stopSfx();$('shot-drawer').hidden=true;$('drawer-backdrop').hidden=true;editingId=null;activeModal=null;lockBackground(false);
     const returnedCard=Array.from(document.querySelectorAll('[data-shot-id]')).find(el=>el.dataset.shotId===closingId);
     if(returnFocus?.isConnected)returnFocus.focus();else if(returnedCard)returnedCard.focus();else $('add-shot').focus();
   }
@@ -517,18 +541,18 @@
     if(playing)return;
     if(presentIndex===state.shots.length-1 && elapsedInShot>=state.shots[presentIndex].duration){presentIndex=0;elapsedInShot=0;presentationRender();}
     playing=true;previousTick=performance.now();$('play-preview').textContent='Ⅱ Pause';$('play-preview').setAttribute('aria-label','Pause timed board preview');
-    audioPlaybackFailed=false;syncAudio();
+    audioPlaybackFailed=false;syncAudio();if(elapsedInShot<.15)playSfx(state.shots[presentIndex]);
     previewTimer=setInterval(()=>{
       const now=performance.now();elapsedInShot+=(now-previousTick)/1000;previousTick=now;
       while(elapsedInShot>=state.shots[presentIndex].duration){
         const duration=state.shots[presentIndex].duration;
         if(presentIndex===state.shots.length-1){elapsedInShot=duration;pausePreview();updateProgress();return;}
-        elapsedInShot-=duration;presentIndex++;presentationRender();
+        elapsedInShot-=duration;presentIndex++;presentationRender();playSfx(state.shots[presentIndex]);
       }
       syncAudio(false);updateProgress();
     },100);
   }
-  function pausePreview(){playing=false;clearInterval(previewTimer);previewTimer=null;if(tempAudio)tempAudio.pause();$('play-preview').textContent='▶ Play';$('play-preview').setAttribute('aria-label','Play timed board preview');}
+  function pausePreview(){stopSfx();playing=false;clearInterval(previewTimer);previewTimer=null;if(tempAudio)tempAudio.pause();$('play-preview').textContent='▶ Play';$('play-preview').setAttribute('aria-label','Play timed board preview');}
   function releaseAudio(){
     pausePreview();
     if(tempAudio){tempAudio.pause();tempAudio.src='';tempAudio=null;}
@@ -702,6 +726,22 @@
   });
   $('edit-duration').addEventListener('blur',event=>{const shot=state.shots.find(s=>s.id===editingId);if(shot)event.target.value=shot.duration;});
   $('move-earlier').addEventListener('click',()=>moveShot(-1));$('move-later').addEventListener('click',()=>moveShot(1));$('duplicate-shot').addEventListener('click',duplicateShot);$('delete-shot').addEventListener('click',deleteShot);
+  $('attach-sfx').addEventListener('click',()=>$('sfx-input').click());
+  $('sfx-input').addEventListener('change',pendingEdit(async event=>{
+    const file=event.target.files[0];const id=editingId;if(!file||!id)return;
+    try{
+      if(file.size>8*1024*1024)throw new Error('Choose a sound effect under 8 MB.');
+      const data=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('The sound effect could not be read.'));reader.readAsDataURL(file);});
+      if(!/^data:audio\/[a-z0-9.+-]+;base64,/i.test(data))throw new Error('Choose an audio file such as MP3 or WAV.');
+      const shot=state.shots.find(s=>s.id===id);if(!shot)return;
+      shot.sfx=data;shot.sfxName=file.name;if(editingId===id)renderSfx(shot);renderCards();scheduleSave();toast('Sound effect added to this panel.');
+    }catch(error){toast(error.message,6000);}finally{event.target.value='';}
+  }));
+  $('remove-sfx').addEventListener('click',()=>{const shot=state.shots.find(s=>s.id===editingId);if(!shot)return;stopSfx();for(const key of ['sfx','sfxName','sfxLevel','sfxIn','sfxOut'])delete shot[key];renderSfx(shot);renderCards();scheduleSave();});
+  $('play-sfx').addEventListener('click',()=>{const shot=state.shots.find(s=>s.id===editingId);stopSfx();playSfx(shot);});
+  $('edit-sfxLevel').addEventListener('input',event=>{const shot=state.shots.find(s=>s.id===editingId);const value=Number(event.target.value);if(!shot||!event.target.value||!Number.isFinite(value))return;shot.sfxLevel=Math.max(0,Math.min(100,value))/100;$('sfx-level-output').textContent=Math.round(shot.sfxLevel*100)+'%';scheduleSave();});
+  $('edit-sfxIn').addEventListener('input',event=>{const shot=state.shots.find(s=>s.id===editingId);if(!shot)return;const value=Number(event.target.value);if(!event.target.value||value===0)delete shot.sfxIn;else if(Number.isFinite(value)&&value>0&&value<=3600&&(shot.sfxOut==null||value<shot.sfxOut))shot.sfxIn=Math.round(value*10)/10;else return;scheduleSave();});
+  $('edit-sfxOut').addEventListener('input',event=>{const shot=state.shots.find(s=>s.id===editingId);if(!shot)return;const value=Number(event.target.value);if(!event.target.value)delete shot.sfxOut;else if(Number.isFinite(value)&&value>(Number(shot.sfxIn)||0)&&value<=3600)shot.sfxOut=Math.round(value*10)/10;else return;scheduleSave();});
   $('replace-frame').addEventListener('click',()=>$('frame-input').click());
   $('frame-input').addEventListener('change',pendingEdit(async event=>{const file=event.target.files[0];const id=editingId;if(!file||!id)return;try{const data=await processImage(file);const shot=state.shots.find(s=>s.id===id);if(!shot)return;shot.customImage=data;shot.customImageName=file.name;if(editingId===id){setFrame($('drawer-frame'),shot);$('restore-frame').hidden=false;}renderCards();scheduleSave();toast('Frame replaced. Export a JSON backup to keep a portable copy.');}catch(error){toast(error.message,6000);}finally{event.target.value='';}}));
   $('restore-frame').addEventListener('click',()=>{const shot=state.shots.find(s=>s.id===editingId);if(!shot)return;delete shot.customImage;delete shot.customImageName;setFrame($('drawer-frame'),shot);$('restore-frame').hidden=true;renderCards();scheduleSave();});
