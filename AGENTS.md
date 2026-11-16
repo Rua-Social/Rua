@@ -33,12 +33,9 @@ is genuinely justified.
 
 ## How work moves
 
-Carry the request through research, recommendations, execution and proportionate
-review. Agents resolve reversible choices within the brief and bring material
-creative or commercial decisions to the founder when they remain unresolved.
-The active coordinator owns completion, including delegated work and the final
-answer. Role ownership lives in `00-system/working-roles.md`; read it before
-dividing work. Any capable model can fill a role.
+Carry the request through to a finished result. Resolve reversible choices
+within the brief and bring material creative or commercial decisions to the
+founder. He is the one creating and telling the story; the tools serve that.
 
 ## Working rules
 
@@ -59,8 +56,7 @@ For current Gmail, Calendar or Drive facts, use the connected Workspace tools.
 Discover available tools before declaring access unavailable. Prefer those tools
 to Mac Mail or Calendar. Local notes can provide context but cannot establish
 current mailbox or calendar state. If a tool fails, report the attempted lookup
-and the gap. Desk or Telegram access must be verified in the current environment;
-a past working connection is not proof of present access. Sending messages needs
+and the gap. Sending messages needs
 explicit authorization; a lookup or draft request does not provide it.
 
 Report actions as completed only when a tool result confirms completion. Label
@@ -71,7 +67,6 @@ when it can save time or improve quality and tools support it. Claim
 independent review only after another reviewer has actually returned findings.
 
 For a requested review, use `00-system/skills/rua-review/SKILL.md`.
-For a studio status extraction, use `00-system/status-extraction.md`.
 For a pickup memo, use `00-system/templates/pickup-memo.md`.
 
 ## Start of a chat

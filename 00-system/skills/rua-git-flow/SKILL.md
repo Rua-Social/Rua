@@ -50,7 +50,7 @@ you are unsure, branch. The cost of an unnecessary branch is thirty seconds.
 `feat/`, `fix/`, `docs/`, `chore/`, `refactor/`.
 
 Slug is two to four words, hyphenated, describing the change and not the file.
-`fix/desk-bridge-timeout`, not `fix/update-py`.
+`fix/storyboard-export-audio`, not `fix/update-py`.
 
 ## Commits
 
