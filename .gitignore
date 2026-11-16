@@ -39,3 +39,14 @@ frames/
 .env.*
 *.key
 *.pem
+
+# Installed creative skills stay untracked (see rua-creative-direction)
+.agents/skills/creative-director/
+.agents/skills/image/
+.agents/skills/video/
+.grok/skills/creative-director
+.grok/skills/image
+.grok/skills/video
+
+# Local Codex config
+.codex/
