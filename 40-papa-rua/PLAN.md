@@ -30,7 +30,7 @@ Ireland Music Week is **30 September to 2 October**, Dublin. Showcase applicatio
 
 ## Brand, from Fiona Duffy
 
-The deck is `references/Defining your brand as an artist - Fiona Duffy-2_260814_181840.pdf` (14 August). Header on every slide: who you are, how you connect, what you want people to feel.
+The deck is Fiona Duffy's brand deck (14 August), in the vault under `rec-papa-rua`. Header on every slide: who you are, how you connect, what you want people to feel.
 
 Brand is not a logo. It is how people perceive you after a song, a Reel, a collab, a room. It becomes a filter:
 
