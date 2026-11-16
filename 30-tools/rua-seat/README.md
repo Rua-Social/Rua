@@ -13,23 +13,37 @@ Seats: desk, pa, reader, maker, checker, flags.
 
 ## Binding
 
-Default on this machine: `hermes -p rua-<seat> chat -q <ask>`. That is a
-harness binding, not doctrine. The doctrine is: the other role actually ran
-and returned.
-
-Override the runner with `RUA_SEAT_RUNNER`, a shell-like template that must
-include `{seat}` and `{ask}`:
+No runner ships by default. The binding is per-machine configuration, not
+doctrine; the doctrine is: the other role actually ran and returned. Set
+`RUA_SEAT_RUNNER`, a shell-like template that must include `{ask}`:
 
 ```sh
-export RUA_SEAT_RUNNER='other-runner --profile rua-{seat} --prompt {ask}'
+export RUA_SEAT_RUNNER='codex exec --sandbox read-only {ask}'
 rua-seat pa "what is new in the inbox"
 ```
 
-Unset `RUA_SEAT_RUNNER` to keep the Hermes default.
+Other installed harnesses take a plain prompt the same way, e.g. `claude -p
+{ask}`, `gemini -p {ask}`, `grok -p {ask}`. Each has its own sandbox,
+approval and permission flags (`codex exec`'s default sandbox is
+`workspace-write`, not read-only); put the ones a seat needs directly in its
+template. A read-only binding can answer for `reader` or `checker` but
+cannot fill `maker`, which has to write.
 
-Both placeholders are required; `{ask}` must occupy exactly one argument.
-The runner is invoked as an argument array, never through a shell. Adapters
-must preserve the inherited `RUA_HANDOFF_*` environment for nested work.
+Include `{seat}` too when the runner has a native profile or session concept
+to bind to:
+
+```sh
+export RUA_SEAT_RUNNER='other-runner --profile rua-{seat} --prompt {ask}'
+```
+
+`{ask}` is required and must occupy exactly one argument; `{seat}` is
+optional. Either way, the seat's role, scope and source pointers travel in
+the prompt itself (see `role_preamble` in `rua-seat`), so no runner-side
+profile is assumed — every seat currently shares the one configured runner
+and its credentials. The runner is invoked as an argument array, never
+through a shell, with stdin closed so a runner that otherwise waits on piped
+input cannot hang the call. Adapters must preserve the inherited
+`RUA_HANDOFF_*` environment for nested work.
 
 ## Shared handoff record
 
@@ -41,8 +55,9 @@ Git. The record can contain private task inputs and output; do not commit or
 publish it. Records are retained until deliberately removed by the operator.
 
 This is the portable handoff record, not a second client or chat database.
-Hermes continues to own its runtime sessions. Another runner can read the same
-job without reconstructing a previous model's conversation.
+The configured runner continues to own its own runtime sessions. Another
+runner can read the same job without reconstructing a previous model's
+conversation.
 
 ```sh
 rua-seat --structured --json --job-id draft-pass-1 --context /outside-git/context.json maker "draft the approved deliverable"
@@ -83,14 +98,13 @@ referenced artifact exists. The coordinator checks the evidence before reporting
 the requested work complete.
 
 In structured mode the adapter receives `RUA_SEAT_RESULT_SCHEMA` pointing at the
-schema. An API adapter should use its provider's native schema-constrained
-generation where available. For OpenAI Responses this is strict `text.format`;
-handle transport failures, refusals and incomplete responses before returning
-the worker object. This CLI does not call OpenAI or claim native schema support
-for Hermes. Its default runner receives the schema in its prompt, and the CLI
-validates the returned JSON. Invalid output is saved as `invalid_output`, never
-silently repaired or retried. See the
-[official structured-output guide](https://developers.openai.com/api/docs/guides/structured-outputs).
+schema. An API-backed adapter should use its provider's native schema-constrained
+generation where available; see, for example, the
+[OpenAI structured-output guide](https://developers.openai.com/api/docs/guides/structured-outputs)
+for `text.format`. This CLI does not call any provider's API directly or claim
+native schema support for a configured runner: the schema travels in the prompt,
+and the CLI validates the returned JSON regardless of which runner produced it.
+Invalid output is saved as `invalid_output`, never silently repaired or retried.
 
 Plain structured output shows only the summary, artifact references and pending
 reasons. `--json` and `--show` expose the complete private record for another
@@ -114,23 +128,6 @@ Exit codes: 0 for a returned plain run or a structured completed result; 2 for
 invalid input/configuration; 4 for failed, blocked, refused, incomplete, cancelled,
 timed-out, oversized, unconfirmed or invalid-output results. No automatic retry
 can duplicate a send or overwrite. `--show` prints JSON even for unfinished jobs.
-
-## Shared profile instructions
-
-`sync_profiles.py` replaces duplicated private SOUL instructions with pointers
-to one repository's rules and role table. It requires all seven existing files,
-changes only those SOUL files, and preserves runtime configuration and credentials.
-
-```sh
-python3 30-tools/rua-seat/sync_profiles.py --repo "$PWD" --hermes-home "$HOME/.hermes"
-python3 30-tools/rua-seat/sync_profiles.py --repo "$PWD" --hermes-home "$HOME/.hermes" --apply
-```
-
-The first command reports drift without writing. Apply creates a private backup
-before replacements. `--restore BACKUP --apply` restores original bytes and
-permissions, with another backup; it refuses to overwrite later user edits.
-Use a durable checkout whose doctrine is current before applying. Already-running
-chats may retain their old system prompt; start a fresh session to load changes.
 
 ## Install
 

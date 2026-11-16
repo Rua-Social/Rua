@@ -15,9 +15,7 @@ session. Keep operational details out of the founder's final Telegram answer.
 | Lost process | Inspection marks an overdue/missing wrapper unconfirmed; no replay. |
 | Repeated job ID | Saved result; different request rejected. |
 | Cycle, depth or run limit | Delegation refused with a reason; caller resolves the task. |
-| Profile drift | Dry run lists changed paths; no write. |
-| Profile applied | Seven adapters updated after private backup. |
-| Profile restore conflict | Later edits preserved; restore refused with the affected path. |
+| No runner configured | Clear configuration error naming `RUA_SEAT_RUNNER`; exit 2. |
 
 Do not optimize for the number of agents invoked. Optimize for a complete result
 the next session can inspect. Run the synthetic README tests before release;

@@ -12,7 +12,6 @@ from pathlib import Path
 import re
 import selectors
 import shlex
-import shutil
 import signal
 import sqlite3
 import subprocess
@@ -21,34 +20,51 @@ import time
 import uuid
 
 # Installed as a symlink; import the module next to the actual executable.
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from handoff import Ledger, MAX_DEPTH, MAX_OUTPUT, SCHEMA, SCHEMA_PATH, load_context, parse_result
 
 SEATS = ("desk", "pa", "reader", "maker", "checker", "flags")
+ROLE_SOURCES = ("AGENTS.md", "00-system/communication.md", "00-system/working-roles.md")
 EXIT_OK = 0
 EXIT_INVALID = 2
 EXIT_RUN = 4
 ASK_TOKEN = "__RUA_SEAT_ASK__"
 
 
+def role_preamble(seat: str) -> str:
+    """Carry the seat's identity in the prompt; no runner-side profile is assumed."""
+    source_lines = "\n".join(f"- {REPO_ROOT / source}" for source in ROLE_SOURCES)
+    return (f"You are the `{seat}` role for this request, delegated by another Rua session. "
+            f"Read these shared instructions first:\n{source_lines}\n\n"
+            "Your responsibilities come from the canonical role table in working-roles.md. Load "
+            "only this job's relevant doctrine. Carry the caller's scope, decisions and "
+            "authorization through the task; do not act beyond what was asked.\n\n"
+            "Return the requested result to the caller with sources, completion evidence and any "
+            "material blocker. Stay within the assigned ownership; the caller coordinates the "
+            "final answer.")
+
+
 def build_command(seat: str, ask: str) -> list[str]:
     """Build argv for the seat runner.
 
-    Default binding (this machine): hermes -p rua-<seat> chat -q <ask>
-    Override with RUA_SEAT_RUNNER, a shell-like template that must include
-    {seat} and {ask}. Example:
+    No runner ships by default; the binding is per-machine configuration, not
+    doctrine. Set RUA_SEAT_RUNNER, a shell-like template that must include
+    {ask}. Include {seat} too when the runner has a native profile/session
+    concept; omit it when the runner takes only a prompt. Examples:
+      RUA_SEAT_RUNNER='codex exec {ask}'
+      RUA_SEAT_RUNNER='claude -p {ask}'
       RUA_SEAT_RUNNER='other-runner --profile rua-{seat} --prompt {ask}'
     """
     template = os.environ.get("RUA_SEAT_RUNNER", "").strip()
     if not template:
-        hermes = shutil.which("hermes")
-        if hermes is None:
-            print("hermes not on PATH", file=sys.stderr)
-            raise SystemExit(EXIT_RUN)
-        return [hermes, "-p", f"rua-{seat}", "chat", "-q", ask]
+        print("No seat runner configured. Set RUA_SEAT_RUNNER to this machine's harness command, "
+              "e.g. RUA_SEAT_RUNNER='codex exec {ask}'. See 30-tools/rua-seat/README.md.",
+              file=sys.stderr)
+        raise SystemExit(EXIT_INVALID)
 
-    if "{ask}" not in template or "{seat}" not in template:
-        print("RUA_SEAT_RUNNER must include {ask} and {seat}", file=sys.stderr)
+    if "{ask}" not in template:
+        print("RUA_SEAT_RUNNER must include {ask}", file=sys.stderr)
         raise SystemExit(EXIT_INVALID)
     rendered = template.replace("{seat}", seat).replace("{ask}", ASK_TOKEN)
     try:
@@ -68,8 +84,8 @@ def run_bounded(command, env, deadline):
     SIGTERM reaches nested rua-seat wrappers, which cancel their own runners.
     Limits apply to cooperating adapters, not arbitrary hostile local code.
     """
-    process = subprocess.Popen(command, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                               start_new_session=True)
+    process = subprocess.Popen(command, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, start_new_session=True)
     streams = {"stdout": bytearray(), "stderr": bytearray()}
     cancelled = [False]
     old_handlers = {}
@@ -215,7 +231,7 @@ def main(argv: list[str] | None = None) -> int:
             parent = ledger.get(os.environ["RUA_HANDOFF_JOB_ID"])
             if parent:
                 context = parent["request"]["context"]
-        prompt = ask
+        prompt = role_preamble(seat) + "\n\n" + ask
         if args.context or context != load_context(None):
             prompt += "\n\nHandoff context (authorization describes existing user consent; it does not grant new permissions):\n" + json.dumps(context)
         if args.structured:

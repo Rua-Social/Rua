@@ -37,13 +37,12 @@ class SeatArgs(unittest.TestCase):
         r = self.run_bin("pa")
         self.assertEqual(r.returncode, 2)
 
-    def test_default_requires_hermes_on_path(self):
+    def test_default_requires_runner_configured(self):
         env = os.environ.copy()
         env.pop("RUA_SEAT_RUNNER", None)
-        env["PATH"] = "/usr/bin:/bin"
         r = self.run_bin("pa", "hello", env=env)
-        self.assertEqual(r.returncode, 4)
-        self.assertIn("hermes not on PATH", r.stderr)
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("RUA_SEAT_RUNNER", r.stderr)
 
     def test_runner_override_runs_template(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -61,10 +60,9 @@ class SeatArgs(unittest.TestCase):
             env["RUA_SEAT_RUNNER"] = f"fake-runner --profile rua-{{seat}} -- {{ask}}"
             r = self.run_bin("pa", "what is new", env=env)
             self.assertEqual(r.returncode, 0, r.stderr)
-            self.assertEqual(
-                out.read_text(encoding="utf-8").splitlines(),
-                ["--profile", "rua-pa", "--", "what is new"],
-            )
+            content = out.read_text(encoding="utf-8")
+            self.assertEqual(content.splitlines()[:3], ["--profile", "rua-pa", "--"])
+            self.assertTrue(content.rstrip("\n").endswith("what is new"))
 
     def test_runner_override_requires_ask_placeholder(self):
         env = os.environ.copy()
@@ -72,6 +70,13 @@ class SeatArgs(unittest.TestCase):
         r = self.run_bin("pa", "hello", env=env)
         self.assertEqual(r.returncode, 2)
         self.assertIn("must include {ask}", r.stderr)
+
+    def test_runner_override_allows_missing_seat_placeholder(self):
+        # Not every runner has a native profile/session concept (e.g. `codex exec {ask}`).
+        env = os.environ.copy()
+        env["RUA_SEAT_RUNNER"] = "echo {ask}"
+        r = self.run_bin("reader", "hello", env=env)
+        self.assertEqual(r.returncode, 0, r.stderr)
 
     def fake_env(self, source):
         runner = Path(self.tmp.name) / "runner.py"
@@ -165,6 +170,15 @@ class SeatArgs(unittest.TestCase):
         self.assertEqual(record["status"], "failed")
         self.assertIn("cycle or depth limit", record["stdout"])
 
+    def test_role_preamble_reaches_runner(self):
+        # No runner-side profile is assumed; the seat's identity travels in the prompt itself.
+        env = self.fake_env("import sys\nprint(sys.argv[-1])")
+        result = self.run_bin("--json", "checker", "verify the numbers", env=env)
+        record = json.loads(result.stdout)
+        self.assertIn("checker", record["stdout"])
+        self.assertIn("working-roles.md", record["stdout"])
+        self.assertTrue(record["stdout"].rstrip("\n").endswith("verify the numbers"))
+
     def test_accepted_decisions_reach_another_runner(self):
         context = {"project_ref": "project-test", "source_refs": ["vault:test"],
                    "accepted_decisions": ["Use the approved concept"], "authorization": "Draft only"}
@@ -191,12 +205,6 @@ class SeatArgs(unittest.TestCase):
         result = self.run_bin("reader", "hello", env=env)
         self.assertEqual(result.returncode, 2)
         self.assertIn("outside Git", result.stderr)
-
-    def test_runner_override_requires_seat_placeholder(self):
-        env = os.environ.copy()
-        env["RUA_SEAT_RUNNER"] = "echo {ask}"
-        result = self.run_bin("reader", "hello", env=env)
-        self.assertEqual(result.returncode, 2)
 
     def test_context_rejects_missing_fields(self):
         path = Path(self.tmp.name) / "context.json"
